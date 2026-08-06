@@ -1,0 +1,22 @@
+{
+  "reportGeneralTypeIssues": "warning",
+  "reportArgumentType": "warning",
+  "reportAttributeAccessIssue": "warning",
+  "reportMissingTypeArgument": "warning",
+  "reportUnknownParameterType": "warning",
+  "reportUnknownMemberType": "warning",
+  "reportUnknownVariableType": "warning",
+  "reportUnknownArgumentType": "warning",
+  "reportCallInDefaultInitializer": "none",
+  "reportDeprecated": "none",
+  "reportUnusedParameter": "warning",
+  "reportUnusedFunction": "warning",
+  "reportUnusedVariable": "warning",
+  "reportUnusedImport": "warning",
+  "reportImplicitOverride": "warning",
+  "reportUnannotatedClassAttribute": "warning",
+  "reportUnusedCallResult": "none",
+  "reportImplicitStringConcatenation": "none",
+  "reportImportCycles": "none",
+  "reportAny": "none"
+}

@@ -1,0 +1,48 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+coverage/
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Python/version managers
+.python-version
+
+# ── Secrets — NEVER commit real credentials ───────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Databases / runtime data ──────────────────────────────────────────────────
+*.db
+*.sqlite3
+*.sqlite
+
+# ── Node / frontend ───────────────────────────────────────────────────────────
+node_modules/
+frontend/dist/
+dist/
+*.tsbuildinfo
+npm-debug.log*
+
+# ── Editors / OS ──────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ── Agent tooling ─────────────────────────────────────────────────────────────
+.omo/
