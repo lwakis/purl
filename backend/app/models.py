@@ -1,0 +1,133 @@
+"""Pydantic models for request/response schemas."""
+
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Literal
+
+from pydantic import BaseModel, Field
+
+# ── Generation ───────────────────────────────────────────────────────────────
+
+
+class GenerateRequest(BaseModel):
+    prompt: str = Field(..., max_length=2000, description='User prompt describing the design')
+    theme: Literal['light', 'dark', 'auto'] = 'auto'
+    style: Literal['minimal', 'corporate', 'playful', 'techno'] = 'minimal'
+    session_id: str | None = Field(None, description='Anonymous session identifier')
+
+
+class IterateRequest(BaseModel):
+    session_id: str | None = None
+    message: str = Field(..., max_length=2000)
+    current_code: str
+    history: list[ChatMessage] = Field(default_factory=list)
+
+
+class ChatMessage(BaseModel):
+    role: Literal['user', 'assistant']
+    content: str
+
+
+# ── API responses ────────────────────────────────────────────────────────────
+
+
+class GenerateResponse(BaseModel):
+    session_id: str | None = None
+    event_type: str
+    data: str
+
+
+class ProjectResponse(BaseModel):
+    id: int
+    name: str
+    prompt: str | None = None
+    current_code: str | None = None
+    theme: str = 'auto'
+    style: str = 'minimal'
+    session_id: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+    model_config = {'from_attributes': True}
+
+
+class ProjectVersionResponse(BaseModel):
+    id: int
+    project_id: int
+    version_num: int
+    code: str | None = None
+    message: str | None = None
+    created_at: datetime | None = None
+
+    model_config = {'from_attributes': True}
+
+
+class ProjectCreate(BaseModel):
+    name: str = 'Untitled'
+    prompt: str | None = None
+    current_code: str | None = None
+    session_id: str | None = None
+
+
+class ProjectUpdate(BaseModel):
+    name: str | None = None
+    prompt: str | None = None
+    current_code: str | None = None
+    theme: str | None = None
+    style: str | None = None
+
+
+class TemplateResponse(BaseModel):
+    id: int
+    title: str
+    description: str | None = None
+    prompt_text: str
+    category: str | None = None
+    icon: str | None = None
+
+    model_config = {'from_attributes': True}
+
+
+# ── Auth ─────────────────────────────────────────────────────────────────────
+
+
+class AnonAuthResponse(BaseModel):
+    session_id: str
+    token: str
+
+
+class RegisterRequest(BaseModel):
+    email: str = Field(..., max_length=255)
+    password: str = Field(..., min_length=6, max_length=128)
+    name: str | None = None
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class AuthResponse(BaseModel):
+    user_id: int
+    email: str
+    name: str | None = None
+    token: str
+
+
+# ── Share ────────────────────────────────────────────────────────────────────
+
+
+class ShareCreateRequest(BaseModel):
+    project_id: int
+
+
+class ShareCreateResponse(BaseModel):
+    short_code: str
+    url: str
+
+
+class ShareGetResponse(BaseModel):
+    name: str
+    code: str | None = None
+    prompt: str | None = None

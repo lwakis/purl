@@ -1,0 +1,260 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import {
+  fetchTemplates,
+  createProject,
+  getProjects,
+  getProject,
+  updateProject,
+  deleteProject,
+  getProjectVersions,
+  createShareLink,
+  getSharedProject,
+  createAnonSession,
+} from './api';
+
+interface MockResponse {
+  ok: boolean;
+  status: number;
+  json: () => Promise<unknown>;
+  text: () => Promise<string>;
+}
+
+function mockResponse(data: unknown, ok = true, status = 200): MockResponse {
+  return {
+    ok,
+    status,
+    json: async () => data,
+    text: async () => (typeof data === 'string' ? data : JSON.stringify(data)),
+  };
+}
+
+const fetchMock = vi.fn();
+
+beforeEach(() => {
+  fetchMock.mockReset();
+  vi.stubGlobal('fetch', fetchMock);
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+describe('api client', () => {
+  it('fetchTemplates GETs /api/templates and returns templates', async () => {
+    const templates = [
+      {
+        id: 1,
+        title: 'Landing',
+        description: 'd',
+        prompt_text: 'p',
+        category: 'c',
+        icon: 'i',
+      },
+    ];
+    fetchMock.mockResolvedValue(mockResponse(templates));
+
+    const result = await fetchTemplates();
+
+    expect(result).toEqual(templates);
+    expect(fetchMock).toHaveBeenCalledWith('/api/templates', {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  });
+
+  it('createProject POSTs /api/projects with the full JSON body', async () => {
+    const project = {
+      id: 1,
+      name: 'My Site',
+      prompt: 'Build a landing page',
+      current_code: '<div/>',
+      theme: 'dark',
+      style: 'minimal',
+      session_id: 'sess-1',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+    };
+    fetchMock.mockResolvedValue(mockResponse(project));
+
+    const data = {
+      name: 'My Site',
+      prompt: 'Build a landing page',
+      current_code: '<div/>',
+      theme: 'dark',
+      style: 'minimal',
+      session_id: 'sess-1',
+    };
+
+    const result = await createProject(data);
+
+    expect(result).toEqual(project);
+    expect(fetchMock).toHaveBeenCalledWith('/api/projects', {
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  });
+
+  it('getProjects GETs /api/projects and returns the list', async () => {
+    const projects = [
+      {
+        id: 1,
+        name: 'A',
+        prompt: 'p',
+        current_code: 'c',
+        theme: 'dark',
+        style: 'minimal',
+        session_id: 's',
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      },
+    ];
+    fetchMock.mockResolvedValue(mockResponse(projects));
+
+    const result = await getProjects();
+
+    expect(result).toEqual(projects);
+    expect(fetchMock).toHaveBeenCalledWith('/api/projects', {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  });
+
+  it('getProject GETs /api/projects/:id', async () => {
+    const project = {
+      id: 7,
+      name: 'A',
+      prompt: 'p',
+      current_code: 'c',
+      theme: 'dark',
+      style: 'minimal',
+      session_id: 's',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+    };
+    fetchMock.mockResolvedValue(mockResponse(project));
+
+    const result = await getProject(7);
+
+    expect(result).toEqual(project);
+    expect(fetchMock).toHaveBeenCalledWith('/api/projects/7', {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  });
+
+  it('updateProject PUTs /api/projects/:id with the JSON body', async () => {
+    const updated = {
+      id: 3,
+      name: 'Renamed',
+      prompt: 'p',
+      current_code: 'c',
+      theme: 'dark',
+      style: 'minimal',
+      session_id: 's',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-02T00:00:00Z',
+    };
+    fetchMock.mockResolvedValue(mockResponse(updated));
+
+    const result = await updateProject(3, { name: 'Renamed' });
+
+    expect(result).toEqual(updated);
+    expect(fetchMock).toHaveBeenCalledWith('/api/projects/3', {
+      headers: { 'Content-Type': 'application/json' },
+      method: 'PUT',
+      body: JSON.stringify({ name: 'Renamed' }),
+    });
+  });
+
+  it('deleteProject DELETEs /api/projects/:id and resolves on 204', async () => {
+    fetchMock.mockResolvedValue(mockResponse(undefined, true, 204));
+
+    await expect(deleteProject(9)).resolves.toBeUndefined();
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/projects/9', {
+      headers: { 'Content-Type': 'application/json' },
+      method: 'DELETE',
+    });
+  });
+
+  it('getProjectVersions GETs /api/projects/:id/versions', async () => {
+    const versions = [
+      {
+        id: 1,
+        version_num: 1,
+        code: 'c',
+        message: 'm',
+        created_at: '2024-01-01T00:00:00Z',
+      },
+    ];
+    fetchMock.mockResolvedValue(mockResponse(versions));
+
+    const result = await getProjectVersions(4);
+
+    expect(result).toEqual(versions);
+    expect(fetchMock).toHaveBeenCalledWith('/api/projects/4/versions', {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  });
+
+  it('createShareLink POSTs /api/share with project_id', async () => {
+    fetchMock.mockResolvedValue(
+      mockResponse({ short_code: 'abc123', url: '/api/share/abc123' })
+    );
+
+    const result = await createShareLink(5);
+
+    expect(result).toEqual({ short_code: 'abc123', url: '/api/share/abc123' });
+    expect(fetchMock).toHaveBeenCalledWith('/api/share', {
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+      body: JSON.stringify({ project_id: 5 }),
+    });
+  });
+
+  it('getSharedProject GETs /api/share/:code', async () => {
+    const shared = { name: 'Shared', code: '<div/>' };
+    fetchMock.mockResolvedValue(mockResponse(shared));
+
+    const result = await getSharedProject('abc123');
+
+    expect(result).toEqual(shared);
+    expect(fetchMock).toHaveBeenCalledWith('/api/share/abc123', {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  });
+
+  it('createAnonSession POSTs /api/auth/anon', async () => {
+    const session = { token: 'tok', session_id: 'sess-2' };
+    fetchMock.mockResolvedValue(mockResponse(session));
+
+    const result = await createAnonSession();
+
+    expect(result).toEqual(session);
+    expect(fetchMock).toHaveBeenCalledWith('/api/auth/anon', {
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    });
+  });
+
+  it('throws a human-friendly error containing the status when the response is not ok', async () => {
+    fetchMock.mockResolvedValue(mockResponse('boom', false, 500));
+
+    await expect(fetchTemplates()).rejects.toThrow('Ошибка сервера (500)');
+    await expect(fetchTemplates()).rejects.toThrow(/500/);
+  });
+
+  it('maps HTTP 429 to a rate-limit message', async () => {
+    fetchMock.mockResolvedValue(mockResponse('rate limited', false, 429));
+
+    await expect(fetchTemplates()).rejects.toThrow(
+      'Превышен лимит запросов, попробуйте позже'
+    );
+  });
+
+  it('maps network failures to a friendly message', async () => {
+    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
+
+    await expect(fetchTemplates()).rejects.toThrow(
+      'Не удалось связаться с сервером'
+    );
+  });
+});

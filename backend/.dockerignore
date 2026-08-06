@@ -1,0 +1,12 @@
+.venv
+venv
+__pycache__
+*.egg-info
+*.db
+.env
+tests/
+uv.lock
+.pytest_cache
+.ruff_cache
+Dockerfile
+.dockerignore

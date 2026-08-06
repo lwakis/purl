@@ -1,0 +1,60 @@
+name: Bug report
+description: Report a bug to help us improve
+title: "Bug: "
+type: Bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report. Please be as specific as possible.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: What you did, what you saw, and why it is wrong
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What was expected
+      description: What you expected to happen instead
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps that trigger the bug
+      placeholder: |
+        1. docker compose up --build
+        2. Submit prompt: "..."
+        3. Click "Generate"
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Where the bug appeared
+      placeholder: |
+        - Mode: mock mode / LLM_API_KEY set
+        - LLM_PROVIDER and model, if not mock mode
+        - Browser or API client, version
+        - OS / Docker version (if applicable)
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Backend/frontend console output, error tracebacks, or network responses
+      render: shell
+    validations:
+      required: false
