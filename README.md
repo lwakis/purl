@@ -2,9 +2,7 @@
 
 Open-source AI design generator. Type a prompt, get a complete HTML/CSS/JS page, streamed live and previewed in a sandboxed iframe. Iterate on it in a chat until it's right. Similar in spirit to Vercel v0 and Lovable, but self-hostable.
 
-<!-- Add the CI badge here after the first push, e.g.:
-     [![CI](https://img.shields.io/github/actions/workflow/status/<owner>/<repo>/ci.yml)] -->
-
+[![CI](https://img.shields.io/github/actions/workflow/status/lwakis/purl/ci.yml)](https://github.com/lwakis/purl/actions/workflows/ci.yml)
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/python-%3E%3D3.13-3776AB)
 ![React](https://img.shields.io/badge/react-18-61DAFB)
@@ -26,7 +24,7 @@ Flagship features:
 ### Docker
 
 ```bash
-git clone <repo-url> && cd purl
+git clone git@github.com:lwakis/purl.git && cd purl
 docker compose up --build
 ```
 
