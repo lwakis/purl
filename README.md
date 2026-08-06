@@ -3,6 +3,8 @@
 Open-source AI design generator. Type a prompt, get a complete HTML/CSS/JS page, streamed live and previewed in a sandboxed iframe. Iterate on it in a chat until it's right. Similar in spirit to Vercel v0 and Lovable, but self-hostable.
 
 [![CI](https://img.shields.io/github/actions/workflow/status/lwakis/purl/ci.yml)](https://github.com/lwakis/purl/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/tag/lwakis/purl?sort=semver)](https://github.com/lwakis/purl/releases)
+[![Coverage](https://codecov.io/gh/lwakis/purl/branch/main/graph/badge.svg)](https://codecov.io/gh/lwakis/purl)
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/python-%3E%3D3.13-3776AB)
 ![React](https://img.shields.io/badge/react-18-61DAFB)
