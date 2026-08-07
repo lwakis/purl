@@ -1,0 +1,72 @@
+name: Release
+
+# Manual release workflow. Usage:
+#   1. Bump `version` in `backend/pyproject.toml`, `frontend/package.json`, and
+#      add a `## [x.y.z]` entry to `CHANGELOG.md`, then merge to `main`.
+#   2. Run "Actions → Release → Run workflow" (version is optional — defaults
+#      to the version in `backend/pyproject.toml`).
+# The workflow verifies consistency, tags `v<version>`, pushes the tag, and
+# creates a GitHub release with the changelog section as the body.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g. 0.2.0). Defaults to the version in backend/pyproject.toml.'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version
+        id: version
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if [ -z "$VERSION" ]; then
+            VERSION="$(grep -m1 '^version = ' backend/pyproject.toml | sed -E 's/^version = "([^"]+)".*/\1/')"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: $VERSION"
+
+      - name: Verify version consistency
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          BACKEND="$(grep -m1 '^version = ' backend/pyproject.toml | sed -E 's/^version = "([^"]+)".*/\1/')"
+          FRONTEND="$(python3 -c 'import json; print(json.load(open("frontend/package.json"))["version"])')"
+          for CUR in "$BACKEND" "$FRONTEND"; do
+            if [ "$CUR" != "$VERSION" ]; then
+              echo "::error::version mismatch: expected $VERSION, found $CUR"
+              exit 1
+            fi
+          done
+          if ! grep -Eq "^## \[$VERSION\]" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no '## [$VERSION]' section"
+            exit 1
+          fi
+          echo "Version consistency OK"
+
+      - name: Create and push tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "${{ steps.version.outputs.tag }}" -m "Release ${{ steps.version.outputs.tag }}"
+          git push origin "${{ steps.version.outputs.tag }}"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          awk -v ver="$VERSION" '$0 ~ "^## \\[" ver "\\]" {capture=1; next} capture && /^## / {exit} capture && NF {print}' CHANGELOG.md > /tmp/release-notes.md
+          gh release create "$TAG" --title "Purl $TAG" --notes-file /tmp/release-notes.md
