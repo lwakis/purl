@@ -5,9 +5,9 @@ description = "Purl AI — AI design generation service backend"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "fastapi[standard]>=0.115.0",
+    "fastapi[standard]>=0.141.1",
     "uvicorn[standard]>=0.52.1",
-    "sqlalchemy[asyncio]>=2.0.0",
+    "sqlalchemy[asyncio]>=2.0.51",
     "aiosqlite>=0.20.0",
     "httpx>=0.28.0",
     "python-dotenv>=1.0.0",
