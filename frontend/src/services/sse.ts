@@ -1,5 +1,6 @@
 import type { ChatMessage, SSEEvent } from '../types';
 import { getToken } from './session';
+import { BASE_URL } from './api';
 
 interface SSEOptions {
   onEvent: (event: SSEEvent) => void;
@@ -145,7 +146,7 @@ export function connectGenerateSSE(
   style: string,
   options: SSEOptions
 ): Promise<void> {
-  return connectSSE('/api/generate', { prompt, theme, style }, options);
+  return connectSSE(`${BASE_URL}/api/generate`, { prompt, theme, style }, options);
 }
 
 export function connectIterateSSE(
@@ -156,7 +157,7 @@ export function connectIterateSSE(
   options: SSEOptions
 ): Promise<void> {
   return connectSSE(
-    '/api/iterate',
+    `${BASE_URL}/api/iterate`,
     {
       session_id: sessionId,
       message,

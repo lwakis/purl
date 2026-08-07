@@ -151,6 +151,14 @@ All variables are optional; defaults live in `backend/app/config.py`. Copy `back
 | `FREE_ITERATIONS_LIMIT` | `10` | Free-plan iteration limit |
 | `CACHE_TTL_SECONDS` | `86400` | Result cache TTL in seconds |
 
+### Frontend
+
+Frontend env vars are read at build time (`.env` in `frontend/`, see [frontend/.env.example](frontend/.env.example)).
+
+| Variable | Default | Description |
+|---|---|---|
+| `VITE_API_BASE_URL` | *(empty)* | API base URL for fetch/SSE calls. Empty = same origin as the frontend (Vite dev proxy or reverse proxy in production). Set it only when frontend and backend live on different origins. |
+
 ## API overview
 
 Interactive docs are served at `/docs` when the backend is running (FastAPI Swagger UI).

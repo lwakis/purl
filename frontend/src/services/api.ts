@@ -1,7 +1,9 @@
 import type { Project, ProjectVersion, PromptTemplate } from '../types';
 import { getToken } from './session';
 
-const BASE_URL = '';
+// API base URL. Empty (default) = same origin as the frontend
+// (Vite dev proxy or a reverse proxy in production).
+export const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '';
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const token = getToken();
