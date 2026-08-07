@@ -23,11 +23,20 @@ jobs:
       - run: uv sync --extra dev
       - run: uv run ruff check .
       - run: uv run ruff format --check .
-      - run: uv run pytest
+      - run: uv run pytest --cov=app --cov-report=xml
       # SAST: reports findings in the log, never blocks the merge.
       - name: Bandit security scan (non-blocking)
         run: uvx bandit -r app -q
         continue-on-error: true
+      # Coverage upload (only runs once the CODECOV_TOKEN secret is configured).
+      - name: Upload coverage to Codecov
+        if: ${{ secrets.CODECOV_TOKEN != '' }}
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: backend/coverage.xml
+          flags: backend
+          fail_ci_if_error: false
 
   frontend:
     runs-on: ubuntu-latest
@@ -35,16 +44,25 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
           cache-dependency-path: 'frontend/package-lock.json'
       - run: npm ci
-      - run: npx vitest run
+      - run: npx vitest run --coverage
       - run: npm run build
       # Dependency audit: reports findings in the log, never blocks the merge.
       - name: npm audit (non-blocking)
         run: npm audit --audit-level=high
         continue-on-error: true
+      # Coverage upload (requires the CODECOV_TOKEN secret, fails open otherwise).
+      - name: Upload coverage to Codecov
+        if: ${{ secrets.CODECOV_TOKEN != '' }}
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: frontend/coverage/lcov.info
+          flags: frontend
+          fail_ci_if_error: false
