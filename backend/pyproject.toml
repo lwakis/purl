@@ -13,7 +13,7 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "pyjwt>=2.9.0",
     "pydantic>=2.0.0",
-    "pydantic-settings>=2.0.0",
+    "pydantic-settings>=2.14.2",
 ]
 
 [project.optional-dependencies]
@@ -36,3 +36,8 @@ select = ["E4", "E7", "E9", "F", "I", "UP", "B"]
 
 [tool.ruff.format]
 quote-style = "single"
+
+[dependency-groups]
+dev = [
+    "pytest-cov>=7.1.0",
+]
