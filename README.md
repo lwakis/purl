@@ -4,11 +4,13 @@ Open-source AI design generator. Type a prompt, get a complete HTML/CSS/JS page,
 
 [![CI](https://img.shields.io/github/actions/workflow/status/lwakis/purl/ci.yml)](https://github.com/lwakis/purl/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/tag/lwakis/purl?sort=semver)](https://github.com/lwakis/purl/releases)
+[![Stars](https://img.shields.io/github/stars/lwakis/purl)](https://github.com/lwakis/purl/stargazers)
+[![Last commit](https://img.shields.io/github/last-commit/lwakis/purl)](https://github.com/lwakis/purl/commits/main)
 [![Coverage](https://codecov.io/gh/lwakis/purl/branch/main/graph/badge.svg)](https://codecov.io/gh/lwakis/purl)
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/python-%3E%3D3.13-3776AB)
-![React](https://img.shields.io/badge/react-18-61DAFB)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688)
+![React](https://img.shields.io/badge/react-19-61DAFB)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688)
 ![Docker](https://img.shields.io/badge/docker-compose-2496ED)
 ![Mock mode](https://img.shields.io/badge/mock%20mode-runs%20without%20API%20key-6B7280)
 
