@@ -31,7 +31,7 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
         handleSend();
       }
     },
-    [handleSend]
+    [handleSend],
   );
 
   return (
@@ -81,30 +81,30 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
         <div ref={chatEndRef} />
       </div>
 
-        {!hideInput && (
-          <div className="p-3 border-t border-line">
-            <div className="flex gap-2">
-              <textarea
-                ref={inputRef}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Что изменить?"
-                aria-label="Сообщение в чат"
-                rows={1}
-                disabled={isGenerating || !currentCode}
-                className="flex-1 bg-surface-950/60 border border-line rounded-lg px-3.5 py-2.5 text-sm text-surface-100 placeholder-surface-500 focus:border-line-strong focus:ring-2 focus:ring-primary-500/20 transition-all resize-none disabled:opacity-30"
-              />
-              <button
-                onClick={handleSend}
-                disabled={!message.trim() || isGenerating || !currentCode}
-                className="p-2.5 rounded-md bg-primary-600 text-white transition-all hover:bg-primary-500 active:scale-[0.98] disabled:bg-white/10 disabled:text-surface-400 disabled:cursor-not-allowed focus-ring"
-              >
-                <PaperAirplaneIcon className="w-4 h-4" />
-              </button>
-            </div>
+      {!hideInput && (
+        <div className="p-3 border-t border-line">
+          <div className="flex gap-2">
+            <textarea
+              ref={inputRef}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Что изменить?"
+              aria-label="Сообщение в чат"
+              rows={1}
+              disabled={isGenerating || !currentCode}
+              className="flex-1 bg-surface-950/60 border border-line rounded-lg px-3.5 py-2.5 text-sm text-surface-100 placeholder-surface-500 focus:border-line-strong focus:ring-2 focus:ring-primary-500/20 transition-all resize-none disabled:opacity-30"
+            />
+            <button
+              onClick={handleSend}
+              disabled={!message.trim() || isGenerating || !currentCode}
+              className="p-2.5 rounded-md bg-primary-600 text-white transition-all hover:bg-primary-500 active:scale-[0.98] disabled:bg-white/10 disabled:text-surface-400 disabled:cursor-not-allowed focus-ring"
+            >
+              <PaperAirplaneIcon className="w-4 h-4" />
+            </button>
           </div>
-        )}
+        </div>
+      )}
     </div>
   );
 }

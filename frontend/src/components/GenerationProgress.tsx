@@ -39,8 +39,8 @@ export default function GenerationProgress() {
                 i < currentIndex
                   ? 'bg-primary-500'
                   : i === currentIndex
-                  ? 'bg-primary-400 relative overflow-hidden before:absolute before:inset-0 before:animate-shimmer before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent'
-                  : 'bg-white/8'
+                    ? 'bg-primary-400 relative overflow-hidden before:absolute before:inset-0 before:animate-shimmer before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent'
+                    : 'bg-white/8'
               }`}
             />
             <span

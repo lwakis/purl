@@ -88,7 +88,7 @@ export function useGeneration() {
         onComplete: handleComplete,
       });
     },
-    [setGenerating, setGenerationStatus, setGenerationError, setCurrentCode]
+    [setGenerating, setGenerationStatus, setGenerationError, setCurrentCode],
   );
 
   const iterate = useCallback(
@@ -176,7 +176,7 @@ export function useGeneration() {
       setGenerationStatus,
       setGenerationError,
       setCurrentCode,
-    ]
+    ],
   );
 
   const cancel = useCallback(() => {

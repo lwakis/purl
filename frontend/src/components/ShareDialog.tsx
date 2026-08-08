@@ -26,8 +26,7 @@ export default function ShareDialog({ open, onClose }: ShareDialogProps) {
       const url = `${window.location.origin}/share/${result.short_code}`;
       setShareUrl(url);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Не удалось создать ссылку';
+      const message = err instanceof Error ? err.message : 'Не удалось создать ссылку';
       toast.error(message);
     } finally {
       setLoading(false);
@@ -72,7 +71,8 @@ export default function ShareDialog({ open, onClose }: ShareDialogProps) {
         {!shareUrl ? (
           <div className="space-y-4">
             <p className="text-sm text-surface-400">
-              Создайте публичную ссылку, чтобы поделиться дизайном. Любой, у кого есть ссылка, сможет его просмотреть.
+              Создайте публичную ссылку, чтобы поделиться дизайном. Любой, у кого есть ссылка,
+              сможет его просмотреть.
             </p>
             <button
               onClick={handleGenerateLink}
@@ -97,11 +97,7 @@ export default function ShareDialog({ open, onClose }: ShareDialogProps) {
                 aria-label="Скопировать ссылку"
                 className="p-2 rounded-md bg-primary-500/15 text-primary-400 hover:bg-primary-500/25 transition-colors focus-ring active:scale-[0.98]"
               >
-                {copied ? (
-                  <CheckIcon className="w-4 h-4" />
-                ) : (
-                  <ClipboardIcon className="w-4 h-4" />
-                )}
+                {copied ? <CheckIcon className="w-4 h-4" /> : <ClipboardIcon className="w-4 h-4" />}
               </button>
             </div>
             <div className="bg-surface-900 border border-line rounded-lg overflow-hidden h-48">

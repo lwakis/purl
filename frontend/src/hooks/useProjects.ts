@@ -52,7 +52,7 @@ export function useProjects() {
         return null;
       }
     },
-    [addProject]
+    [addProject],
   );
 
   const update = useCallback(
@@ -67,7 +67,7 @@ export function useProjects() {
         return null;
       }
     },
-    [projects, setProjects]
+    [projects, setProjects],
   );
 
   const remove = useCallback(
@@ -81,7 +81,7 @@ export function useProjects() {
         toast.error(message);
       }
     },
-    [projects, setProjects]
+    [projects, setProjects],
   );
 
   return {

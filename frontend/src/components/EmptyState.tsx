@@ -10,8 +10,8 @@ export default function EmptyState() {
         Создайте дизайн по текстовому описанию
       </h1>
       <p className="text-sm text-surface-400 text-center max-w-md text-balance leading-relaxed">
-        Опишите, что вам нужно — и получите готовый HTML/CSS дизайн за секунды.
-        Уточняйте его в диалоге.
+        Опишите, что вам нужно — и получите готовый HTML/CSS дизайн за секунды. Уточняйте его в
+        диалоге.
       </p>
     </div>
   );

@@ -45,7 +45,7 @@
 }
 
 @layer components {
-.syntax-highlighter-override pre {
+  .syntax-highlighter-override pre {
     background: theme('colors.surface.900') !important;
     border-radius: theme('borderRadius.lg') !important;
     font-size: theme('fontSize.sm') !important;

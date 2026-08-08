@@ -1,5 +1,13 @@
 import { create } from 'zustand';
-import type { ChatMessage, Project, PromptTemplate, ThemeMode, DesignStyle, ActivePanel, PreviewSize } from '../types';
+import type {
+  ChatMessage,
+  Project,
+  PromptTemplate,
+  ThemeMode,
+  DesignStyle,
+  ActivePanel,
+  PreviewSize,
+} from '../types';
 
 interface AppState {
   projects: Project[];
@@ -67,15 +75,13 @@ export const useAppStore = create<AppState>((set) => ({
   setStyle: (style) => set({ style }),
   setCurrentCode: (currentCode) => set({ currentCode }),
   setChatHistory: (chatHistory) => set({ chatHistory }),
-  addChatMessage: (message) =>
-    set((state) => ({ chatHistory: [...state.chatHistory, message] })),
+  addChatMessage: (message) => set((state) => ({ chatHistory: [...state.chatHistory, message] })),
   setGenerating: (isGenerating) => set({ isGenerating }),
   setGenerationStatus: (generationStatus) => set({ generationStatus }),
   setGenerationError: (generationError) => set({ generationError }),
   setSessionId: (sessionId) => set({ sessionId }),
   setCurrentProject: (currentProject) => set({ currentProject }),
-  addProject: (project) =>
-    set((state) => ({ projects: [project, ...state.projects] })),
+  addProject: (project) => set((state) => ({ projects: [project, ...state.projects] })),
   setProjects: (projects) => set({ projects }),
   setTemplates: (templates) => set({ templates }),
   setShareUrl: (shareUrl) => set({ shareUrl }),

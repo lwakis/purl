@@ -9,9 +9,21 @@ import type { ThemeMode, DesignStyle, PromptTemplate } from '../types';
 const MAX_PROMPT_LENGTH = 2000;
 
 const THEMES: { value: ThemeMode; label: string; icon: string }[] = [
-  { value: 'dark', label: 'Тёмная', icon: 'M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z' },
-  { value: 'light', label: 'Светлая', icon: 'M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z' },
-  { value: 'auto', label: 'Авто', icon: 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' },
+  {
+    value: 'dark',
+    label: 'Тёмная',
+    icon: 'M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z',
+  },
+  {
+    value: 'light',
+    label: 'Светлая',
+    icon: 'M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z',
+  },
+  {
+    value: 'auto',
+    label: 'Авто',
+    icon: 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
+  },
 ];
 
 const STYLES: { value: DesignStyle; label: string }[] = [
@@ -27,7 +39,16 @@ interface PromptInputProps {
 }
 
 export default function PromptInput({ templates, onTemplateSelect }: PromptInputProps) {
-  const { prompt, theme, style, setPrompt, setTheme, setStyle, generationError, setGenerationError } = useAppStore();
+  const {
+    prompt,
+    theme,
+    style,
+    setPrompt,
+    setTheme,
+    setStyle,
+    generationError,
+    setGenerationError,
+  } = useAppStore();
   const { generate, isGenerating } = useGeneration();
 
   const charCount = prompt.length;
@@ -40,7 +61,7 @@ export default function PromptInput({ templates, onTemplateSelect }: PromptInput
         setPrompt(value);
       }
     },
-    [setPrompt]
+    [setPrompt],
   );
 
   const handleGenerate = useCallback(() => {
@@ -55,16 +76,13 @@ export default function PromptInput({ templates, onTemplateSelect }: PromptInput
         handleGenerate();
       }
     },
-    [handleGenerate]
+    [handleGenerate],
   );
 
   return (
     <div className="space-y-3.5 animate-fade-in bg-surface-900 border border-line rounded-xl p-4 lg:p-5">
       {generationError && (
-        <ErrorAlert
-          message={generationError}
-          onDismiss={() => setGenerationError(null)}
-        />
+        <ErrorAlert message={generationError} onDismiss={() => setGenerationError(null)} />
       )}
 
       <div className="relative">

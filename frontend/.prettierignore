@@ -1,0 +1,9 @@
+node_modules
+dist
+coverage
+package-lock.json
+tsconfig.tsbuildinfo
+src/test
+**/*.test.ts
+**/*.test.tsx
+DESIGN.md

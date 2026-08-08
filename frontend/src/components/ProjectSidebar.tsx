@@ -12,7 +12,16 @@ import { getProjectVersions } from '../services/api';
 import type { Project, ProjectVersion } from '../types';
 
 export default function ProjectSidebar() {
-  const { sidebarOpen, setSidebarOpen, currentProject, setCurrentProject, setCurrentCode, setPrompt, setChatHistory, setSessionId } = useAppStore();
+  const {
+    sidebarOpen,
+    setSidebarOpen,
+    currentProject,
+    setCurrentProject,
+    setCurrentCode,
+    setPrompt,
+    setChatHistory,
+    setSessionId,
+  } = useAppStore();
   const { projects, loading, remove } = useProjects();
   const [versionsOpen, setVersionsOpen] = useState<number | null>(null);
   const [versions, setVersions] = useState<ProjectVersion[]>([]);
@@ -36,7 +45,7 @@ export default function ProjectSidebar() {
       setChatHistory([]);
       setSidebarOpen(false);
     },
-    [setCurrentProject, setCurrentCode, setPrompt, setSessionId, setChatHistory, setSidebarOpen]
+    [setCurrentProject, setCurrentCode, setPrompt, setSessionId, setChatHistory, setSidebarOpen],
   );
 
   const handleDelete = useCallback(
@@ -45,7 +54,7 @@ export default function ProjectSidebar() {
       if (!window.confirm('Удалить проект? Это действие нельзя отменить.')) return;
       remove(id);
     },
-    [remove]
+    [remove],
   );
 
   const toggleVersions = useCallback(
@@ -66,7 +75,7 @@ export default function ProjectSidebar() {
         setVersionsLoading(false);
       }
     },
-    [versionsOpen]
+    [versionsOpen],
   );
 
   const handleLoadVersion = useCallback(
@@ -78,7 +87,7 @@ export default function ProjectSidebar() {
       setChatHistory([]);
       setSidebarOpen(false);
     },
-    [setCurrentProject, setCurrentCode, setPrompt, setSessionId, setChatHistory, setSidebarOpen]
+    [setCurrentProject, setCurrentCode, setPrompt, setSessionId, setChatHistory, setSidebarOpen],
   );
 
   return (
@@ -92,13 +101,9 @@ export default function ProjectSidebar() {
 
       <div
         className={`fixed top-0 left-0 h-full z-40 bg-surface-900 border-r border-line transition-all duration-300 ease-out overflow-hidden flex-shrink-0 ${
-          sidebarOpen
-            ? 'translate-x-0 w-72'
-            : '-translate-x-full w-72'
+          sidebarOpen ? 'translate-x-0 w-72' : '-translate-x-full w-72'
         } lg:translate-x-0 lg:static lg:z-auto ${
-          sidebarOpen
-            ? 'lg:w-72 lg:opacity-100 lg:border-r'
-            : 'lg:w-0 lg:opacity-0 lg:border-r-0'
+          sidebarOpen ? 'lg:w-72 lg:opacity-100 lg:border-r' : 'lg:w-0 lg:opacity-0 lg:border-r-0'
         }`}
       >
         <div className="flex flex-col h-full">
@@ -128,19 +133,14 @@ export default function ProjectSidebar() {
             {loading ? (
               <div className="space-y-2">
                 {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="skeleton h-16"
-                  />
+                  <div key={i} className="skeleton h-16" />
                 ))}
               </div>
             ) : projects.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-32 text-center">
                 <DocumentTextIcon className="w-8 h-8 text-surface-700 mb-2" />
                 <p className="text-surface-400 text-xs">Проектов пока нет</p>
-                <p className="text-surface-400 text-xs mt-1">
-                  Создайте дизайн и сохраните его
-                </p>
+                <p className="text-surface-400 text-xs mt-1">Создайте дизайн и сохраните его</p>
               </div>
             ) : (
               projects.map((project) => (
@@ -195,9 +195,7 @@ export default function ProjectSidebar() {
                       {versionsLoading ? (
                         <div className="skeleton h-8" />
                       ) : versions.length === 0 ? (
-                        <p className="text-xs text-surface-400 px-1 py-1">
-                          Версий пока нет
-                        </p>
+                        <p className="text-xs text-surface-400 px-1 py-1">Версий пока нет</p>
                       ) : (
                         versions.map((version) => (
                           <button

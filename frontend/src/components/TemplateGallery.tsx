@@ -15,19 +15,13 @@ const CATEGORIES: { label: string; value: string }[] = [
   { label: 'Форма', value: 'Form' },
 ];
 
-export default function TemplateGallery({
-  templates,
-  loading,
-  onSelect,
-}: TemplateGalleryProps) {
+export default function TemplateGallery({ templates, loading, onSelect }: TemplateGalleryProps) {
   const [activeCategory, setActiveCategory] = useState('All');
 
   const filteredTemplates =
     activeCategory === 'All'
       ? templates
-      : templates.filter(
-          (t) => t.category?.toLowerCase() === activeCategory.toLowerCase()
-        );
+      : templates.filter((t) => t.category?.toLowerCase() === activeCategory.toLowerCase());
 
   const currentCategoryLabel = CATEGORIES.find((c) => c.value === activeCategory)?.label || 'Все';
 
@@ -75,7 +69,9 @@ export default function TemplateGallery({
           ))}
         </div>
       ) : filteredTemplates.length === 0 ? (
-        <p className="text-surface-400 text-xs">Нет шаблонов в категории «{currentCategoryLabel}»</p>
+        <p className="text-surface-400 text-xs">
+          Нет шаблонов в категории «{currentCategoryLabel}»
+        </p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
           {filteredTemplates.map((tpl, i) => (
@@ -89,9 +85,7 @@ export default function TemplateGallery({
               <h3 className="text-sm font-medium text-surface-200 group-hover:text-surface-100 transition-colors">
                 {tpl.title}
               </h3>
-              <p className="text-xs text-surface-400 mt-1 line-clamp-2">
-                {tpl.description}
-              </p>
+              <p className="text-xs text-surface-400 mt-1 line-clamp-2">{tpl.description}</p>
             </button>
           ))}
         </div>

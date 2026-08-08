@@ -1,4 +1,9 @@
-import { Bars3Icon, ChatBubbleLeftRightIcon, CodeBracketIcon, BookmarkIcon } from '@heroicons/react/24/outline';
+import {
+  Bars3Icon,
+  ChatBubbleLeftRightIcon,
+  CodeBracketIcon,
+  BookmarkIcon,
+} from '@heroicons/react/24/outline';
 import { useAppStore } from '../store/appStore';
 
 interface HeaderProps {
@@ -11,7 +16,15 @@ interface HeaderProps {
   onSave: () => void;
 }
 
-export default function Header({ chatOpen, onChatToggle, codeOpen, onCodeToggle, hasDesign, canSave, onSave }: HeaderProps) {
+export default function Header({
+  chatOpen,
+  onChatToggle,
+  codeOpen,
+  onCodeToggle,
+  hasDesign,
+  canSave,
+  onSave,
+}: HeaderProps) {
   const { sidebarOpen, setSidebarOpen, currentProject } = useAppStore();
 
   return (
@@ -27,9 +40,7 @@ export default function Header({ chatOpen, onChatToggle, codeOpen, onCodeToggle,
           </button>
           <div className="flex items-center gap-2">
             <img src="/purl-mark.svg" alt="Purl" className="w-7 h-7" />
-            <span className="font-semibold text-lg tracking-tight text-surface-100">
-              Purl
-            </span>
+            <span className="font-semibold text-lg tracking-tight text-surface-100">Purl</span>
           </div>
           <div className="hidden sm:flex items-center gap-2 min-w-0">
             <span className="text-surface-600 text-sm">/</span>

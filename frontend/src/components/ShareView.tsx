@@ -36,7 +36,12 @@ export default function ShareView({ code }: ShareViewProps) {
       })
       .catch(() => {
         if (cancelled) return;
-        setState({ loading: false, error: 'Ссылка недействительна или истекла', name: '', html: '' });
+        setState({
+          loading: false,
+          error: 'Ссылка недействительна или истекла',
+          name: '',
+          html: '',
+        });
       });
 
     return () => {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { lazy, Suspense, useState, useEffect, useCallback } from 'react';
 import { Toaster } from 'react-hot-toast';
 import {
   PaperAirplaneIcon,
@@ -14,7 +14,6 @@ import Header from './components/Header';
 import EmptyState from './components/EmptyState';
 import PromptInput from './components/PromptInput';
 import PreviewPanel from './components/PreviewPanel';
-import CodePanel from './components/CodePanel';
 import ChatPanel from './components/ChatPanel';
 import TemplateGallery from './components/TemplateGallery';
 import ProjectSidebar from './components/ProjectSidebar';
@@ -22,6 +21,10 @@ import ShareDialog from './components/ShareDialog';
 import SaveDialog from './components/SaveDialog';
 import ShareView from './components/ShareView';
 import type { PromptTemplate } from './types';
+
+// react-syntax-highlighter is heavy (~300kB) — load CodePanel on demand so
+// it lands in its own chunk instead of the main bundle.
+const CodePanel = lazy(() => import('./components/CodePanel'));
 
 type PanelTab = 'chat' | 'code' | null;
 
@@ -101,7 +104,7 @@ export default function App() {
       setPrompt(template.prompt_text);
       setBottomInput(template.prompt_text);
     },
-    [setPrompt]
+    [setPrompt],
   );
 
   const handleBottomSend = useCallback(() => {
@@ -116,18 +119,17 @@ export default function App() {
     setBottomInput('');
   }, [bottomInput, hasDesign, isGenerating, generate, iterate, setPrompt]);
 
-  const canSave =
-    currentProject === null || currentProject.current_code !== currentCode;
+  const canSave = currentProject === null || currentProject.current_code !== currentCode;
 
   const chatOpen = panelTab === 'chat';
   const codeOpen = panelTab === 'code';
   const onChatToggle = useCallback(
     () => setPanelTab((prev) => (prev === 'chat' ? null : 'chat')),
-    []
+    [],
   );
   const onCodeToggle = useCallback(
     () => setPanelTab((prev) => (prev === 'code' ? null : 'code')),
-    []
+    [],
   );
 
   return (
@@ -174,10 +176,7 @@ export default function App() {
           <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
             <div className="max-w-5xl mx-auto px-4 py-8 lg:py-12 space-y-6 w-full">
               <EmptyState />
-              <PromptInput
-                templates={templates}
-                onTemplateSelect={handleTemplateSelect}
-              />
+              <PromptInput templates={templates} onTemplateSelect={handleTemplateSelect} />
               <TemplateGallery
                 templates={templates}
                 loading={templatesLoading}
@@ -282,22 +281,27 @@ export default function App() {
               {panelTab === 'chat' ? (
                 <ChatPanel />
               ) : (
-                <CodePanel onShare={() => setShareDialogOpen(true)} />
+                <Suspense
+                  fallback={
+                    <div className="flex h-full items-center justify-center">
+                      <div className="w-full max-w-sm animate-pulse rounded-xl border border-line bg-surface-800 p-4">
+                        <div className="mb-3 h-4 w-2/3 rounded bg-surface-700" />
+                        <div className="h-40 rounded bg-surface-700/70" />
+                      </div>
+                    </div>
+                  }
+                >
+                  <CodePanel onShare={() => setShareDialogOpen(true)} />
+                </Suspense>
               )}
             </div>
           </aside>
         </>
       )}
 
-      <ShareDialog
-        open={shareDialogOpen}
-        onClose={closeShare}
-      />
+      <ShareDialog open={shareDialogOpen} onClose={closeShare} />
 
-      <SaveDialog
-        open={saveDialogOpen}
-        onClose={closeSave}
-      />
+      <SaveDialog open={saveDialogOpen} onClose={closeSave} />
     </div>
   );
 }

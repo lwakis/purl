@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
+import markup from 'react-syntax-highlighter/dist/esm/languages/prism/markup';
+import oneDark from 'react-syntax-highlighter/dist/esm/styles/prism/one-dark';
 import {
   ClipboardIcon,
   ArrowDownTrayIcon,
@@ -9,6 +10,10 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { useAppStore } from '../store/appStore';
+
+// Register only the markup grammar — it covers HTML (alias) and keeps the
+// lazily-loaded CodePanel chunk far smaller than the full Prism bundle.
+SyntaxHighlighter.registerLanguage('markup', markup);
 
 interface CodePanelProps {
   onShare: () => void;
@@ -39,13 +44,29 @@ export default function CodePanel({ onShare }: CodePanelProps) {
     toast.success('Скачивание начато');
   }, [currentCode]);
 
-  const handleDownloadZip = useCallback(() => {
+  const handleDownloadZip = useCallback(async () => {
     if (!currentCode) return;
-    const blob = new Blob([currentCode], { type: 'text/html' });
+    // Dynamic import keeps jszip (and its deps) out of the main bundle;
+    // CodePanel is itself lazily loaded (see App.tsx).
+    const { default: JSZip } = await import('jszip');
+    const zip = new JSZip();
+    zip.file('index.html', currentCode);
+    zip.file(
+      'README.txt',
+      [
+        'Purl design export',
+        '',
+        'Generated with Purl — AI design generator.',
+        'https://github.com/lwakis/purl',
+        '',
+        'Open index.html in any browser to view the design.',
+      ].join('\n'),
+    );
+    const blob = await zip.generateAsync({ type: 'blob' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'purl-design.html';
+    a.download = 'purl-design.zip';
     a.click();
     URL.revokeObjectURL(url);
     toast.success('Скачивание начато');

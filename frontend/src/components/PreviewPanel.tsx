@@ -1,5 +1,10 @@
 import { useState, useCallback } from 'react';
-import { ArrowPathIcon, ComputerDesktopIcon, DeviceTabletIcon, DevicePhoneMobileIcon } from '@heroicons/react/24/outline';
+import {
+  ArrowPathIcon,
+  ComputerDesktopIcon,
+  DeviceTabletIcon,
+  DevicePhoneMobileIcon,
+} from '@heroicons/react/24/outline';
 import { useAppStore } from '../store/appStore';
 import type { PreviewSize } from '../types';
 import GenerationProgress from './GenerationProgress';
@@ -12,7 +17,14 @@ const PREVIEW_SIZES: { value: PreviewSize; icon: typeof ComputerDesktopIcon; wid
 ];
 
 export default function PreviewPanel() {
-  const { currentCode, isGenerating, previewSize, setPreviewSize, generationError, setGenerationError } = useAppStore();
+  const {
+    currentCode,
+    isGenerating,
+    previewSize,
+    setPreviewSize,
+    generationError,
+    setGenerationError,
+  } = useAppStore();
   const [refreshKey, setRefreshKey] = useState(0);
 
   const handleRefresh = useCallback(() => {
@@ -61,10 +73,7 @@ export default function PreviewPanel() {
 
       {generationError && (
         <div className="mb-3">
-          <ErrorAlert
-            message={generationError}
-            onDismiss={() => setGenerationError(null)}
-          />
+          <ErrorAlert message={generationError} onDismiss={() => setGenerationError(null)} />
         </div>
       )}
 

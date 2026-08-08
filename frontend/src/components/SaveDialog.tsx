@@ -10,7 +10,8 @@ interface SaveDialogProps {
 }
 
 export default function SaveDialog({ open, onClose }: SaveDialogProps) {
-  const { currentCode, prompt, theme, style, sessionId, currentProject, setCurrentProject } = useAppStore();
+  const { currentCode, prompt, theme, style, sessionId, currentProject, setCurrentProject } =
+    useAppStore();
   const { create, fetchProjects } = useProjects();
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
@@ -44,7 +45,19 @@ export default function SaveDialog({ open, onClose }: SaveDialogProps) {
       await fetchProjects();
       onClose();
     }
-  }, [name, currentCode, prompt, theme, style, sessionId, saving, create, fetchProjects, setCurrentProject, onClose]);
+  }, [
+    name,
+    currentCode,
+    prompt,
+    theme,
+    style,
+    sessionId,
+    saving,
+    create,
+    fetchProjects,
+    setCurrentProject,
+    onClose,
+  ]);
 
   if (!open) return null;
 

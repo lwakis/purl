@@ -66,10 +66,7 @@ export async function getProject(id: number): Promise<Project> {
   return request<Project>(`/api/projects/${id}`);
 }
 
-export async function updateProject(
-  id: number,
-  data: Partial<Project>
-): Promise<Project> {
+export async function updateProject(id: number, data: Partial<Project>): Promise<Project> {
   return request<Project>(`/api/projects/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -89,18 +86,17 @@ export async function getProjectVersions(id: number): Promise<ProjectVersion[]> 
 export async function saveProjectVersion(
   projectId: number,
   code: string,
-  message?: string
+  message?: string,
 ): Promise<ProjectVersion> {
   const params = new URLSearchParams({ code });
   if (message) params.set('message', message);
-  return request<ProjectVersion>(
-    `/api/projects/${projectId}/versions?${params.toString()}`,
-    { method: 'POST' }
-  );
+  return request<ProjectVersion>(`/api/projects/${projectId}/versions?${params.toString()}`, {
+    method: 'POST',
+  });
 }
 
 export async function createShareLink(
-  projectId: number
+  projectId: number,
 ): Promise<{ short_code: string; url: string }> {
   return request<{ short_code: string; url: string }>('/api/share', {
     method: 'POST',

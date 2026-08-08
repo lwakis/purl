@@ -24,9 +24,9 @@ export function useDialog({ open, onClose, dialogRef }: UseDialogOptions) {
     const dialog = dialogRef.current;
     if (!dialog) return;
 
-    const focusables = Array.from(
-      dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
-    ).filter((el) => !el.hasAttribute('disabled'));
+    const focusables = Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+      (el) => !el.hasAttribute('disabled'),
+    );
     const first = focusables[0] ?? dialog;
     const last = focusables[focusables.length - 1] ?? dialog;
     first.focus();
