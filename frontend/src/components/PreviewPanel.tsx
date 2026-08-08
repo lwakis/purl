@@ -95,6 +95,7 @@ export default function PreviewPanel() {
                 srcDoc={currentCode}
                 sandbox="allow-scripts"
                 title={t('preview.iframeTitle')}
+                data-testid="preview-iframe"
                 className="w-full h-full rounded-lg"
                 style={{ minHeight: '300px' }}
               />

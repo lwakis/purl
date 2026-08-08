@@ -95,6 +95,7 @@ export default function PromptInput({ templates, onTemplateSelect }: PromptInput
           onKeyDown={handleKeyDown}
           placeholder={t('prompt.placeholder')}
           aria-label={t('prompt.aria')}
+          data-testid="prompt-input"
           className="w-full bg-surface-950/60 border border-line rounded-lg px-4 py-3 text-sm text-surface-100 placeholder-surface-500 focus:border-line-strong focus:ring-2 focus:ring-primary-500/20 transition-all resize-none min-h-[110px] leading-relaxed focus:outline-none"
           rows={3}
           disabled={isGenerating}
@@ -153,6 +154,7 @@ export default function PromptInput({ templates, onTemplateSelect }: PromptInput
         <button
           onClick={handleGenerate}
           disabled={!prompt.trim() || isGenerating}
+          data-testid="generate-button"
           className="flex-1 flex items-center justify-center gap-2 bg-primary-600 text-white font-medium px-4 py-2.5 rounded-md text-sm transition-all hover:bg-primary-500 active:scale-[0.98] disabled:bg-white/10 disabled:text-surface-400 disabled:cursor-not-allowed focus-ring"
         >
           {isGenerating ? (
