@@ -18,13 +18,13 @@ export default function GenerationProgress() {
   const currentIndex = STAGES.findIndex((s) => statusLower.includes(s.key));
 
   return (
-    <div className="glass-panel rounded-xl p-4 mb-4 animate-fade-in">
+    <div className="bg-surface-900 border border-line rounded-xl p-4 mb-4 animate-fade-in">
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm text-surface-300">{generationStatus}</span>
         <button
           onClick={cancel}
           disabled={!isGenerating}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-surface-400 hover:text-surface-100 hover:bg-surface-800 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-surface-400 hover:text-surface-100 hover:bg-white/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-ring"
           aria-label="Отменить генерацию"
         >
           <XMarkIcon className="w-3.5 h-3.5" />
@@ -35,12 +35,12 @@ export default function GenerationProgress() {
         {STAGES.map((stage, i) => (
           <div key={stage.key} className="flex items-center gap-2 flex-1">
             <div
-              className={`h-1.5 rounded-full flex-1 transition-all duration-500 ${
+              className={`h-1 rounded-full flex-1 transition-all duration-300 ${
                 i < currentIndex
                   ? 'bg-primary-500'
                   : i === currentIndex
-                  ? 'bg-primary-500/50 animate-pulse'
-                  : 'bg-surface-700'
+                  ? 'bg-primary-400 relative overflow-hidden before:absolute before:inset-0 before:animate-shimmer before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent'
+                  : 'bg-white/8'
               }`}
             />
             <span

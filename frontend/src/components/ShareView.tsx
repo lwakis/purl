@@ -63,7 +63,7 @@ export default function ShareView({ code }: ShareViewProps) {
         <p className="text-surface-400 text-sm">{state.error}</p>
         <a
           href="/"
-          className="generation-gradient text-white font-medium px-4 py-2 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-primary-500/25 text-sm"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-primary-600 font-medium text-white text-sm transition-all hover:bg-primary-500 active:scale-[0.98] focus-ring"
         >
           Открыть Purl
         </a>
@@ -73,23 +73,21 @@ export default function ShareView({ code }: ShareViewProps) {
 
   return (
     <div className="min-h-screen bg-surface-950 text-surface-100 flex flex-col">
-      <header className="flex items-center justify-between h-14 px-4 lg:px-6 border-b border-surface-700/50">
+      <header className="flex items-center justify-between h-14 px-4 lg:px-6 border-b border-line-subtle">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg generation-gradient flex items-center justify-center">
-            <span className="text-white font-bold text-xs">S</span>
-          </div>
+          <img src="/purl-mark.svg" alt="Purl" className="w-7 h-7" />
           <span className="font-semibold text-lg tracking-tight">Purl</span>
         </div>
         <a
           href="/"
-          className="text-sm font-medium text-surface-300 hover:text-surface-100 px-3 py-1.5 rounded-lg hover:bg-surface-800 transition-colors"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-surface-400 hover:text-surface-100 hover:bg-white/5 transition-colors focus-ring active:scale-[0.98]"
         >
           Открыть в Purl
         </a>
       </header>
       <main className="flex-1 flex flex-col p-4 lg:p-6 min-h-0">
         <h1 className="text-lg font-semibold text-surface-100 mb-4">{state.name}</h1>
-        <div className="flex-1 bg-surface-900/50 rounded-xl border border-surface-700/50 overflow-hidden min-h-[300px]">
+        <div className="flex-1 bg-white rounded-lg ring-1 ring-black/40 shadow-canvas overflow-hidden min-h-[300px]">
           {state.html ? (
             <iframe
               srcDoc={state.html}
@@ -98,7 +96,7 @@ export default function ShareView({ code }: ShareViewProps) {
               className="w-full h-full"
             />
           ) : (
-            <div className="h-full flex items-center justify-center text-surface-400 text-sm">
+            <div className="h-full flex items-center justify-center text-surface-600 text-sm">
               В этом дизайне нет содержимого
             </div>
           )}

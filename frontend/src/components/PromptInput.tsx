@@ -59,7 +59,7 @@ export default function PromptInput({ templates, onTemplateSelect }: PromptInput
   );
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-3.5 animate-fade-in bg-surface-900 border border-line rounded-xl p-4 lg:p-5">
       {generationError && (
         <ErrorAlert
           message={generationError}
@@ -74,30 +74,30 @@ export default function PromptInput({ templates, onTemplateSelect }: PromptInput
           onKeyDown={handleKeyDown}
           placeholder="Опишите дизайн, который хотите... (например: Лендинг для SaaS по автоматизации HR, тёмная тема, корпоративный стиль)"
           aria-label="Описание дизайна"
-          className="w-full bg-surface-900 border border-surface-700 rounded-xl px-4 py-3.5 text-surface-100 placeholder-surface-500 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all min-h-[100px] text-sm leading-relaxed"
+          className="w-full bg-surface-950/60 border border-line rounded-lg px-4 py-3 text-sm text-surface-100 placeholder-surface-500 focus:border-line-strong focus:ring-2 focus:ring-primary-500/20 transition-all resize-none min-h-[110px] leading-relaxed focus:outline-none"
           rows={3}
           disabled={isGenerating}
         />
         <div
           className={`absolute bottom-3 right-3 text-xs ${
-            atLimit ? 'text-red-400 font-semibold' : 'text-surface-400'
+            atLimit ? 'text-status-error font-semibold' : 'text-surface-500'
           }`}
         >
           {charCount}/{MAX_PROMPT_LENGTH}
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-1.5 bg-surface-900 rounded-lg p-1 border border-surface-700">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-0.5 bg-surface-800/70 border border-line rounded-lg p-0.5">
           {THEMES.map((t) => (
             <button
               key={t.value}
               onClick={() => setTheme(t.value)}
               disabled={isGenerating}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors focus-ring ${
                 theme === t.value
-                  ? 'bg-primary-500/20 text-primary-300 shadow-sm'
-                  : 'text-surface-400 hover:text-surface-200 hover:bg-surface-800'
+                  ? 'bg-surface-700 text-surface-100'
+                  : 'text-surface-400 hover:text-surface-200'
               }`}
             >
               <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
@@ -108,16 +108,16 @@ export default function PromptInput({ templates, onTemplateSelect }: PromptInput
           ))}
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-0.5 bg-surface-800/70 border border-line rounded-lg p-0.5">
           {STYLES.map((s) => (
             <button
               key={s.value}
               onClick={() => setStyle(s.value)}
               disabled={isGenerating}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
+              className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors focus-ring ${
                 style === s.value
-                  ? 'bg-accent-500/20 text-accent-300 border-accent-500/30'
-                  : 'text-surface-400 border-surface-700 hover:text-surface-200 hover:border-surface-600'
+                  ? 'bg-surface-700 text-surface-100'
+                  : 'text-surface-400 hover:text-surface-200'
               }`}
             >
               {s.label}
@@ -132,7 +132,7 @@ export default function PromptInput({ templates, onTemplateSelect }: PromptInput
         <button
           onClick={handleGenerate}
           disabled={!prompt.trim() || isGenerating}
-          className="flex-1 flex items-center justify-center gap-2 generation-gradient text-white font-medium px-6 py-2.5 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-primary-500/25 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none text-sm"
+          className="flex-1 flex items-center justify-center gap-2 bg-primary-600 text-white font-medium px-4 py-2.5 rounded-md text-sm transition-all hover:bg-primary-500 active:scale-[0.98] disabled:bg-white/10 disabled:text-surface-400 disabled:cursor-not-allowed focus-ring"
         >
           {isGenerating ? (
             <>
@@ -157,7 +157,7 @@ export default function PromptInput({ templates, onTemplateSelect }: PromptInput
               key={tpl.id}
               onClick={() => onTemplateSelect(tpl)}
               disabled={isGenerating}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-800/50 border border-surface-700/50 text-surface-400 hover:text-surface-200 hover:bg-surface-800 hover:border-surface-600 transition-all text-xs disabled:opacity-40"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-surface-800/60 border border-line text-surface-400 hover:text-surface-200 hover:bg-surface-800 transition-colors text-xs disabled:opacity-40 focus-ring"
             >
               <span className="text-surface-400">{tpl.icon || '#'}</span>
               {tpl.title}

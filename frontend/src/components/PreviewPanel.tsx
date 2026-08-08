@@ -24,30 +24,33 @@ export default function PreviewPanel() {
   return (
     <div className="flex flex-col h-full animate-fade-in">
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2 bg-surface-900 rounded-lg p-0.5 border border-surface-700/50">
-          {PREVIEW_SIZES.map((size) => {
-            const Icon = size.icon;
-            return (
-              <button
-                key={size.value}
-                onClick={() => setPreviewSize(size.value)}
-                className={`p-1.5 rounded-md transition-all ${
-                  previewSize === size.value
-                    ? 'bg-surface-700 text-surface-100'
-                    : 'text-surface-400 hover:text-surface-300'
-                }`}
-                title={size.value}
-                aria-label={`Предпросмотр: ${size.value}`}
-              >
-                <Icon className="w-4 h-4" />
-              </button>
-            );
-          })}
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-surface-200 hidden sm:block">Предпросмотр</span>
+          <div className="flex items-center gap-0.5 bg-surface-800/70 border border-line rounded-lg p-0.5">
+            {PREVIEW_SIZES.map((size) => {
+              const Icon = size.icon;
+              return (
+                <button
+                  key={size.value}
+                  onClick={() => setPreviewSize(size.value)}
+                  className={`p-1.5 rounded-md transition-all focus-ring active:scale-[0.98] ${
+                    previewSize === size.value
+                      ? 'bg-surface-700 text-surface-100'
+                      : 'text-surface-400 hover:text-surface-200'
+                  }`}
+                  title={size.value}
+                  aria-label={`Предпросмотр: ${size.value}`}
+                >
+                  <Icon className="w-4 h-4" />
+                </button>
+              );
+            })}
+          </div>
         </div>
         {currentCode && (
           <button
             onClick={handleRefresh}
-            className="p-1.5 rounded-lg text-surface-400 hover:text-surface-100 hover:bg-surface-800 transition-colors"
+            className="p-1.5 rounded-md text-surface-400 hover:text-surface-100 hover:bg-white/5 transition-colors focus-ring active:scale-[0.98]"
             title="Обновить предпросмотр"
             aria-label="Обновить предпросмотр"
           >
@@ -67,12 +70,12 @@ export default function PreviewPanel() {
 
       <GenerationProgress />
 
-      <div className="flex-1 relative bg-surface-900/50 rounded-xl border border-surface-700/50 overflow-hidden">
+      <div className="flex-1 relative bg-surface-900 border border-line rounded-xl overflow-hidden">
         <div className="absolute inset-0 flex items-center justify-center overflow-auto p-4">
           {currentCode ? (
             <div
               style={{ maxWidth: selectedSize.width }}
-              className="w-full h-full min-h-[300px] bg-white rounded-lg shadow-2xl transition-all duration-300"
+              className="w-full h-full min-h-[300px] bg-white rounded-lg ring-1 ring-black/40 shadow-canvas transition-all duration-300 overflow-hidden"
             >
               <iframe
                 key={refreshKey}
@@ -97,7 +100,7 @@ export default function PreviewPanel() {
         </div>
 
         {isGenerating && currentCode && (
-          <div className="absolute inset-0 bg-surface-900/40 backdrop-blur-[1px] flex items-center justify-center rounded-xl">
+          <div className="absolute inset-0 bg-surface-900/60 flex items-center justify-center rounded-xl">
             <div className="flex items-center gap-1.5 bg-surface-800/80 px-4 py-2 rounded-full">
               <span className="loading-dot" />
               <span className="loading-dot" />

@@ -56,14 +56,14 @@ export default function ShareDialog({ open, onClose }: ShareDialogProps) {
         role="dialog"
         aria-modal="true"
         aria-label="Поделиться дизайном"
-        className="relative w-full max-w-md glass-panel rounded-2xl p-6 shadow-2xl animate-slide-up"
+        className="relative w-full max-w-md bg-surface-900 border border-line rounded-2xl p-6 shadow-overlay animate-slide-up"
       >
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-semibold text-surface-100">Поделиться дизайном</h2>
           <button
             onClick={onClose}
             aria-label="Закрыть"
-            className="p-1.5 rounded-lg text-surface-400 hover:text-surface-100 hover:bg-surface-800 transition-colors"
+            className="p-1.5 rounded-md text-surface-400 hover:text-surface-100 hover:bg-white/5 transition-colors focus-ring active:scale-[0.98]"
           >
             <XMarkIcon className="w-5 h-5" />
           </button>
@@ -77,14 +77,14 @@ export default function ShareDialog({ open, onClose }: ShareDialogProps) {
             <button
               onClick={handleGenerateLink}
               disabled={loading || !currentProject}
-              className="w-full generation-gradient text-white font-medium px-4 py-2.5 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-primary-500/25 disabled:opacity-40 disabled:cursor-not-allowed text-sm"
+              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-primary-600 font-medium text-white text-sm transition-all hover:bg-primary-500 active:scale-[0.98] disabled:bg-white/10 disabled:text-surface-400 disabled:cursor-not-allowed focus-ring"
             >
               {loading ? 'Создание...' : 'Создать ссылку'}
             </button>
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="flex items-center gap-2 bg-surface-900 rounded-xl p-3 border border-surface-700/50">
+            <div className="flex items-center gap-2 bg-surface-800/70 rounded-md p-3 border border-line">
               <input
                 type="text"
                 value={shareUrl}
@@ -95,7 +95,7 @@ export default function ShareDialog({ open, onClose }: ShareDialogProps) {
               <button
                 onClick={handleCopyLink}
                 aria-label="Скопировать ссылку"
-                className="p-2 rounded-lg bg-primary-500/20 text-primary-300 hover:bg-primary-500/30 transition-colors"
+                className="p-2 rounded-md bg-primary-500/15 text-primary-400 hover:bg-primary-500/25 transition-colors focus-ring active:scale-[0.98]"
               >
                 {copied ? (
                   <CheckIcon className="w-4 h-4" />
@@ -104,7 +104,7 @@ export default function ShareDialog({ open, onClose }: ShareDialogProps) {
                 )}
               </button>
             </div>
-            <div className="bg-surface-900 rounded-xl border border-surface-700/50 overflow-hidden h-48">
+            <div className="bg-surface-900 border border-line rounded-lg overflow-hidden h-48">
               <iframe
                 srcDoc={currentProject?.current_code || ''}
                 sandbox="allow-scripts"

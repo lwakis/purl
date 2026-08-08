@@ -85,13 +85,13 @@ export default function ProjectSidebar() {
     <>
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/40 z-30 lg:hidden"
+          className="fixed inset-0 bg-surface-950/60 z-30 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       <div
-        className={`fixed top-0 left-0 h-full z-40 bg-surface-900 border-r border-surface-700/50 transition-all duration-300 ease-out overflow-hidden flex-shrink-0 ${
+        className={`fixed top-0 left-0 h-full z-40 bg-surface-900 border-r border-line transition-all duration-300 ease-out overflow-hidden flex-shrink-0 ${
           sidebarOpen
             ? 'translate-x-0 w-72'
             : '-translate-x-full w-72'
@@ -102,20 +102,21 @@ export default function ProjectSidebar() {
         }`}
       >
         <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between p-4 border-b border-surface-700/50">
-            <h2 className="text-sm font-semibold text-surface-200">Проекты</h2>
+          <div className="flex items-center justify-between p-4 border-b border-line.subtle">
+            <h2 className="text-sm font-semibold text-surface-100">Проекты</h2>
             <div className="flex items-center gap-1">
               <button
                 onClick={handleNewProject}
-                className="p-1.5 rounded-lg text-surface-400 hover:text-surface-100 hover:bg-surface-800 transition-colors"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-surface-400 hover:text-surface-100 hover:bg-white/5 active:scale-[0.98] transition-colors focus-ring"
                 title="Новый проект"
                 aria-label="Новый проект"
               >
-                <PlusIcon className="w-4 h-4" />
+                <PlusIcon className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Новый проект</span>
               </button>
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="p-1.5 rounded-lg text-surface-400 hover:text-surface-100 hover:bg-surface-800 transition-colors lg:hidden"
+                className="p-2 rounded-md text-surface-400 hover:text-surface-100 hover:bg-white/5 active:scale-95 transition-colors focus-ring lg:hidden"
                 aria-label="Закрыть панель проектов"
               >
                 <XMarkIcon className="w-4 h-4" />
@@ -129,7 +130,7 @@ export default function ProjectSidebar() {
                 {[1, 2, 3].map((i) => (
                   <div
                     key={i}
-                    className="h-16 rounded-lg bg-surface-800/50 animate-pulse"
+                    className="skeleton h-16"
                   />
                 ))}
               </div>
@@ -145,34 +146,34 @@ export default function ProjectSidebar() {
               projects.map((project) => (
                 <div
                   key={project.id}
-                  className={`rounded-xl transition-all group ${
+                  className={`rounded-lg transition-colors group ${
                     currentProject?.id === project.id
-                      ? 'bg-primary-500/10 border border-primary-500/20'
-                      : 'hover:bg-surface-800/50 border border-transparent'
+                      ? 'bg-primary-500/10 border border-primary-500/25'
+                      : 'hover:bg-surface-800/60 border border-line hover:border-line-strong'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2 p-3">
                     <button
                       onClick={() => handleLoadProject(project)}
-                      className="min-w-0 flex-1 text-left"
+                      className="min-w-0 flex-1 text-left focus-ring"
                     >
-                      <p className="text-sm font-medium text-surface-200 truncate">
+                      <p className="text-sm font-medium text-surface-100 truncate">
                         {project.name}
                       </p>
                       <p className="text-xs text-surface-400 mt-0.5 line-clamp-2">
                         {project.prompt}
                       </p>
-                      <p className="text-xs text-surface-400 mt-1">
+                      <p className="text-xs text-surface-600 mt-1">
                         {new Date(project.updated_at || project.created_at).toLocaleDateString()}
                       </p>
                     </button>
                     <div className="flex items-center gap-0.5 flex-shrink-0">
                       <button
                         onClick={(e) => toggleVersions(e, project.id)}
-                        className={`p-1 rounded-md transition-all ${
+                        className={`p-1 rounded-md transition-all focus-ring ${
                           versionsOpen === project.id
-                            ? 'text-primary-300 bg-primary-500/10'
-                            : 'text-surface-400 opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 hover:text-surface-100 hover:bg-surface-800'
+                            ? 'text-primary-400 bg-primary-500/15'
+                            : 'text-surface-400 opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 hover:text-surface-100 hover:bg-white/5'
                         }`}
                         aria-label="Версии проекта"
                         aria-expanded={versionsOpen === project.id}
@@ -181,7 +182,7 @@ export default function ProjectSidebar() {
                       </button>
                       <button
                         onClick={(e) => handleDelete(e, project.id)}
-                        className="p-1 rounded-md text-surface-400 opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                        className="p-1 rounded-md text-surface-400 opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 hover:text-status-error hover:bg-status-error/10 transition-all focus-ring"
                         aria-label="Удалить проект"
                       >
                         <TrashIcon className="w-3.5 h-3.5" />
@@ -192,7 +193,7 @@ export default function ProjectSidebar() {
                   {versionsOpen === project.id && (
                     <div className="px-3 pb-3 space-y-1">
                       {versionsLoading ? (
-                        <div className="h-8 rounded-lg bg-surface-800/50 animate-pulse" />
+                        <div className="skeleton h-8" />
                       ) : versions.length === 0 ? (
                         <p className="text-xs text-surface-400 px-1 py-1">
                           Версий пока нет
@@ -202,7 +203,7 @@ export default function ProjectSidebar() {
                           <button
                             key={version.id}
                             onClick={() => handleLoadVersion(project, version)}
-                            className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs text-surface-400 hover:text-surface-100 hover:bg-surface-800 transition-colors"
+                            className="w-full text-left px-2.5 py-1.5 rounded-md text-xs text-surface-400 hover:text-surface-100 hover:bg-white/5 transition-colors focus-ring"
                           >
                             <span className="font-medium text-surface-300">
                               Версия {version.version_num}

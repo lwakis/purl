@@ -5,7 +5,7 @@
 @layer base {
   * {
     scrollbar-width: thin;
-    scrollbar-color: theme('colors.surface.700') transparent;
+    scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
   }
 
   *::-webkit-scrollbar {
@@ -18,25 +18,34 @@
   }
 
   *::-webkit-scrollbar-thumb {
-    background-color: theme('colors.surface.700');
+    background-color: rgba(255, 255, 255, 0.14);
     border-radius: 3px;
   }
 
   *::-webkit-scrollbar-thumb:hover {
-    background-color: theme('colors.surface.600');
+    background-color: rgba(255, 255, 255, 0.22);
+  }
+
+  html {
+    font-feature-settings: 'cv01', 'ss03';
+    font-variation-settings: 'opsz' 14;
   }
 
   body {
-    @apply min-h-screen;
+    @apply min-h-screen bg-surface-950 text-surface-100 antialiased;
   }
 
   #root {
     @apply min-h-screen;
   }
+
+  ::selection {
+    @apply bg-primary-500/30 text-surface-100;
+  }
 }
 
 @layer components {
-  .syntax-highlighter-override pre {
+.syntax-highlighter-override pre {
     background: theme('colors.surface.900') !important;
     border-radius: theme('borderRadius.lg') !important;
     font-size: theme('fontSize.sm') !important;
@@ -56,26 +65,38 @@
     animation-delay: 0.4s;
   }
 
-  .generation-gradient {
-    background: linear-gradient(
-      135deg,
-      theme('colors.primary.500') 0%,
-      theme('colors.accent.500') 100%
-    );
+  .skeleton {
+    @apply relative overflow-hidden rounded-md bg-white/5;
   }
 
-  .glass-panel {
-    @apply bg-surface-800/60 backdrop-blur-xl border border-surface-700/50;
+  .skeleton::before {
+    content: '';
+    @apply absolute inset-0 animate-shimmer bg-gradient-to-r from-transparent via-white/10 to-transparent;
   }
 
   .responsive-iframe {
     @apply w-full h-full border-0;
     transition: max-width 0.3s ease;
   }
+
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-950;
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

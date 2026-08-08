@@ -56,14 +56,14 @@ export default function SaveDialog({ open, onClose }: SaveDialogProps) {
         role="dialog"
         aria-modal="true"
         aria-label="Сохранить проект"
-        className="relative w-full max-w-md glass-panel rounded-2xl p-6 shadow-2xl animate-slide-up"
+        className="relative w-full max-w-md bg-surface-900 border border-line rounded-2xl p-6 shadow-overlay animate-slide-up"
       >
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-semibold text-surface-100">Сохранить проект</h2>
           <button
             onClick={onClose}
             aria-label="Закрыть"
-            className="p-1.5 rounded-lg text-surface-400 hover:text-surface-100 hover:bg-surface-800 transition-colors"
+            className="p-1.5 rounded-md text-surface-400 hover:text-surface-100 hover:bg-white/5 transition-colors focus-ring active:scale-[0.98]"
           >
             <XMarkIcon className="w-5 h-5" />
           </button>
@@ -87,13 +87,13 @@ export default function SaveDialog({ open, onClose }: SaveDialogProps) {
                 }
               }}
               placeholder="Например: Лендинг для стартапа"
-              className="w-full bg-surface-900 border border-surface-700 rounded-xl px-3.5 py-2.5 text-sm text-surface-100 placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all"
+              className="w-full bg-surface-800/70 border border-line rounded-md px-3.5 py-2.5 text-sm text-surface-100 placeholder-surface-500 focus:border-line-strong focus:ring-2 focus:ring-primary-500/20 transition-all"
             />
           </div>
           <button
             onClick={handleSave}
             disabled={saving || !currentCode}
-            className="w-full generation-gradient text-white font-medium px-4 py-2.5 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-primary-500/25 disabled:opacity-40 disabled:cursor-not-allowed text-sm"
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-primary-600 font-medium text-white text-sm transition-all hover:bg-primary-500 active:scale-[0.98] disabled:bg-white/10 disabled:text-surface-400 disabled:cursor-not-allowed focus-ring"
           >
             {saving ? 'Сохранение...' : 'Сохранить'}
           </button>

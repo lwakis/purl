@@ -1,9 +1,13 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Toaster } from 'react-hot-toast';
-import { PaperAirplaneIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import {
+  PaperAirplaneIcon,
+  XMarkIcon,
+  ChatBubbleLeftRightIcon,
+  CodeBracketIcon,
+} from '@heroicons/react/24/outline';
 import { useAppStore } from './store/appStore';
 import { useGeneration } from './hooks/useGeneration';
-import { useDialog } from './hooks/useDialog';
 import { fetchTemplates, createAnonSession } from './services/api';
 import { loadSession, saveSession } from './services/session';
 import Header from './components/Header';
@@ -18,6 +22,8 @@ import ShareDialog from './components/ShareDialog';
 import SaveDialog from './components/SaveDialog';
 import ShareView from './components/ShareView';
 import type { PromptTemplate } from './types';
+
+type PanelTab = 'chat' | 'code' | null;
 
 export default function App() {
   // Share landing: /share/:code renders a dedicated screen, not the generator.
@@ -41,21 +47,24 @@ export default function App() {
   const [templatesLoading, setTemplatesLoading] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false);
-  const [codeOpen, setCodeOpen] = useState(false);
+  const [panelTab, setPanelTab] = useState<PanelTab>(null);
   const [bottomInput, setBottomInput] = useState('');
   const hasDesign = !!currentCode;
 
-  const chatPanelRef = useRef<HTMLDivElement>(null);
-  const codeOverlayRef = useRef<HTMLDivElement>(null);
-
-  const closeChat = useCallback(() => setChatOpen(false), []);
-  const closeCode = useCallback(() => setCodeOpen(false), []);
   const closeShare = useCallback(() => setShareDialogOpen(false), []);
   const closeSave = useCallback(() => setSaveDialogOpen(false), []);
+  const closePanel = useCallback(() => setPanelTab(null), []);
 
-  useDialog({ open: chatOpen && hasDesign, onClose: closeChat, dialogRef: chatPanelRef });
-  useDialog({ open: codeOpen && hasDesign, onClose: closeCode, dialogRef: codeOverlayRef });
+  // Escape closes the right panel (chat/code). Save/Share dialogs handle
+  // their own Escape via useDialog — skip while one of them is open.
+  useEffect(() => {
+    if (panelTab === null || saveDialogOpen || shareDialogOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPanelTab(null);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [panelTab, saveDialogOpen, shareDialogOpen]);
 
   useEffect(() => {
     const init = async () => {
@@ -110,28 +119,39 @@ export default function App() {
   const canSave =
     currentProject === null || currentProject.current_code !== currentCode;
 
+  const chatOpen = panelTab === 'chat';
+  const codeOpen = panelTab === 'code';
+  const onChatToggle = useCallback(
+    () => setPanelTab((prev) => (prev === 'chat' ? null : 'chat')),
+    []
+  );
+  const onCodeToggle = useCallback(
+    () => setPanelTab((prev) => (prev === 'code' ? null : 'code')),
+    []
+  );
+
   return (
-    <div className="h-screen flex flex-col bg-surface-950 text-surface-100">
+    <div className="h-dvh flex flex-col bg-surface-950 text-surface-100">
       <Toaster
         position="top-right"
         toastOptions={{
           style: {
-            background: '#1e293b',
-            color: '#f1f5f9',
-            border: '1px solid #334155',
+            background: '#0F1113',
+            color: '#F7F8F8',
+            border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '12px',
             fontSize: '14px',
           },
           success: {
             iconTheme: {
-              primary: '#6366f1',
-              secondary: '#f8fafc',
+              primary: '#8B93FF',
+              secondary: '#F7F8F8',
             },
           },
           error: {
             iconTheme: {
-              primary: '#ef4444',
-              secondary: '#f8fafc',
+              primary: '#EF4444',
+              secondary: '#F7F8F8',
             },
           },
         }}
@@ -139,20 +159,20 @@ export default function App() {
 
       <Header
         chatOpen={chatOpen}
-        onChatToggle={() => setChatOpen((v) => !v)}
+        onChatToggle={onChatToggle}
         codeOpen={codeOpen}
-        onCodeToggle={() => setCodeOpen((v) => !v)}
+        onCodeToggle={onCodeToggle}
         hasDesign={hasDesign}
         canSave={canSave}
         onSave={() => setSaveDialogOpen(true)}
       />
 
-      <div className="flex-1 flex overflow-hidden relative">
+      <div className="flex-1 flex min-w-0 overflow-hidden">
         <ProjectSidebar />
 
         {!hasDesign ? (
           <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-            <div className="max-w-3xl mx-auto px-4 py-8 lg:py-12 space-y-8">
+            <div className="max-w-5xl mx-auto px-4 py-8 lg:py-12 space-y-6 w-full">
               <EmptyState />
               <PromptInput
                 templates={templates}
@@ -166,15 +186,15 @@ export default function App() {
             </div>
           </main>
         ) : (
-          <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-            {/* Full-screen preview */}
-            <div className="flex-1 px-4 pb-20 pt-4 min-h-0">
+          <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            {/* Canvas area */}
+            <div className="flex-1 min-h-0 px-4 pt-4 pb-3 lg:px-6 lg:pt-6">
               <PreviewPanel />
             </div>
 
-            {/* Floating bottom input bar */}
-            <div className="absolute bottom-4 left-4 right-4 z-20">
-              <div className="max-w-3xl mx-auto bg-surface-900/90 backdrop-blur-xl border border-surface-700/50 rounded-2xl shadow-2xl p-1.5 flex items-end gap-1.5">
+            {/* Bottom command bar — in flow, not floating */}
+            <div className="border-t border-line bg-surface-900/60 px-3 py-3">
+              <div className="max-w-3xl mx-auto flex items-end gap-1.5">
                 <textarea
                   value={bottomInput}
                   onChange={(e) => setBottomInput(e.target.value)}
@@ -186,14 +206,14 @@ export default function App() {
                   }}
                   placeholder="Что вы хотите создать или изменить?"
                   aria-label="Сообщение для генерации или правки"
-                  className="flex-1 bg-transparent text-surface-100 placeholder-surface-500 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500/50 rounded-lg text-sm py-2 px-3 leading-relaxed max-h-32"
+                  className="flex-1 bg-transparent text-surface-100 placeholder-surface-500 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500/40 rounded-lg text-sm py-2 px-3 leading-relaxed max-h-32"
                   rows={1}
                   disabled={isGenerating}
                 />
                 <button
                   onClick={handleBottomSend}
                   disabled={!bottomInput.trim() || isGenerating}
-                  className="p-2.5 rounded-xl generation-gradient text-white transition-all duration-200 hover:shadow-lg hover:shadow-primary-500/25 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:shadow-none flex-shrink-0"
+                  className="p-2.5 rounded-md bg-primary-600 text-white transition-all duration-150 hover:bg-primary-500 active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-primary-600 flex-shrink-0 focus-ring"
                   aria-label="Отправить"
                 >
                   <PaperAirplaneIcon className="w-4 h-4" />
@@ -204,57 +224,69 @@ export default function App() {
         )}
       </div>
 
-      {/* Chat overlay */}
-      {chatOpen && hasDesign && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="flex-1" onClick={() => setChatOpen(false)} />
+      {/* Right panel (chat / code): static column on lg+, overlay on mobile */}
+      {hasDesign && panelTab !== null && (
+        <>
           <div
-            ref={chatPanelRef}
+            className="fixed inset-0 z-40 bg-surface-950/60 lg:hidden animate-fade-in"
+            onClick={closePanel}
+          />
+          <aside
             role="dialog"
             aria-modal="true"
-            aria-label="Чат с дизайнером"
-            className="w-96 max-w-[85vw] bg-surface-900 border-l border-surface-700/50 shadow-2xl flex flex-col animate-slide-in-right"
+            aria-label="Панель дизайнера"
+            className="fixed inset-y-0 right-0 z-50 w-full max-w-[420px] lg:static lg:z-auto lg:w-[380px] lg:max-w-none flex flex-col bg-surface-900 border-l border-line shadow-overlay lg:shadow-none animate-slide-in-right lg:animate-none"
           >
-            <div className="flex items-center justify-between p-4 border-b border-surface-700/50">
-              <h3 className="text-sm font-semibold text-surface-200">Чат</h3>
+            <div className="flex items-center gap-1 px-3 py-2.5 border-b border-line">
+              <div
+                role="tablist"
+                aria-label="Панель чата и кода"
+                className="flex items-center gap-0.5 bg-surface-800/70 border border-line rounded-lg p-0.5 flex-1"
+              >
+                <button
+                  role="tab"
+                  aria-selected={panelTab === 'chat'}
+                  onClick={() => setPanelTab('chat')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors focus-ring ${
+                    panelTab === 'chat'
+                      ? 'bg-surface-700 text-surface-100'
+                      : 'text-surface-400 hover:text-surface-200'
+                  }`}
+                >
+                  <ChatBubbleLeftRightIcon className="w-3.5 h-3.5" />
+                  Чат
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={panelTab === 'code'}
+                  onClick={() => setPanelTab('code')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors focus-ring ${
+                    panelTab === 'code'
+                      ? 'bg-surface-700 text-surface-100'
+                      : 'text-surface-400 hover:text-surface-200'
+                  }`}
+                >
+                  <CodeBracketIcon className="w-3.5 h-3.5" />
+                  Код
+                </button>
+              </div>
               <button
-                onClick={() => setChatOpen(false)}
-                className="p-1.5 rounded-lg text-surface-400 hover:text-surface-100 hover:bg-surface-800 transition-colors"
-                aria-label="Закрыть чат"
+                onClick={closePanel}
+                className="p-2 rounded-md text-surface-400 hover:text-surface-100 hover:bg-white/5 transition-colors focus-ring"
+                aria-label="Закрыть панель"
               >
                 <XMarkIcon className="w-4 h-4" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4">
-              <ChatPanel />
+            <div className="flex-1 min-h-0 overflow-y-auto p-4">
+              {panelTab === 'chat' ? (
+                <ChatPanel />
+              ) : (
+                <CodePanel onShare={() => setShareDialogOpen(true)} />
+              )}
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Code overlay */}
-      {codeOpen && hasDesign && (
-        <div
-          ref={codeOverlayRef}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Код дизайна"
-          className="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-sm flex flex-col"
-        >
-          <div className="flex items-center justify-between px-6 py-4 border-b border-surface-700/50">
-            <h2 className="text-sm font-semibold text-surface-200">Код</h2>
-            <button
-              onClick={() => setCodeOpen(false)}
-              className="p-1.5 rounded-lg text-surface-400 hover:text-surface-100 hover:bg-surface-800 transition-colors"
-              aria-label="Закрыть код"
-            >
-              <XMarkIcon className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="flex-1 p-4 min-h-0">
-            <CodePanel onShare={() => setShareDialogOpen(true)} />
-          </div>
-        </div>
+          </aside>
+        </>
       )}
 
       <ShareDialog

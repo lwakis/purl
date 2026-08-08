@@ -57,61 +57,55 @@ export default function CodePanel({ onShare }: CodePanelProps) {
 
   return (
     <div className="flex flex-col h-full animate-fade-in">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <CodeBracketIcon className="w-4 h-4 text-primary-400" />
-          <span className="text-sm font-medium text-surface-200">index.html</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={handleCopy}
-            disabled={!currentCode}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-surface-400 hover:text-surface-100 hover:bg-surface-800 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Копировать код"
-          >
-            <ClipboardIcon className="w-3.5 h-3.5" />
-            Копировать
-          </button>
-          <button
-            onClick={handleDownload}
-            disabled={!currentCode}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-surface-400 hover:text-surface-100 hover:bg-surface-800 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Скачать HTML"
-          >
-            <ArrowDownTrayIcon className="w-3.5 h-3.5" />
-            Скачать
-          </button>
-          <button
-            onClick={handleDownloadZip}
-            disabled={!currentCode}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-surface-400 hover:text-surface-100 hover:bg-surface-800 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Скачать как ZIP"
-          >
-            <ArrowDownTrayIcon className="w-3.5 h-3.5" />
-            ZIP
-          </button>
-          <button
-            onClick={onShare}
-            disabled={!currentCode}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-surface-400 hover:text-surface-100 hover:bg-surface-800 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Поделиться"
-          >
-            <ShareIcon className="w-3.5 h-3.5" />
-            Поделиться
-          </button>
-          <button
-            onClick={handleReactPlaceholder}
-            disabled={!currentCode}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-surface-400 hover:text-surface-100 hover:bg-surface-800 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Экспорт в React"
-          >
-            <CodeBracketIcon className="w-3.5 h-3.5" />
-            React
-          </button>
-        </div>
+      <div className="flex flex-wrap items-center gap-1 mb-3">
+        <button
+          onClick={handleCopy}
+          disabled={!currentCode}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-surface-400 hover:text-surface-100 hover:bg-white/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-ring active:scale-[0.98]"
+          title="Копировать код"
+        >
+          <ClipboardIcon className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Копировать</span>
+        </button>
+        <button
+          onClick={handleDownload}
+          disabled={!currentCode}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-surface-400 hover:text-surface-100 hover:bg-white/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-ring active:scale-[0.98]"
+          title="Скачать HTML"
+        >
+          <ArrowDownTrayIcon className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Скачать</span>
+        </button>
+        <button
+          onClick={handleDownloadZip}
+          disabled={!currentCode}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-surface-400 hover:text-surface-100 hover:bg-white/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-ring active:scale-[0.98]"
+          title="Скачать как ZIP"
+        >
+          <ArrowDownTrayIcon className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">ZIP</span>
+        </button>
+        <button
+          onClick={onShare}
+          disabled={!currentCode}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-surface-400 hover:text-surface-100 hover:bg-white/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-ring active:scale-[0.98]"
+          title="Поделиться"
+        >
+          <ShareIcon className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Поделиться</span>
+        </button>
+        <button
+          onClick={handleReactPlaceholder}
+          disabled={!currentCode}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-surface-400 hover:text-surface-100 hover:bg-white/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-ring active:scale-[0.98]"
+          title="Экспорт в React"
+        >
+          <CodeBracketIcon className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">React</span>
+        </button>
       </div>
 
-      <div className="flex-1 relative rounded-xl overflow-hidden border border-surface-700/50">
+      <div className="flex-1 relative bg-surface-900 border border-line rounded-xl overflow-hidden">
         {currentCode ? (
           <div className="absolute inset-0 overflow-auto syntax-highlighter-override">
             <SyntaxHighlighter

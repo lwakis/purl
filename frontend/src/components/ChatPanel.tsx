@@ -36,62 +36,53 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
 
   return (
     <div className="flex flex-col h-full">
-      {!hideInput && (
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-medium text-surface-200">Чат</span>
-          {chatHistory.length > 0 && (
-            <span className="text-xs text-surface-400">
-              {Math.ceil(chatHistory.length / 2)} итераций
-            </span>
-          )}
+      {chatHistory.length > 0 && (
+        <div className="text-[11px] text-surface-500 px-1 mb-2">
+          {Math.ceil(chatHistory.length / 2)} итераций
         </div>
       )}
 
-      <div className={`flex flex-col flex-1 min-h-0 ${hideInput ? '' : 'bg-surface-900/50 rounded-xl border border-surface-700/50'}`}>
-        <div className="flex-1 overflow-y-auto p-3 space-y-3">
-          {chatHistory.length === 0 ? (
-            <div className="flex items-center justify-center h-full">
-              <p className="text-surface-400 text-sm text-center">
-                {currentCode
-                  ? 'Что вы хотите изменить в дизайне?'
-                  : 'Сначала создайте дизайн, затем обсуждайте правки'}
-              </p>
-            </div>
-          ) : (
-            chatHistory.map((msg, i) => (
+      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+        {chatHistory.length === 0 ? (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-surface-400 text-sm text-center">
+              {currentCode
+                ? 'Что вы хотите изменить в дизайне?'
+                : 'Сначала создайте дизайн, затем обсуждайте правки'}
+            </p>
+          </div>
+        ) : (
+          chatHistory.map((msg, i) => (
+            <div
+              key={i}
+              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-slide-up`}
+              style={{ animationDelay: `${i * 60}ms` }}
+            >
               <div
-                key={i}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-slide-up`}
-                style={{ animationDelay: `${i * 50}ms` }}
+                className={`max-w-[85%] rounded-lg px-3.5 py-2.5 text-sm leading-relaxed ${
+                  msg.role === 'user'
+                    ? 'bg-primary-500/15 text-surface-100'
+                    : 'bg-surface-800 text-surface-300 border border-white/10'
+                }`}
               >
-                <div
-                  className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed ${
-                    msg.role === 'user'
-                      ? 'bg-primary-500/20 text-primary-200 border border-primary-500/20'
-                      : 'bg-surface-800 text-surface-300 border border-surface-700/50'
-                  }`}
-                >
-                  {msg.content}
-                </div>
-              </div>
-            ))
-          )}
-          {isGenerating && (
-            <div className="flex justify-start">
-              <div className="bg-surface-800 border border-surface-700/50 rounded-xl px-4 py-3">
-                <div className="flex items-center gap-1.5">
-                  <span className="loading-dot" />
-                  <span className="loading-dot" />
-                  <span className="loading-dot" />
-                </div>
+                {msg.content}
               </div>
             </div>
-          )}
-          <div ref={chatEndRef} />
-        </div>
+          ))
+        )}
+        {isGenerating && (
+          <div className="flex justify-start">
+            <div className="flex flex-col gap-2 w-2/3">
+              <div className="skeleton h-4 w-full" />
+              <div className="skeleton h-4 w-3/4" />
+            </div>
+          </div>
+        )}
+        <div ref={chatEndRef} />
+      </div>
 
         {!hideInput && (
-          <div className="p-3 border-t border-surface-700/50">
+          <div className="p-3 border-t border-line">
             <div className="flex gap-2">
               <textarea
                 ref={inputRef}
@@ -102,19 +93,18 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
                 aria-label="Сообщение в чат"
                 rows={1}
                 disabled={isGenerating || !currentCode}
-                className="flex-1 bg-surface-800 border border-surface-700 rounded-lg px-3 py-2 text-sm text-surface-100 placeholder-surface-500 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all disabled:opacity-30"
+                className="flex-1 bg-surface-950/60 border border-line rounded-lg px-3.5 py-2.5 text-sm text-surface-100 placeholder-surface-500 focus:border-line-strong focus:ring-2 focus:ring-primary-500/20 transition-all resize-none disabled:opacity-30"
               />
               <button
                 onClick={handleSend}
                 disabled={!message.trim() || isGenerating || !currentCode}
-                className="p-2.5 rounded-lg generation-gradient text-white transition-all duration-200 hover:shadow-lg hover:shadow-primary-500/25 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:shadow-none"
+                className="p-2.5 rounded-md bg-primary-600 text-white transition-all hover:bg-primary-500 active:scale-[0.98] disabled:bg-white/10 disabled:text-surface-400 disabled:cursor-not-allowed focus-ring"
               >
                 <PaperAirplaneIcon className="w-4 h-4" />
               </button>
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 }

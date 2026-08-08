@@ -38,25 +38,25 @@ export default function TemplateGallery({
   return (
     <div className="space-y-3 animate-fade-in">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-surface-200">Шаблоны</h2>
+        <h2 className="text-sm font-medium text-surface-200">Шаблоны</h2>
         <button
           onClick={handleRefresh}
-          className="p-1 rounded-lg text-surface-400 hover:text-surface-300 hover:bg-surface-800 transition-colors"
+          className="p-2 rounded-md text-surface-400 hover:text-surface-100 hover:bg-white/5 active:scale-95 transition-colors focus-ring"
           aria-label="Обновить шаблоны"
         >
           <ArrowPathIcon className="w-4 h-4" />
         </button>
       </div>
 
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+      <div className="flex flex-wrap gap-1.5">
         {CATEGORIES.map((cat) => (
           <button
             key={cat.value}
             onClick={() => setActiveCategory(cat.value)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
+            className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors focus-ring ${
               activeCategory === cat.value
-                ? 'bg-primary-500/20 text-primary-300 border border-primary-500/30'
-                : 'text-surface-400 bg-surface-800/50 border border-surface-700/50 hover:text-surface-200 hover:bg-surface-800'
+                ? 'bg-surface-700 text-surface-100'
+                : 'text-surface-400 hover:text-surface-200 hover:bg-white/5'
             }`}
           >
             {cat.label}
@@ -65,23 +65,25 @@ export default function TemplateGallery({
       </div>
 
       {loading ? (
-        <div className="flex gap-3 overflow-x-auto pb-2">
-          {[1, 2, 3, 4].map((i) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
             <div
               key={i}
-              className="flex-shrink-0 w-52 h-24 rounded-xl bg-surface-800/50 animate-pulse border border-surface-700/50"
+              style={{ animationDelay: `${i * 60}ms` }}
+              className="h-28 rounded-lg skeleton animate-fade-in"
             />
           ))}
         </div>
       ) : filteredTemplates.length === 0 ? (
         <p className="text-surface-400 text-xs">Нет шаблонов в категории «{currentCategoryLabel}»</p>
       ) : (
-        <div className="flex gap-3 overflow-x-auto pb-2">
-          {filteredTemplates.map((tpl) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
+          {filteredTemplates.map((tpl, i) => (
             <button
               key={tpl.id}
               onClick={() => onSelect(tpl)}
-              className="flex-shrink-0 w-52 text-left glass-panel rounded-xl p-3.5 hover:bg-surface-700/60 hover:border-surface-600/50 transition-all border border-surface-700/50 group"
+              style={{ animationDelay: `${i * 60}ms` }}
+              className="w-full text-left rounded-lg bg-surface-800/60 border border-line p-3.5 hover:border-line-strong hover:bg-surface-800 transition-colors group focus-ring animate-fade-in"
             >
               <div className="text-xl mb-2">{tpl.icon || '#'}</div>
               <h3 className="text-sm font-medium text-surface-200 group-hover:text-surface-100 transition-colors">
