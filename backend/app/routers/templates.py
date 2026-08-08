@@ -83,6 +83,7 @@ SEED_TEMPLATES: list[dict[str, str | int]] = [
 
 
 @router.get('', response_model=list[TemplateResponse])
+@router.get('/', response_model=list[TemplateResponse])
 async def list_templates(db: AsyncSession = Depends(get_db)):  # noqa: B008
     """Return all prompt templates, seeded on first access if empty."""
     # Check if templates exist

@@ -11,6 +11,7 @@ from app.utils import generate_short_code
 router = APIRouter(prefix='/api/share', tags=['share'])
 
 
+@router.post('', response_model=ShareCreateResponse, status_code=201)
 @router.post('/', response_model=ShareCreateResponse, status_code=201)
 async def create_share_link(
     req: ShareCreateRequest,

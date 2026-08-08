@@ -57,6 +57,7 @@ def _version_to_response(v: ProjectVersion) -> ProjectVersionResponse:
 # ── Projects ─────────────────────────────────────────────────────────────────
 
 
+@router.get('', response_model=list[ProjectResponse])
 @router.get('/', response_model=list[ProjectResponse])
 async def list_projects(
     user_id: int | None = Query(None),
@@ -74,6 +75,7 @@ async def list_projects(
     return [_project_to_response(p) for p in projects]
 
 
+@router.post('', response_model=ProjectResponse, status_code=201)
 @router.post('/', response_model=ProjectResponse, status_code=201)
 async def create_project(
     req: ProjectCreate,
