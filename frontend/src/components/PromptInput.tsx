@@ -4,7 +4,7 @@ import { useAppStore } from '../store/appStore';
 import { useGeneration } from '../hooks/useGeneration';
 import GenerationProgress from './GenerationProgress';
 import ErrorAlert from './ErrorAlert';
-import { useT } from '../i18n';
+import { useT, localizeTemplate } from '../i18n';
 import type { TranslationKey } from '../i18n';
 import type { ThemeMode, DesignStyle, PromptTemplate } from '../types';
 
@@ -181,7 +181,7 @@ export default function PromptInput({ templates, onTemplateSelect }: PromptInput
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-surface-800/60 border border-line text-surface-400 hover:text-surface-200 hover:bg-surface-800 transition-colors text-xs disabled:opacity-40 focus-ring"
             >
               <span className="text-surface-400">{tpl.icon || '#'}</span>
-              {tpl.title}
+              {localizeTemplate(tpl.category)?.title ?? tpl.title}
             </button>
           ))}
         </div>

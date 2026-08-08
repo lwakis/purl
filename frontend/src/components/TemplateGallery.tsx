@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
-import { useT } from '../i18n';
+import { useT, localizeTemplate } from '../i18n';
 import type { TranslationKey } from '../i18n';
 import type { PromptTemplate } from '../types';
 
@@ -78,20 +78,25 @@ export default function TemplateGallery({ templates, loading, onSelect }: Templa
         </p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
-          {filteredTemplates.map((tpl, i) => (
-            <button
-              key={tpl.id}
-              onClick={() => onSelect(tpl)}
-              style={{ animationDelay: `${i * 60}ms` }}
-              className="w-full text-left rounded-lg bg-surface-800/60 border border-line p-3.5 hover:border-line-strong hover:bg-surface-800 transition-colors group focus-ring animate-fade-in"
-            >
-              <div className="text-xl mb-2">{tpl.icon || '#'}</div>
-              <h3 className="text-sm font-medium text-surface-200 group-hover:text-surface-100 transition-colors">
-                {tpl.title}
-              </h3>
-              <p className="text-xs text-surface-400 mt-1 line-clamp-2">{tpl.description}</p>
-            </button>
-          ))}
+          {filteredTemplates.map((tpl, i) => {
+            const localized = localizeTemplate(tpl.category);
+            return (
+              <button
+                key={tpl.id}
+                onClick={() => onSelect(tpl)}
+                style={{ animationDelay: `${i * 60}ms` }}
+                className="w-full text-left rounded-lg bg-surface-800/60 border border-line p-3.5 hover:border-line-strong hover:bg-surface-800 transition-colors group focus-ring animate-fade-in"
+              >
+                <div className="text-xl mb-2">{tpl.icon || '#'}</div>
+                <h3 className="text-sm font-medium text-surface-200 group-hover:text-surface-100 transition-colors">
+                  {localized?.title ?? tpl.title}
+                </h3>
+                <p className="text-xs text-surface-400 mt-1 line-clamp-2">
+                  {localized?.description ?? tpl.description}
+                </p>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

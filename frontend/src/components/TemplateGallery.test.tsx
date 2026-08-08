@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TemplateGallery from './TemplateGallery';
+import { useAppStore } from '../store/appStore';
 import type { PromptTemplate } from '../types';
 
 const templates: PromptTemplate[] = [
@@ -25,6 +26,7 @@ function renderGallery(overrides: Partial<Parameters<typeof TemplateGallery>[0]>
 
 afterEach(() => {
   vi.restoreAllMocks();
+  useAppStore.setState({ locale: 'ru' });
 });
 
 describe('TemplateGallery', () => {
@@ -91,5 +93,13 @@ describe('TemplateGallery', () => {
     renderGallery({ loading: true });
     expect(screen.queryByText('Лендинг стартапа')).not.toBeInTheDocument();
     expect(document.querySelectorAll('.skeleton')).toHaveLength(8);
+  });
+
+  it('renders localized titles in the English locale', () => {
+    useAppStore.setState({ locale: 'en' });
+    renderGallery();
+    expect(screen.getAllByText('SaaS Landing Page')).toHaveLength(3);
+    expect(screen.getAllByText('Analytics Dashboard')).toHaveLength(3);
+    expect(screen.getAllByText('Registration Form')).toHaveLength(2);
   });
 });
