@@ -213,6 +213,9 @@ uv run ruff format .    # format
 # Frontend (from frontend/)
 npx vitest run          # run the test suite
 npm run build           # type-check (tsc -b) and build
+npm run test:e2e        # end-to-end smoke tests (Playwright), auto-starts
+                        # backend (mock mode) + Vite on :8000/:5173
+                        #   first run: npx playwright install chromium
 
 # Repo root
 pre-commit install             # once, to enable hooks
