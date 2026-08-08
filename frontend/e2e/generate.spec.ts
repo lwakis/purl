@@ -4,47 +4,59 @@ import { test, expect } from '@playwright/test';
 // mock mode (see playwright.config.ts — LLM_API_KEY is forced empty, so the
 // backend streams a local mock design with no external calls).
 //
-// Default UI locale is 'ru', so selectors below use the Russian strings.
+// The default UI locale is 'ru', which falls back to backend-provided
+// template text, so selectors are built from the live /api/templates
+// response instead of hardcoding strings (single source of truth).
 
-test('generate flow: prompt → streamed preview', async ({ page }) => {
+function escaped(substring: string): RegExp {
+  return new RegExp(substring.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+}
+
+test('generate flow: prompt → streamed preview', async ({ page, request }) => {
+  // Fetch the seeded templates the same way the app does — the landing card
+  // proves backend connectivity.
+  const templates = await (await request.get('/api/templates')).json();
+  const landing = templates.find((t: { category: string }) => t.category === 'landing');
+  expect(landing).toBeDefined();
+
   await page.goto('/');
 
-  // Templates are fetched from the backend /api/templates and seeded on
-  // first access — a gallery card proves backend connectivity. The title
-  // appears twice (chip in PromptInput + card in TemplateGallery), so scope
-  // to the gallery card and use .first().
+  // The title appears twice (chip in PromptInput + card in TemplateGallery),
+  // so scope to the gallery card by description and use .first().
   const templateCard = page
-    .getByRole('button', { name: /Лендинг SaaS-продукта/ })
-    .filter({ hasText: 'Одностраничный лендинг' })
+    .getByRole('button', { name: escaped(landing.title) })
+    .filter({ hasText: escaped(landing.description.slice(0, 20).trim()) })
     .first();
   await expect(templateCard).toBeVisible({ timeout: 15_000 });
 
   // Type a prompt into the main textarea and generate.
   const promptBox = page.getByRole('textbox', { name: 'Описание дизайна' });
-  await promptBox.fill('Создай лендинг для кофейни с меню и контактами');
+  await promptBox.fill(landing.prompt_text);
   await page.getByRole('button', { name: 'Сгенерировать' }).click();
 
   // Generation completes → the design canvas (PreviewPanel) replaces the
   // landing empty state; the preview iframe must get non-empty content.
-  const previewIframe = page.getByTitle('Предпросмотр дизайна');
-  await expect(previewIframe).toBeVisible({ timeout: 30_000 });
-
-  const frame = previewIframe.contentFrame();
-  await expect(frame?.locator('body')).not.toBeEmpty();
+  const previewFrame = page.frameLocator('iframe[title="Предпросмотр дизайна"]');
+  await expect(previewFrame.locator('body')).not.toBeEmpty({ timeout: 30_000 });
 });
 
-test('template select fills the prompt box', async ({ page }) => {
+test('template select fills the prompt box', async ({ page, request }) => {
+  const templates = await (await request.get('/api/templates')).json();
+  const landing = templates.find((t: { category: string }) => t.category === 'landing');
+  expect(landing).toBeDefined();
+
   await page.goto('/');
 
   const templateCard = page
-    .getByRole('button', { name: /Лендинг SaaS-продукта/ })
-    .filter({ hasText: 'Одностраничный лендинг' })
+    .getByRole('button', { name: escaped(landing.title) })
+    .filter({ hasText: escaped(landing.description.slice(0, 20).trim()) })
     .first();
   await expect(templateCard).toBeVisible({ timeout: 15_000 });
 
-  // Clicking a template card must prefill the main prompt textarea.
+  // Clicking a template card must prefill the main prompt textarea with the
+  // template's prompt text from the backend.
   await templateCard.click();
   await expect(page.getByRole('textbox', { name: 'Описание дизайна' })).toHaveValue(
-    /Создай современный лендинг для SaaS-продукта/,
+    escaped(landing.prompt_text.slice(0, 30)),
   );
 });
