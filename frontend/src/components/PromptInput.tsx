@@ -4,33 +4,35 @@ import { useAppStore } from '../store/appStore';
 import { useGeneration } from '../hooks/useGeneration';
 import GenerationProgress from './GenerationProgress';
 import ErrorAlert from './ErrorAlert';
+import { useT } from '../i18n';
+import type { TranslationKey } from '../i18n';
 import type { ThemeMode, DesignStyle, PromptTemplate } from '../types';
 
 const MAX_PROMPT_LENGTH = 2000;
 
-const THEMES: { value: ThemeMode; label: string; icon: string }[] = [
+const THEMES: { value: ThemeMode; labelKey: TranslationKey; icon: string }[] = [
   {
     value: 'dark',
-    label: 'Тёмная',
+    labelKey: 'prompt.themeDark',
     icon: 'M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z',
   },
   {
     value: 'light',
-    label: 'Светлая',
+    labelKey: 'prompt.themeLight',
     icon: 'M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z',
   },
   {
     value: 'auto',
-    label: 'Авто',
+    labelKey: 'prompt.themeAuto',
     icon: 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
   },
 ];
 
-const STYLES: { value: DesignStyle; label: string }[] = [
-  { value: 'minimal', label: 'Минимал' },
-  { value: 'corporate', label: 'Корпоратив' },
-  { value: 'playful', label: 'Игривый' },
-  { value: 'techno', label: 'Техно' },
+const STYLES: { value: DesignStyle; labelKey: TranslationKey }[] = [
+  { value: 'minimal', labelKey: 'prompt.styleMinimal' },
+  { value: 'corporate', labelKey: 'prompt.styleCorporate' },
+  { value: 'playful', labelKey: 'prompt.stylePlayful' },
+  { value: 'techno', labelKey: 'prompt.styleTechno' },
 ];
 
 interface PromptInputProps {
@@ -50,6 +52,7 @@ export default function PromptInput({ templates, onTemplateSelect }: PromptInput
     setGenerationError,
   } = useAppStore();
   const { generate, isGenerating } = useGeneration();
+  const { t } = useT();
 
   const charCount = prompt.length;
   const atLimit = charCount >= MAX_PROMPT_LENGTH;
@@ -90,8 +93,8 @@ export default function PromptInput({ templates, onTemplateSelect }: PromptInput
           value={prompt}
           onChange={handlePromptChange}
           onKeyDown={handleKeyDown}
-          placeholder="Опишите дизайн, который хотите... (например: Лендинг для SaaS по автоматизации HR, тёмная тема, корпоративный стиль)"
-          aria-label="Описание дизайна"
+          placeholder={t('prompt.placeholder')}
+          aria-label={t('prompt.aria')}
           className="w-full bg-surface-950/60 border border-line rounded-lg px-4 py-3 text-sm text-surface-100 placeholder-surface-500 focus:border-line-strong focus:ring-2 focus:ring-primary-500/20 transition-all resize-none min-h-[110px] leading-relaxed focus:outline-none"
           rows={3}
           disabled={isGenerating}
@@ -107,38 +110,38 @@ export default function PromptInput({ templates, onTemplateSelect }: PromptInput
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-0.5 bg-surface-800/70 border border-line rounded-lg p-0.5">
-          {THEMES.map((t) => (
+          {THEMES.map((th) => (
             <button
-              key={t.value}
-              onClick={() => setTheme(t.value)}
+              key={th.value}
+              onClick={() => setTheme(th.value)}
               disabled={isGenerating}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors focus-ring ${
-                theme === t.value
+                theme === th.value
                   ? 'bg-surface-700 text-surface-100'
                   : 'text-surface-400 hover:text-surface-200'
               }`}
             >
               <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                <path d={t.icon} />
+                <path d={th.icon} />
               </svg>
-              {t.label}
+              {t(th.labelKey)}
             </button>
           ))}
         </div>
 
         <div className="flex items-center gap-0.5 bg-surface-800/70 border border-line rounded-lg p-0.5">
-          {STYLES.map((s) => (
+          {STYLES.map((st) => (
             <button
-              key={s.value}
-              onClick={() => setStyle(s.value)}
+              key={st.value}
+              onClick={() => setStyle(st.value)}
               disabled={isGenerating}
               className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors focus-ring ${
-                style === s.value
+                style === st.value
                   ? 'bg-surface-700 text-surface-100'
                   : 'text-surface-400 hover:text-surface-200'
               }`}
             >
-              {s.label}
+              {t(st.labelKey)}
             </button>
           ))}
         </div>
@@ -157,12 +160,12 @@ export default function PromptInput({ templates, onTemplateSelect }: PromptInput
               <span className="loading-dot" />
               <span className="loading-dot" />
               <span className="loading-dot" />
-              <span className="ml-1">Генерация...</span>
+              <span className="ml-1">{t('prompt.generating')}</span>
             </>
           ) : (
             <>
               <SparklesIcon className="w-4 h-4" />
-              Сгенерировать
+              {t('prompt.generate')}
             </>
           )}
         </button>

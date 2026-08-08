@@ -10,6 +10,7 @@ import { useAppStore } from './store/appStore';
 import { useGeneration } from './hooks/useGeneration';
 import { fetchTemplates, createAnonSession } from './services/api';
 import { loadSession, saveSession } from './services/session';
+import { useT } from './i18n';
 import Header from './components/Header';
 import EmptyState from './components/EmptyState';
 import PromptInput from './components/PromptInput';
@@ -29,6 +30,13 @@ const CodePanel = lazy(() => import('./components/CodePanel'));
 type PanelTab = 'chat' | 'code' | null;
 
 export default function App() {
+  const { t, locale } = useT();
+
+  // Keep <html lang> in sync with the UI language for a11y and translation tools.
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
+
   // Share landing: /share/:code renders a dedicated screen, not the generator.
   const shareMatch = window.location.pathname.match(/^\/share\/([^/]+)\/?$/);
   if (shareMatch) {
@@ -81,7 +89,7 @@ export default function App() {
           setSessionId(anon.session_id);
           saveSession(anon.session_id, anon.token);
         } catch {
-          setGenerationError('Не удалось создать сессию. Обновите страницу и попробуйте снова.');
+          setGenerationError(t('errors.sessionInitFailed'));
         }
       }
 
@@ -203,8 +211,8 @@ export default function App() {
                       handleBottomSend();
                     }
                   }}
-                  placeholder="Что вы хотите создать или изменить?"
-                  aria-label="Сообщение для генерации или правки"
+                  placeholder={t('app.inputPlaceholder')}
+                  aria-label={t('app.inputAria')}
                   className="flex-1 bg-transparent text-surface-100 placeholder-surface-500 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500/40 rounded-lg text-sm py-2 px-3 leading-relaxed max-h-32"
                   rows={1}
                   disabled={isGenerating}
@@ -213,7 +221,7 @@ export default function App() {
                   onClick={handleBottomSend}
                   disabled={!bottomInput.trim() || isGenerating}
                   className="p-2.5 rounded-md bg-primary-600 text-white transition-all duration-150 hover:bg-primary-500 active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-primary-600 flex-shrink-0 focus-ring"
-                  aria-label="Отправить"
+                  aria-label={t('app.sendAria')}
                 >
                   <PaperAirplaneIcon className="w-4 h-4" />
                 </button>
@@ -233,13 +241,13 @@ export default function App() {
           <aside
             role="dialog"
             aria-modal="true"
-            aria-label="Панель дизайнера"
+            aria-label={t('app.panelAria')}
             className="fixed inset-y-0 right-0 z-50 w-full max-w-[420px] lg:static lg:z-auto lg:w-[380px] lg:max-w-none flex flex-col bg-surface-900 border-l border-line shadow-overlay lg:shadow-none animate-slide-in-right lg:animate-none"
           >
             <div className="flex items-center gap-1 px-3 py-2.5 border-b border-line">
               <div
                 role="tablist"
-                aria-label="Панель чата и кода"
+                aria-label={t('app.tabsAria')}
                 className="flex items-center gap-0.5 bg-surface-800/70 border border-line rounded-lg p-0.5 flex-1"
               >
                 <button
@@ -253,7 +261,7 @@ export default function App() {
                   }`}
                 >
                   <ChatBubbleLeftRightIcon className="w-3.5 h-3.5" />
-                  Чат
+                  {t('header.chat')}
                 </button>
                 <button
                   role="tab"
@@ -266,13 +274,13 @@ export default function App() {
                   }`}
                 >
                   <CodeBracketIcon className="w-3.5 h-3.5" />
-                  Код
+                  {t('header.code')}
                 </button>
               </div>
               <button
                 onClick={closePanel}
                 className="p-2 rounded-md text-surface-400 hover:text-surface-100 hover:bg-white/5 transition-colors focus-ring"
-                aria-label="Закрыть панель"
+                aria-label={t('app.closePanelAria')}
               >
                 <XMarkIcon className="w-4 h-4" />
               </button>

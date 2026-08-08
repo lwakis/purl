@@ -1,5 +1,7 @@
 import { useState, useCallback } from 'react';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
+import { useT } from '../i18n';
+import type { TranslationKey } from '../i18n';
 import type { PromptTemplate } from '../types';
 
 interface TemplateGalleryProps {
@@ -8,22 +10,24 @@ interface TemplateGalleryProps {
   onSelect: (template: PromptTemplate) => void;
 }
 
-const CATEGORIES: { label: string; value: string }[] = [
-  { label: 'Все', value: 'All' },
-  { label: 'Лендинг', value: 'Landing' },
-  { label: 'Дашборд', value: 'Dashboard' },
-  { label: 'Форма', value: 'Form' },
+const CATEGORIES: { labelKey: TranslationKey; value: string }[] = [
+  { labelKey: 'templates.categoryAll', value: 'All' },
+  { labelKey: 'templates.categoryLanding', value: 'Landing' },
+  { labelKey: 'templates.categoryDashboard', value: 'Dashboard' },
+  { labelKey: 'templates.categoryForm', value: 'Form' },
 ];
 
 export default function TemplateGallery({ templates, loading, onSelect }: TemplateGalleryProps) {
+  const { t } = useT();
   const [activeCategory, setActiveCategory] = useState('All');
 
   const filteredTemplates =
     activeCategory === 'All'
       ? templates
-      : templates.filter((t) => t.category?.toLowerCase() === activeCategory.toLowerCase());
+      : templates.filter((tpl) => tpl.category?.toLowerCase() === activeCategory.toLowerCase());
 
-  const currentCategoryLabel = CATEGORIES.find((c) => c.value === activeCategory)?.label || 'Все';
+  const currentCategoryLabel =
+    CATEGORIES.find((c) => c.value === activeCategory)?.labelKey || 'templates.categoryAll';
 
   const handleRefresh = useCallback(() => {
     window.location.reload();
@@ -32,11 +36,11 @@ export default function TemplateGallery({ templates, loading, onSelect }: Templa
   return (
     <div className="space-y-3 animate-fade-in">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-medium text-surface-200">Шаблоны</h2>
+        <h2 className="text-sm font-medium text-surface-200">{t('templates.title')}</h2>
         <button
           onClick={handleRefresh}
           className="p-2 rounded-md text-surface-400 hover:text-surface-100 hover:bg-white/5 active:scale-95 transition-colors focus-ring"
-          aria-label="Обновить шаблоны"
+          aria-label={t('templates.refreshAria')}
         >
           <ArrowPathIcon className="w-4 h-4" />
         </button>
@@ -53,7 +57,7 @@ export default function TemplateGallery({ templates, loading, onSelect }: Templa
                 : 'text-surface-400 hover:text-surface-200 hover:bg-white/5'
             }`}
           >
-            {cat.label}
+            {t(cat.labelKey)}
           </button>
         ))}
       </div>
@@ -70,7 +74,7 @@ export default function TemplateGallery({ templates, loading, onSelect }: Templa
         </div>
       ) : filteredTemplates.length === 0 ? (
         <p className="text-surface-400 text-xs">
-          Нет шаблонов в категории «{currentCategoryLabel}»
+          {t('templates.empty', { category: t(currentCategoryLabel) })}
         </p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">

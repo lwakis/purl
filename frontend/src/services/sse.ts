@@ -1,6 +1,7 @@
 import type { ChatMessage, SSEEvent } from '../types';
 import { getToken } from './session';
 import { BASE_URL } from './api';
+import { t } from '../i18n';
 
 interface SSEOptions {
   onEvent: (event: SSEEvent) => void;
@@ -61,7 +62,7 @@ async function connectSSE(url: string, body: unknown, options: SSEOptions): Prom
     clearTimer();
     inactivityTimer = setTimeout(() => {
       controller.abort();
-      settle(() => onError(new Error('Превышено время ожидания ответа сервера')));
+      settle(() => onError(new Error(t('errors.timeout'))));
     }, INACTIVITY_TIMEOUT_MS);
   };
 
@@ -95,20 +96,20 @@ async function connectSSE(url: string, body: unknown, options: SSEOptions): Prom
 
       if (response.status >= 500) {
         if (isRetryable(undefined, response.status)) return true;
-        throw new Error(`Ошибка сервера (${response.status})`);
+        throw new Error(t('errors.serverError', { status: response.status }));
       }
 
       if (!response.ok) {
         throw new Error(
           response.status === 429
-            ? 'Превышен лимит запросов, попробуйте позже'
-            : `Ошибка сервера (${response.status})`,
+            ? t('errors.rateLimit')
+            : t('errors.serverError', { status: response.status }),
         );
       }
 
       const reader = response.body?.getReader();
       if (!reader) {
-        throw new Error('Response body is not readable');
+        throw new Error(t('errors.bodyUnreadable'));
       }
 
       const decoder = new TextDecoder();
@@ -155,19 +156,17 @@ async function connectSSE(url: string, body: unknown, options: SSEOptions): Prom
       // Clean EOF without a `complete` event means the stream was cut short —
       // surface an error so the loading state never hangs forever.
       if (!completed) {
-        settle(() => onError(new Error('Соединение с сервером прервано')));
+        settle(() => onError(new Error(t('errors.connectionLost'))));
       }
       return false;
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
         // User-initiated cancel (or inactivity timeout, already settled above).
-        settle(() => onError(new Error('Генерация отменена')));
+        settle(() => onError(new Error(t('errors.cancelled'))));
         return false;
       }
       if (isRetryable(error)) return true;
-      settle(() =>
-        onError(error instanceof Error ? error : new Error('Не удалось связаться с сервером')),
-      );
+      settle(() => onError(error instanceof Error ? error : new Error(t('errors.network'))));
       return false;
     }
   };

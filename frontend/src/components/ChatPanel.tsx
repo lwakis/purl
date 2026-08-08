@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import { useAppStore } from '../store/appStore';
 import { useGeneration } from '../hooks/useGeneration';
+import { useT } from '../i18n';
 
 interface ChatPanelProps {
   hideInput?: boolean;
@@ -10,6 +11,7 @@ interface ChatPanelProps {
 export default function ChatPanel({ hideInput }: ChatPanelProps) {
   const { chatHistory, isGenerating, currentCode } = useAppStore();
   const { iterate } = useGeneration();
+  const { t } = useT();
   const [message, setMessage] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -38,7 +40,7 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
     <div className="flex flex-col h-full">
       {chatHistory.length > 0 && (
         <div className="text-[11px] text-surface-500 px-1 mb-2">
-          {Math.ceil(chatHistory.length / 2)} итераций
+          {t('chat.iterations', { n: Math.ceil(chatHistory.length / 2) })}
         </div>
       )}
 
@@ -46,9 +48,7 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
         {chatHistory.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <p className="text-surface-400 text-sm text-center">
-              {currentCode
-                ? 'Что вы хотите изменить в дизайне?'
-                : 'Сначала создайте дизайн, затем обсуждайте правки'}
+              {currentCode ? t('chat.whatToChange') : t('chat.createFirst')}
             </p>
           </div>
         ) : (
@@ -89,8 +89,8 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Что изменить?"
-              aria-label="Сообщение в чат"
+              placeholder={t('chat.inputPlaceholder')}
+              aria-label={t('chat.inputAria')}
               rows={1}
               disabled={isGenerating || !currentCode}
               className="flex-1 bg-surface-950/60 border border-line rounded-lg px-3.5 py-2.5 text-sm text-surface-100 placeholder-surface-500 focus:border-line-strong focus:ring-2 focus:ring-primary-500/20 transition-all resize-none disabled:opacity-30"

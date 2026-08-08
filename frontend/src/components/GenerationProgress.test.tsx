@@ -12,7 +12,7 @@ describe('GenerationProgress', () => {
   });
 
   it('renders the generation status text and stage labels', () => {
-    useAppStore.setState({ isGenerating: true, generationStatus: 'Анализирую промпт...' });
+    useAppStore.setState({ isGenerating: true, generationStatus: 'status.analysis' });
     render(<GenerationProgress />);
     expect(screen.getByText('Анализирую промпт...')).toBeInTheDocument();
     expect(screen.getByText('Анализ промпта')).toBeInTheDocument();
@@ -22,7 +22,7 @@ describe('GenerationProgress', () => {
 
   it('cancels generation via the cancel button', async () => {
     const user = userEvent.setup();
-    useAppStore.setState({ isGenerating: true, generationStatus: 'Генерирую код...' });
+    useAppStore.setState({ isGenerating: true, generationStatus: 'status.code' });
     render(<GenerationProgress />);
     await user.click(screen.getByRole('button', { name: 'Отменить генерацию' }));
     expect(useAppStore.getState().isGenerating).toBe(false);

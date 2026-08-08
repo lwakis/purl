@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getSharedProject } from '../services/api';
+import { useT } from '../i18n';
 
 interface ShareViewProps {
   code: string;
@@ -13,6 +14,7 @@ interface ShareViewState {
 }
 
 export default function ShareView({ code }: ShareViewProps) {
+  const { t } = useT();
   const [state, setState] = useState<ShareViewState>({
     loading: true,
     error: null,
@@ -38,7 +40,7 @@ export default function ShareView({ code }: ShareViewProps) {
         if (cancelled) return;
         setState({
           loading: false,
-          error: 'Ссылка недействительна или истекла',
+          error: t('shareView.invalidLink'),
           name: '',
           html: '',
         });
@@ -47,7 +49,7 @@ export default function ShareView({ code }: ShareViewProps) {
     return () => {
       cancelled = true;
     };
-  }, [code]);
+  }, [code, t]);
 
   if (state.loading) {
     return (
@@ -64,13 +66,13 @@ export default function ShareView({ code }: ShareViewProps) {
   if (state.error) {
     return (
       <div className="min-h-screen bg-surface-950 text-surface-100 flex flex-col items-center justify-center gap-4 p-6 text-center">
-        <h1 className="text-xl font-semibold text-surface-200">Дизайн не найден</h1>
+        <h1 className="text-xl font-semibold text-surface-200">{t('shareView.notFound')}</h1>
         <p className="text-surface-400 text-sm">{state.error}</p>
         <a
           href="/"
           className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-primary-600 font-medium text-white text-sm transition-all hover:bg-primary-500 active:scale-[0.98] focus-ring"
         >
-          Открыть Purl
+          {t('shareView.openPurl')}
         </a>
       </div>
     );
@@ -87,7 +89,7 @@ export default function ShareView({ code }: ShareViewProps) {
           href="/"
           className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-surface-400 hover:text-surface-100 hover:bg-white/5 transition-colors focus-ring active:scale-[0.98]"
         >
-          Открыть в Purl
+          {t('shareView.openInPurl')}
         </a>
       </header>
       <main className="flex-1 flex flex-col p-4 lg:p-6 min-h-0">
@@ -97,12 +99,12 @@ export default function ShareView({ code }: ShareViewProps) {
             <iframe
               srcDoc={state.html}
               sandbox="allow-scripts"
-              title="Shared Design Preview"
+              title={t('shareView.iframeTitle')}
               className="w-full h-full"
             />
           ) : (
             <div className="h-full flex items-center justify-center text-surface-600 text-sm">
-              В этом дизайне нет содержимого
+              {t('shareView.emptyContent')}
             </div>
           )}
         </div>

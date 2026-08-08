@@ -23,7 +23,7 @@ describe('ShareView', () => {
     vi.mocked(getSharedProject).mockResolvedValue({ name: 'Общий лендинг', code: '<html>shared</html>' });
     render(<ShareView code="abc" />);
     expect(await screen.findByRole('heading', { name: 'Общий лендинг' })).toBeInTheDocument();
-    expect(screen.getByTitle('Shared Design Preview')).toBeInTheDocument();
+    expect(screen.getByTitle('Предпросмотр опубликованного дизайна')).toBeInTheDocument();
   });
 
   it('shows the error state when the link is invalid', async () => {

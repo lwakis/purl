@@ -64,7 +64,7 @@ describe('ChatPanel', () => {
     render(<ChatPanel />);
     expect(screen.getByText('Сделай тёмнее')).toBeInTheDocument();
     expect(screen.getByText('Готово!')).toBeInTheDocument();
-    expect(screen.getByText('1 итераций')).toBeInTheDocument();
+    expect(screen.getByText('1 итерация')).toBeInTheDocument();
   });
 
   it('hides the input when hideInput is set', () => {

@@ -10,6 +10,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { useAppStore } from '../store/appStore';
+import { useT } from '../i18n';
 
 // Register only the markup grammar — it covers HTML (alias) and keeps the
 // lazily-loaded CodePanel chunk far smaller than the full Prism bundle.
@@ -21,16 +22,17 @@ interface CodePanelProps {
 
 export default function CodePanel({ onShare }: CodePanelProps) {
   const { currentCode } = useAppStore();
+  const { t } = useT();
 
   const handleCopy = useCallback(async () => {
     if (!currentCode) return;
     try {
       await navigator.clipboard.writeText(currentCode);
-      toast.success('Код скопирован в буфер обмена');
+      toast.success(t('code.copied'));
     } catch {
-      toast.error('Не удалось скопировать код');
+      toast.error(t('code.copyFailed'));
     }
-  }, [currentCode]);
+  }, [currentCode, t]);
 
   const handleDownload = useCallback(() => {
     if (!currentCode) return;
@@ -41,8 +43,8 @@ export default function CodePanel({ onShare }: CodePanelProps) {
     a.download = 'index.html';
     a.click();
     URL.revokeObjectURL(url);
-    toast.success('Скачивание начато');
-  }, [currentCode]);
+    toast.success(t('code.downloadStarted'));
+  }, [currentCode, t]);
 
   const handleDownloadZip = useCallback(async () => {
     if (!currentCode) return;
@@ -54,12 +56,12 @@ export default function CodePanel({ onShare }: CodePanelProps) {
     zip.file(
       'README.txt',
       [
-        'Purl design export',
+        t('code.zipTitle'),
         '',
-        'Generated with Purl — AI design generator.',
+        t('code.zipGenerated'),
         'https://github.com/lwakis/purl',
         '',
-        'Open index.html in any browser to view the design.',
+        t('code.zipOpen'),
       ].join('\n'),
     );
     const blob = await zip.generateAsync({ type: 'blob' });
@@ -69,12 +71,12 @@ export default function CodePanel({ onShare }: CodePanelProps) {
     a.download = 'purl-design.zip';
     a.click();
     URL.revokeObjectURL(url);
-    toast.success('Скачивание начато');
-  }, [currentCode]);
+    toast.success(t('code.downloadStarted'));
+  }, [currentCode, t]);
 
   const handleReactPlaceholder = useCallback(() => {
-    toast('Экспорт в React скоро появится', { icon: '🚧' });
-  }, []);
+    toast(t('code.reactSoon'), { icon: '🚧' });
+  }, [t]);
 
   return (
     <div className="flex flex-col h-full animate-fade-in">
@@ -83,25 +85,25 @@ export default function CodePanel({ onShare }: CodePanelProps) {
           onClick={handleCopy}
           disabled={!currentCode}
           className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-surface-400 hover:text-surface-100 hover:bg-white/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-ring active:scale-[0.98]"
-          title="Копировать код"
+          title={t('code.copyTitle')}
         >
           <ClipboardIcon className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Копировать</span>
+          <span className="hidden sm:inline">{t('code.copy')}</span>
         </button>
         <button
           onClick={handleDownload}
           disabled={!currentCode}
           className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-surface-400 hover:text-surface-100 hover:bg-white/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-ring active:scale-[0.98]"
-          title="Скачать HTML"
+          title={t('code.downloadTitle')}
         >
           <ArrowDownTrayIcon className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Скачать</span>
+          <span className="hidden sm:inline">{t('code.download')}</span>
         </button>
         <button
           onClick={handleDownloadZip}
           disabled={!currentCode}
           className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-surface-400 hover:text-surface-100 hover:bg-white/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-ring active:scale-[0.98]"
-          title="Скачать как ZIP"
+          title={t('code.downloadZipTitle')}
         >
           <ArrowDownTrayIcon className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">ZIP</span>
@@ -110,16 +112,16 @@ export default function CodePanel({ onShare }: CodePanelProps) {
           onClick={onShare}
           disabled={!currentCode}
           className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-surface-400 hover:text-surface-100 hover:bg-white/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-ring active:scale-[0.98]"
-          title="Поделиться"
+          title={t('code.shareTitle')}
         >
           <ShareIcon className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Поделиться</span>
+          <span className="hidden sm:inline">{t('code.share')}</span>
         </button>
         <button
           onClick={handleReactPlaceholder}
           disabled={!currentCode}
           className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-surface-400 hover:text-surface-100 hover:bg-white/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-ring active:scale-[0.98]"
-          title="Экспорт в React"
+          title={t('code.reactTitle')}
         >
           <CodeBracketIcon className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">React</span>
@@ -149,7 +151,7 @@ export default function CodePanel({ onShare }: CodePanelProps) {
           <div className="absolute inset-0 flex items-center justify-center bg-surface-900">
             <div className="text-center">
               <CodeBracketIcon className="w-10 h-10 text-surface-700 mx-auto mb-3" />
-              <p className="text-surface-400 text-sm">Сгенерированный код появится здесь</p>
+              <p className="text-surface-400 text-sm">{t('code.empty')}</p>
             </div>
           </div>
         )}

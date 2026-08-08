@@ -46,6 +46,7 @@ afterEach(() => {
     sidebarOpen: false,
     activePanel: 'code',
     previewSize: 'desktop',
+    locale: 'ru',
   });
   window.localStorage.clear();
 });

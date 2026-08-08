@@ -8,6 +8,7 @@ import type {
   DesignStyle,
   ActivePanel,
   PreviewSize,
+  Locale,
 } from '../types';
 
 const initialState = {
@@ -27,6 +28,7 @@ const initialState = {
   sidebarOpen: false,
   activePanel: 'code' as ActivePanel,
   previewSize: 'desktop' as PreviewSize,
+  locale: 'ru' as Locale,
 };
 
 const projectA: Project = {
@@ -77,6 +79,7 @@ describe('appStore', () => {
     expect(state.shareUrl).toBeNull();
     expect(state.sidebarOpen).toBe(false);
     expect(state.previewSize).toBe('desktop');
+    expect(state.locale).toBe('ru');
   });
 
   it('setPrompt updates the prompt', () => {
@@ -171,6 +174,14 @@ describe('appStore', () => {
     expect(useAppStore.getState().previewSize).toBe('mobile');
   });
 
+  it('setLocale updates the locale', () => {
+    useAppStore.getState().setLocale('en');
+    expect(useAppStore.getState().locale).toBe('en');
+
+    useAppStore.getState().setLocale('ru');
+    expect(useAppStore.getState().locale).toBe('ru');
+  });
+
   it('addProject prepends and does not mutate state in place', () => {
     useAppStore.getState().setProjects([projectA]);
     const before = useAppStore.getState().projects;
@@ -221,6 +232,7 @@ describe('appStore', () => {
     useAppStore.getState().setSidebarOpen(true);
     useAppStore.getState().setActivePanel('chat');
     useAppStore.getState().setPreviewSize('mobile');
+    useAppStore.getState().setLocale('en');
 
     useAppStore.getState().reset();
 
@@ -241,5 +253,6 @@ describe('appStore', () => {
     expect(state.sidebarOpen).toBe(false);
     expect(state.activePanel).toBe('code');
     expect(state.previewSize).toBe('desktop');
+    expect(state.locale).toBe('ru');
   });
 });

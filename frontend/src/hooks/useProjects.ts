@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getProjects, createProject, updateProject, deleteProject } from '../services/api';
 import { useAppStore } from '../store/appStore';
+import { t } from '../i18n';
 import type { Project } from '../types';
 import toast from 'react-hot-toast';
 
@@ -21,7 +22,7 @@ export function useProjects() {
       const data = await getProjects(sessionId);
       setProjects(data);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load projects';
+      const message = err instanceof Error ? err.message : t('errors.loadProjects');
       setError(message);
     } finally {
       setLoading(false);
@@ -44,10 +45,10 @@ export function useProjects() {
       try {
         const project = await createProject(data);
         addProject(project);
-        toast.success('Проект сохранён');
+        toast.success(t('toasts.projectSaved'));
         return project;
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to create project';
+        const message = err instanceof Error ? err.message : t('errors.createProject');
         toast.error(message);
         return null;
       }
@@ -62,7 +63,7 @@ export function useProjects() {
         setProjects(projects.map((p) => (p.id === id ? updated : p)));
         return updated;
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to update project';
+        const message = err instanceof Error ? err.message : t('errors.updateProject');
         toast.error(message);
         return null;
       }
@@ -75,9 +76,9 @@ export function useProjects() {
       try {
         await deleteProject(id);
         setProjects(projects.filter((p) => p.id !== id));
-        toast.success('Проект удалён');
+        toast.success(t('toasts.projectDeleted'));
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to delete project';
+        const message = err instanceof Error ? err.message : t('errors.deleteProject');
         toast.error(message);
       }
     },

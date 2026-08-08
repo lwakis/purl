@@ -3,6 +3,7 @@ import { connectGenerateSSE, connectIterateSSE } from '../services/sse';
 import { createAnonSession, saveProjectVersion } from '../services/api';
 import { saveSession } from '../services/session';
 import { useAppStore } from '../store/appStore';
+import { useT } from '../i18n';
 import type { ChatMessage, SSEEvent } from '../types';
 
 // Module-level abort state: the Cancel button lives in a different component
@@ -12,6 +13,7 @@ let abortRequested = false;
 let activeController: AbortController | null = null;
 
 export function useGeneration() {
+  const { t } = useT();
   const {
     setGenerating,
     setGenerationStatus,
@@ -45,7 +47,7 @@ export function useGeneration() {
       activeController = new AbortController();
       setGenerationError(null);
       setGenerating(true);
-      setGenerationStatus('Анализирую промпт...');
+      setGenerationStatus('status.analysis');
       setCurrentCode('');
 
       let accumulatedCode = '';
@@ -55,13 +57,13 @@ export function useGeneration() {
 
         switch (event.type) {
           case 'analysis':
-            setGenerationStatus('Анализирую промпт...');
+            setGenerationStatus('status.analysis');
             break;
           case 'design':
-            setGenerationStatus('Разрабатываю дизайн...');
+            setGenerationStatus('status.design');
             break;
           case 'code':
-            setGenerationStatus('Генерирую код...');
+            setGenerationStatus('status.code');
             accumulatedCode += event.content;
             setCurrentCode(accumulatedCode);
             break;
@@ -79,7 +81,7 @@ export function useGeneration() {
         if (abortRequested) return;
         setCurrentCode(finalHtml);
         setGenerating(false);
-        setGenerationStatus('Готово!');
+        setGenerationStatus('status.done');
       };
 
       await connectGenerateSSE(prompt, theme || 'dark', style || 'minimal', {
@@ -95,7 +97,7 @@ export function useGeneration() {
     async (message: string) => {
       const sid = await ensureSession();
       if (!sid) {
-        setGenerationError('Не удалось создать сессию. Попробуйте ещё раз.');
+        setGenerationError(t('errors.sessionCreateFailed'));
         return;
       }
 
@@ -103,7 +105,7 @@ export function useGeneration() {
       activeController = new AbortController();
       setGenerationError(null);
       setGenerating(true);
-      setGenerationStatus('Обрабатываю правки...');
+      setGenerationStatus('status.processingEdits');
 
       const userMessage: ChatMessage = { role: 'user', content: message };
       addChatMessage(userMessage);
@@ -116,13 +118,13 @@ export function useGeneration() {
 
         switch (event.type) {
           case 'analysis':
-            setGenerationStatus('Анализирую правки...');
+            setGenerationStatus('status.analysisEdits');
             break;
           case 'design':
-            setGenerationStatus('Обновляю дизайн...');
+            setGenerationStatus('status.designEdits');
             break;
           case 'code':
-            setGenerationStatus('Генерирую код...');
+            setGenerationStatus('status.code');
             accumulatedCode += event.content;
             setCurrentCode(accumulatedCode);
             break;
@@ -136,7 +138,7 @@ export function useGeneration() {
         setGenerationStatus('');
         addChatMessage({
           role: 'assistant',
-          content: `Произошла ошибка: ${err.message}. Пожалуйста, попробуйте ещё раз.`,
+          content: t('chat.errorOccurred', { message: err.message }),
         });
       };
 
@@ -148,7 +150,7 @@ export function useGeneration() {
 
         const assistantMessage: ChatMessage = {
           role: 'assistant',
-          content: `Готово! Я обновил дизайн согласно вашим правкам.`,
+          content: t('chat.designUpdated'),
         };
         addChatMessage(assistantMessage);
 
@@ -176,6 +178,7 @@ export function useGeneration() {
       setGenerationStatus,
       setGenerationError,
       setCurrentCode,
+      t,
     ],
   );
 

@@ -1,5 +1,6 @@
 import type { Project, ProjectVersion, PromptTemplate } from '../types';
 import { getToken } from './session';
+import { t } from '../i18n';
 
 // API base URL. Empty (default) = same origin as the frontend
 // (Vite dev proxy or a reverse proxy in production).
@@ -18,13 +19,13 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
       ...options,
     });
   } catch {
-    throw new Error('Не удалось связаться с сервером');
+    throw new Error(t('errors.network'));
   }
 
   if (!response.ok) {
     const raw = await response.text().catch(() => '');
     if (response.status === 429) {
-      throw new Error('Превышен лимит запросов, попробуйте позже');
+      throw new Error(t('errors.rateLimit'));
     }
     let detail = '';
     try {
@@ -33,7 +34,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     } catch {
       // body is not JSON — ignore raw technical body
     }
-    throw new Error(detail || `Ошибка сервера (${response.status})`);
+    throw new Error(detail || t('errors.serverError', { status: response.status }));
   }
 
   return response.json();

@@ -3,6 +3,7 @@ import { XMarkIcon, ClipboardIcon, CheckIcon } from '@heroicons/react/24/outline
 import { useAppStore } from '../store/appStore';
 import { createShareLink } from '../services/api';
 import { useDialog } from '../hooks/useDialog';
+import { useT } from '../i18n';
 import toast from 'react-hot-toast';
 
 interface ShareDialogProps {
@@ -12,6 +13,7 @@ interface ShareDialogProps {
 
 export default function ShareDialog({ open, onClose }: ShareDialogProps) {
   const { shareUrl, setShareUrl, currentProject } = useAppStore();
+  const { t } = useT();
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -26,24 +28,24 @@ export default function ShareDialog({ open, onClose }: ShareDialogProps) {
       const url = `${window.location.origin}/share/${result.short_code}`;
       setShareUrl(url);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Не удалось создать ссылку';
+      const message = err instanceof Error ? err.message : t('shareDialog.createFailed');
       toast.error(message);
     } finally {
       setLoading(false);
     }
-  }, [currentProject, setShareUrl]);
+  }, [currentProject, setShareUrl, t]);
 
   const handleCopyLink = useCallback(async () => {
     if (!shareUrl) return;
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
-      toast.success('Ссылка скопирована');
+      toast.success(t('shareDialog.copied'));
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error('Не удалось скопировать ссылку');
+      toast.error(t('shareDialog.copyFailed'));
     }
-  }, [shareUrl]);
+  }, [shareUrl, t]);
 
   if (!open) return null;
 
@@ -54,14 +56,14 @@ export default function ShareDialog({ open, onClose }: ShareDialogProps) {
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Поделиться дизайном"
+        aria-label={t('shareDialog.title')}
         className="relative w-full max-w-md bg-surface-900 border border-line rounded-2xl p-6 shadow-overlay animate-slide-up"
       >
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-surface-100">Поделиться дизайном</h2>
+          <h2 className="text-lg font-semibold text-surface-100">{t('shareDialog.title')}</h2>
           <button
             onClick={onClose}
-            aria-label="Закрыть"
+            aria-label={t('common.close')}
             className="p-1.5 rounded-md text-surface-400 hover:text-surface-100 hover:bg-white/5 transition-colors focus-ring active:scale-[0.98]"
           >
             <XMarkIcon className="w-5 h-5" />
@@ -70,16 +72,13 @@ export default function ShareDialog({ open, onClose }: ShareDialogProps) {
 
         {!shareUrl ? (
           <div className="space-y-4">
-            <p className="text-sm text-surface-400">
-              Создайте публичную ссылку, чтобы поделиться дизайном. Любой, у кого есть ссылка,
-              сможет его просмотреть.
-            </p>
+            <p className="text-sm text-surface-400">{t('shareDialog.description')}</p>
             <button
               onClick={handleGenerateLink}
               disabled={loading || !currentProject}
               className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-primary-600 font-medium text-white text-sm transition-all hover:bg-primary-500 active:scale-[0.98] disabled:bg-white/10 disabled:text-surface-400 disabled:cursor-not-allowed focus-ring"
             >
-              {loading ? 'Создание...' : 'Создать ссылку'}
+              {loading ? t('shareDialog.creating') : t('shareDialog.create')}
             </button>
           </div>
         ) : (
@@ -89,12 +88,12 @@ export default function ShareDialog({ open, onClose }: ShareDialogProps) {
                 type="text"
                 value={shareUrl}
                 readOnly
-                aria-label="Ссылка для публикации"
+                aria-label={t('shareDialog.linkAria')}
                 className="flex-1 bg-transparent text-sm text-surface-200 focus:outline-none"
               />
               <button
                 onClick={handleCopyLink}
-                aria-label="Скопировать ссылку"
+                aria-label={t('shareDialog.copyLinkAria')}
                 className="p-2 rounded-md bg-primary-500/15 text-primary-400 hover:bg-primary-500/25 transition-colors focus-ring active:scale-[0.98]"
               >
                 {copied ? <CheckIcon className="w-4 h-4" /> : <ClipboardIcon className="w-4 h-4" />}
@@ -104,13 +103,11 @@ export default function ShareDialog({ open, onClose }: ShareDialogProps) {
               <iframe
                 srcDoc={currentProject?.current_code || ''}
                 sandbox="allow-scripts"
-                title="Shared Preview"
+                title={t('shareDialog.iframeTitle')}
                 className="w-full h-full"
               />
             </div>
-            <p className="text-xs text-surface-400">
-              Любой, у кого есть эта ссылка, может просмотреть дизайн
-            </p>
+            <p className="text-xs text-surface-400">{t('shareDialog.anyoneCanView')}</p>
           </div>
         )}
       </div>

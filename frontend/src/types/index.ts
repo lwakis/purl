@@ -57,3 +57,4 @@ export type PreviewSize = 'desktop' | 'tablet' | 'mobile';
 export type ThemeMode = 'light' | 'dark' | 'auto';
 export type DesignStyle = 'minimal' | 'corporate' | 'playful' | 'techno';
 export type ActivePanel = 'code' | 'chat';
+export type Locale = 'ru' | 'en';

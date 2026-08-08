@@ -3,6 +3,7 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useAppStore } from '../store/appStore';
 import { useProjects } from '../hooks/useProjects';
 import { useDialog } from '../hooks/useDialog';
+import { useT } from '../i18n';
 
 interface SaveDialogProps {
   open: boolean;
@@ -13,6 +14,7 @@ export default function SaveDialog({ open, onClose }: SaveDialogProps) {
   const { currentCode, prompt, theme, style, sessionId, currentProject, setCurrentProject } =
     useAppStore();
   const { create, fetchProjects } = useProjects();
+  const { t } = useT();
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -68,14 +70,14 @@ export default function SaveDialog({ open, onClose }: SaveDialogProps) {
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Сохранить проект"
+        aria-label={t('saveDialog.title')}
         className="relative w-full max-w-md bg-surface-900 border border-line rounded-2xl p-6 shadow-overlay animate-slide-up"
       >
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-surface-100">Сохранить проект</h2>
+          <h2 className="text-lg font-semibold text-surface-100">{t('saveDialog.title')}</h2>
           <button
             onClick={onClose}
-            aria-label="Закрыть"
+            aria-label={t('common.close')}
             className="p-1.5 rounded-md text-surface-400 hover:text-surface-100 hover:bg-white/5 transition-colors focus-ring active:scale-[0.98]"
           >
             <XMarkIcon className="w-5 h-5" />
@@ -85,7 +87,7 @@ export default function SaveDialog({ open, onClose }: SaveDialogProps) {
         <div className="space-y-4">
           <div>
             <label htmlFor="project-name" className="block text-sm text-surface-400 mb-1.5">
-              Название проекта
+              {t('saveDialog.nameLabel')}
             </label>
             <input
               id="project-name"
@@ -99,7 +101,7 @@ export default function SaveDialog({ open, onClose }: SaveDialogProps) {
                   handleSave();
                 }
               }}
-              placeholder="Например: Лендинг для стартапа"
+              placeholder={t('saveDialog.namePlaceholder')}
               className="w-full bg-surface-800/70 border border-line rounded-md px-3.5 py-2.5 text-sm text-surface-100 placeholder-surface-500 focus:border-line-strong focus:ring-2 focus:ring-primary-500/20 transition-all"
             />
           </div>
@@ -108,7 +110,7 @@ export default function SaveDialog({ open, onClose }: SaveDialogProps) {
             disabled={saving || !currentCode}
             className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-primary-600 font-medium text-white text-sm transition-all hover:bg-primary-500 active:scale-[0.98] disabled:bg-white/10 disabled:text-surface-400 disabled:cursor-not-allowed focus-ring"
           >
-            {saving ? 'Сохранение...' : 'Сохранить'}
+            {saving ? t('saveDialog.saving') : t('common.save')}
           </button>
         </div>
       </div>

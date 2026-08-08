@@ -9,6 +9,7 @@ import {
 import { useAppStore } from '../store/appStore';
 import { useProjects } from '../hooks/useProjects';
 import { getProjectVersions } from '../services/api';
+import { useT } from '../i18n';
 import type { Project, ProjectVersion } from '../types';
 
 export default function ProjectSidebar() {
@@ -23,6 +24,7 @@ export default function ProjectSidebar() {
     setSessionId,
   } = useAppStore();
   const { projects, loading, remove } = useProjects();
+  const { t } = useT();
   const [versionsOpen, setVersionsOpen] = useState<number | null>(null);
   const [versions, setVersions] = useState<ProjectVersion[]>([]);
   const [versionsLoading, setVersionsLoading] = useState(false);
@@ -51,10 +53,10 @@ export default function ProjectSidebar() {
   const handleDelete = useCallback(
     (e: React.MouseEvent, id: number) => {
       e.stopPropagation();
-      if (!window.confirm('Удалить проект? Это действие нельзя отменить.')) return;
+      if (!window.confirm(t('sidebar.deleteConfirm'))) return;
       remove(id);
     },
-    [remove],
+    [remove, t],
   );
 
   const toggleVersions = useCallback(
@@ -108,21 +110,21 @@ export default function ProjectSidebar() {
       >
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between p-4 border-b border-line.subtle">
-            <h2 className="text-sm font-semibold text-surface-100">Проекты</h2>
+            <h2 className="text-sm font-semibold text-surface-100">{t('sidebar.title')}</h2>
             <div className="flex items-center gap-1">
               <button
                 onClick={handleNewProject}
                 className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-surface-400 hover:text-surface-100 hover:bg-white/5 active:scale-[0.98] transition-colors focus-ring"
-                title="Новый проект"
-                aria-label="Новый проект"
+                title={t('sidebar.newProject')}
+                aria-label={t('sidebar.newProject')}
               >
                 <PlusIcon className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Новый проект</span>
+                <span className="hidden sm:inline">{t('sidebar.newProject')}</span>
               </button>
               <button
                 onClick={() => setSidebarOpen(false)}
                 className="p-2 rounded-md text-surface-400 hover:text-surface-100 hover:bg-white/5 active:scale-95 transition-colors focus-ring lg:hidden"
-                aria-label="Закрыть панель проектов"
+                aria-label={t('sidebar.closeAria')}
               >
                 <XMarkIcon className="w-4 h-4" />
               </button>
@@ -139,8 +141,8 @@ export default function ProjectSidebar() {
             ) : projects.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-32 text-center">
                 <DocumentTextIcon className="w-8 h-8 text-surface-700 mb-2" />
-                <p className="text-surface-400 text-xs">Проектов пока нет</p>
-                <p className="text-surface-400 text-xs mt-1">Создайте дизайн и сохраните его</p>
+                <p className="text-surface-400 text-xs">{t('sidebar.emptyTitle')}</p>
+                <p className="text-surface-400 text-xs mt-1">{t('sidebar.emptySubtitle')}</p>
               </div>
             ) : (
               projects.map((project) => (
@@ -175,7 +177,7 @@ export default function ProjectSidebar() {
                             ? 'text-primary-400 bg-primary-500/15'
                             : 'text-surface-400 opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 hover:text-surface-100 hover:bg-white/5'
                         }`}
-                        aria-label="Версии проекта"
+                        aria-label={t('sidebar.versionsAria')}
                         aria-expanded={versionsOpen === project.id}
                       >
                         <ClockIcon className="w-3.5 h-3.5" />
@@ -183,7 +185,7 @@ export default function ProjectSidebar() {
                       <button
                         onClick={(e) => handleDelete(e, project.id)}
                         className="p-1 rounded-md text-surface-400 opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 hover:text-status-error hover:bg-status-error/10 transition-all focus-ring"
-                        aria-label="Удалить проект"
+                        aria-label={t('sidebar.deleteAria')}
                       >
                         <TrashIcon className="w-3.5 h-3.5" />
                       </button>
@@ -195,7 +197,9 @@ export default function ProjectSidebar() {
                       {versionsLoading ? (
                         <div className="skeleton h-8" />
                       ) : versions.length === 0 ? (
-                        <p className="text-xs text-surface-400 px-1 py-1">Версий пока нет</p>
+                        <p className="text-xs text-surface-400 px-1 py-1">
+                          {t('sidebar.noVersions')}
+                        </p>
                       ) : (
                         versions.map((version) => (
                           <button
@@ -204,7 +208,7 @@ export default function ProjectSidebar() {
                             className="w-full text-left px-2.5 py-1.5 rounded-md text-xs text-surface-400 hover:text-surface-100 hover:bg-white/5 transition-colors focus-ring"
                           >
                             <span className="font-medium text-surface-300">
-                              Версия {version.version_num}
+                              {t('sidebar.version', { num: version.version_num })}
                             </span>
                             <span className="ml-2">
                               {new Date(version.created_at).toLocaleDateString()}
