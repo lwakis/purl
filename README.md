@@ -92,7 +92,7 @@ in-memory: rate limiter · TTL cache
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 18, TypeScript, Vite 5, Tailwind CSS, zustand, react-syntax-highlighter |
+| Frontend | React 19, TypeScript 7, Vite 8, Tailwind CSS, zustand, react-syntax-highlighter |
 | Backend | Python >= 3.13, FastAPI, SQLAlchemy 2 (async), uvicorn |
 | Database | SQLite via aiosqlite |
 | Streaming | Server-Sent Events (SSE) |
@@ -117,11 +117,13 @@ purl/
 │   ├── .env.example         # environment template
 │   └── pyproject.toml       # deps, ruff and pytest config
 ├── frontend/                # React SPA (Vite)
+│   ├── DESIGN.md           # design contract for the app shell
 │   ├── src/
 │   │   ├── components/      # preview, code, chat, templates, sidebar
 │   │   ├── hooks/           # generation and project hooks
 │   │   ├── services/        # API client and SSE reader
 │   │   ├── store/           # zustand state
+│   │   ├── styles/          # global CSS
 │   │   └── types/           # shared TypeScript types
 │   └── package.json
 ├── .github/workflows/       # CI (lint + tests)
@@ -148,7 +150,7 @@ All variables are optional; defaults live in `backend/app/config.py`. Copy `back
 | `JWT_EXPIRE_MINUTES` | `1440` | Token lifetime in minutes |
 | `RATE_LIMIT_ANON` | `100` | Anonymous requests per hour |
 | `RATE_LIMIT_FREE` | `500` | Authenticated requests per hour |
-| `CORS_ORIGINS` | `["http://localhost:5173"]` | Allowed CORS origins (JSON array) |
+| `CORS_ORIGINS` | `["http://localhost:5173","http://localhost:5174","http://127.0.0.1:5173","http://127.0.0.1:5174"]` | Allowed CORS origins (JSON array) |
 | `MAX_PROMPT_LENGTH` | `2000` | Maximum prompt length in characters |
 | `FREE_ITERATIONS_LIMIT` | `10` | Free-plan iteration limit |
 | `CACHE_TTL_SECONDS` | `86400` | Result cache TTL in seconds |
