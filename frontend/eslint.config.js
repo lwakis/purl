@@ -1,13 +1,11 @@
 // ESLint 10 flat config.
 //
-// FALLBACK MODE — typescript-eslint 8.66 hard-crashes at import with the
-// project's TypeScript 7.0.2 (`typescript-eslint does not support TS 7.0.`),
-// and no TS-capable ESLint parser is available. Verified empirically — see
-// `npm run lint` report. Therefore:
-//   - .ts/.tsx files are excluded from ESLint entirely; they are type-checked
-//     by `tsc -b` (part of `npm run build`) and formatted by Prettier.
-//   - ESLint covers plain JS/JSX (config files today) with core + React rules.
-// Revisit once typescript-eslint supports TS >= 7.1.
+// TypeScript files are intentionally not linted here: typescript-eslint
+// rejects TypeScript 7 (peer range <6.1.0, hard crash on import), so it is
+// not installed — npm resolution stays conflict-free. TS is type-checked by
+// `tsc -b` (part of `npm run build`) and formatted by Prettier. ESLint covers
+// plain JS/JSX with core + React rules. Revisit once typescript-eslint
+// supports TS >= 7.
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import prettier from 'eslint-config-prettier';
