@@ -27,6 +27,14 @@ dev = [
 asyncio_mode = "auto"
 testpaths = ["tests"]
 
+# Workaround: default pytracer misses coroutine lines after `await` in TestClient threads,
+# under-reporting endpoint coverage; sys.monitoring core (PEP 669) traces threads correctly.
+[tool.coverage.run]
+core = "sysmon"
+
+[tool.coverage.report]
+fail_under = 80
+
 [tool.ruff]
 line-length = 100
 target-version = "py313"
