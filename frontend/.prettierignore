@@ -7,3 +7,6 @@ src/test
 **/*.test.ts
 **/*.test.tsx
 DESIGN.md
+playwright-report
+test-results
+blob-report

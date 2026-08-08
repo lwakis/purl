@@ -38,6 +38,11 @@ dist/
 *.tsbuildinfo
 npm-debug.log*
 
+# ── Playwright / E2E ──────────────────────────────────────────────────────────
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
+
 # ── Editors / OS ──────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
