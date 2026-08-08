@@ -34,14 +34,14 @@ describe('ChatPanel', () => {
     useAppStore.setState({ currentCode: '' });
     render(<ChatPanel />);
     expect(screen.getByRole('textbox', { name: 'Сообщение в чат' })).toBeEnabled();
-    expect(screen.getByRole('button', { name: '' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Отправить' })).toBeDisabled();
   });
 
   it('sends a message and calls iterate with it', async () => {
     const user = userEvent.setup();
     render(<ChatPanel />);
     await user.type(screen.getByRole('textbox', { name: 'Сообщение в чат' }), 'Сделай кнопки больше');
-    await user.click(screen.getByRole('button', { name: '' }));
+    await user.click(screen.getByRole('button', { name: 'Отправить' }));
 
     await waitFor(() => {
       expect(connectIterateSSE).toHaveBeenCalledWith(

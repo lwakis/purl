@@ -97,6 +97,7 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
             <button
               onClick={handleSend}
               disabled={!message.trim() || isGenerating || !currentCode}
+              aria-label={t('app.sendAria')}
               className="p-2.5 rounded-md bg-primary-600 text-white transition-all hover:bg-primary-500 active:scale-[0.98] disabled:bg-white/10 disabled:text-surface-400 disabled:cursor-not-allowed focus-ring"
             >
               <PaperAirplaneIcon className="w-4 h-4" />
