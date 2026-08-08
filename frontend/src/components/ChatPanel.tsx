@@ -92,7 +92,6 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
               placeholder={t('chat.inputPlaceholder')}
               aria-label={t('chat.inputAria')}
               rows={1}
-              disabled={isGenerating || !currentCode}
               className="flex-1 bg-surface-950/60 border border-line rounded-lg px-3.5 py-2.5 text-sm text-surface-100 placeholder-surface-500 focus:border-line-strong focus:ring-2 focus:ring-primary-500/20 transition-all resize-none disabled:opacity-30"
             />
             <button

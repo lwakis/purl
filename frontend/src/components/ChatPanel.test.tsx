@@ -30,10 +30,11 @@ describe('ChatPanel', () => {
     expect(screen.getByText('Сначала создайте дизайн, затем обсуждайте правки')).toBeInTheDocument();
   });
 
-  it('disables the input and send button without code', () => {
+  it('disables the send button but keeps the input enabled without code', () => {
     useAppStore.setState({ currentCode: '' });
     render(<ChatPanel />);
-    expect(screen.getByRole('textbox', { name: 'Сообщение в чат' })).toBeDisabled();
+    expect(screen.getByRole('textbox', { name: 'Сообщение в чат' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '' })).toBeDisabled();
   });
 
   it('sends a message and calls iterate with it', async () => {
