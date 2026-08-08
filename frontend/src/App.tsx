@@ -1,13 +1,7 @@
 import { lazy, Suspense, useState, useEffect, useCallback } from 'react';
 import { Toaster } from 'react-hot-toast';
-import {
-  PaperAirplaneIcon,
-  XMarkIcon,
-  ChatBubbleLeftRightIcon,
-  CodeBracketIcon,
-} from '@heroicons/react/24/outline';
+import { XMarkIcon, ChatBubbleLeftRightIcon, CodeBracketIcon } from '@heroicons/react/24/outline';
 import { useAppStore } from './store/appStore';
-import { useGeneration } from './hooks/useGeneration';
 import { fetchTemplates, createAnonSession } from './services/api';
 import { loadSession, saveSession } from './services/session';
 import { useT, localizeTemplate } from './i18n';
@@ -46,7 +40,6 @@ export default function App() {
   const {
     currentCode,
     templates,
-    isGenerating,
     setTemplates,
     setSessionId,
     setPrompt,
@@ -54,12 +47,10 @@ export default function App() {
     setGenerationError,
   } = useAppStore();
 
-  const { generate, iterate } = useGeneration();
   const [templatesLoading, setTemplatesLoading] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [panelTab, setPanelTab] = useState<PanelTab>(null);
-  const [bottomInput, setBottomInput] = useState('');
   const hasDesign = !!currentCode;
 
   const closeShare = useCallback(() => setShareDialogOpen(false), []);
@@ -111,22 +102,9 @@ export default function App() {
     (template: PromptTemplate) => {
       const text = localizeTemplate(template.category)?.prompt_text ?? template.prompt_text;
       setPrompt(text);
-      setBottomInput(text);
     },
     [setPrompt],
   );
-
-  const handleBottomSend = useCallback(() => {
-    if (!bottomInput.trim() || isGenerating) return;
-    if (!hasDesign) {
-      const text = bottomInput.trim();
-      setPrompt(text);
-      generate(text);
-    } else {
-      iterate(bottomInput.trim());
-    }
-    setBottomInput('');
-  }, [bottomInput, hasDesign, isGenerating, generate, iterate, setPrompt]);
 
   const canSave = currentProject === null || currentProject.current_code !== currentCode;
 
@@ -198,35 +176,6 @@ export default function App() {
             {/* Canvas area */}
             <div className="flex-1 min-h-0 px-4 pt-4 pb-3 lg:px-6 lg:pt-6">
               <PreviewPanel />
-            </div>
-
-            {/* Bottom command bar — in flow, not floating */}
-            <div className="border-t border-line bg-surface-900/60 px-3 py-3">
-              <div className="max-w-3xl mx-auto flex items-end gap-1.5">
-                <textarea
-                  value={bottomInput}
-                  onChange={(e) => setBottomInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleBottomSend();
-                    }
-                  }}
-                  placeholder={t('app.inputPlaceholder')}
-                  aria-label={t('app.inputAria')}
-                  className="flex-1 bg-transparent text-surface-100 placeholder-surface-500 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500/40 rounded-lg text-sm py-2 px-3 leading-relaxed max-h-32"
-                  rows={1}
-                  disabled={isGenerating}
-                />
-                <button
-                  onClick={handleBottomSend}
-                  disabled={!bottomInput.trim() || isGenerating}
-                  className="p-2.5 rounded-md bg-primary-600 text-white transition-all duration-150 hover:bg-primary-500 active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-primary-600 flex-shrink-0 focus-ring"
-                  aria-label={t('app.sendAria')}
-                >
-                  <PaperAirplaneIcon className="w-4 h-4" />
-                </button>
-              </div>
             </div>
           </main>
         )}
