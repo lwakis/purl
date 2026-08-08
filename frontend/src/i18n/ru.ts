@@ -198,8 +198,6 @@ export const ru = {
     },
   },
   app: {
-    inputPlaceholder: 'Что вы хотите создать или изменить?',
-    inputAria: 'Сообщение для генерации или правки',
     sendAria: 'Отправить',
     panelAria: 'Панель дизайнера',
     tabsAria: 'Панель чата и кода',

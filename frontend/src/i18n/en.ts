@@ -194,8 +194,6 @@ export const en: RuDictionary = {
     },
   },
   app: {
-    inputPlaceholder: 'What do you want to create or change?',
-    inputAria: 'Message for generation or edits',
     sendAria: 'Send',
     panelAria: 'Designer panel',
     tabsAria: 'Chat and code panel',
