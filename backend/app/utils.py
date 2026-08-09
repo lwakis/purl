@@ -1,7 +1,6 @@
 """Utility functions for the Purl backend."""
 
 import hashlib
-import secrets
 import uuid
 from html.parser import HTMLParser
 
@@ -9,11 +8,6 @@ from html.parser import HTMLParser
 def generate_session_id() -> str:
     """Generate a short unique session identifier."""
     return uuid.uuid4().hex[:16]
-
-
-def generate_short_code() -> str:
-    """Generate a short, URL-safe share code (8 characters)."""
-    return secrets.token_urlsafe(6)  # ~8 chars, URL-safe
 
 
 def hash_prompt(prompt: str, theme: str, style: str) -> str:

@@ -94,7 +94,6 @@ class Project(Base):
     versions = relationship(
         'ProjectVersion', back_populates='project', cascade='all, delete-orphan'
     )
-    share_links = relationship('ShareLink', back_populates='project', cascade='all, delete-orphan')
 
     def __repr__(self) -> str:
         return f'<Project id={self.id} name={self.name!r}>'
@@ -117,23 +116,6 @@ class ProjectVersion(Base):
 
     def __repr__(self) -> str:
         return f'<ProjectVersion id={self.id} project={self.project_id} v{self.version_num}>'
-
-
-# ── ShareLink ────────────────────────────────────────────────────────────────
-
-
-class ShareLink(Base):
-    __tablename__ = 'share_links'
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    project_id = Column(Integer, ForeignKey('projects.id'), nullable=False)
-    short_code = Column(String(20), unique=True, nullable=False, index=True)
-    created_at = Column(DateTime(timezone=True), default=_utcnow)
-
-    project = relationship('Project', back_populates='share_links')
-
-    def __repr__(self) -> str:
-        return f'<ShareLink code={self.short_code!r}>'
 
 
 # ── PromptTemplate ───────────────────────────────────────────────────────────

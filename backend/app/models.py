@@ -113,21 +113,3 @@ class AuthResponse(BaseModel):
     email: str
     name: str | None = None
     token: str
-
-
-# ── Share ────────────────────────────────────────────────────────────────────
-
-
-class ShareCreateRequest(BaseModel):
-    project_id: int
-
-
-class ShareCreateResponse(BaseModel):
-    short_code: str
-    url: str
-
-
-class ShareGetResponse(BaseModel):
-    name: str
-    code: str | None = None
-    prompt: str | None = None
