@@ -52,6 +52,13 @@
     line-height: 1.6 !important;
   }
 
+  /* oneDark paints the inner code element per line (wrapLines makes each
+     line a block-level span); keep it transparent so the container's
+     bg-surface-900 shows uniformly instead of a gray band per line. */
+  .syntax-highlighter-override pre code[class*='language-'] {
+    background: transparent !important;
+  }
+
   .loading-dot {
     @apply inline-block w-2 h-2 rounded-full bg-primary-400;
     animation: pulse-dot 1.4s ease-in-out infinite;
