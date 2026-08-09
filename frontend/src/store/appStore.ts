@@ -25,7 +25,6 @@ interface AppState {
   theme: ThemeMode;
   style: DesignStyle;
   templates: PromptTemplate[];
-  shareUrl: string | null;
   sidebarOpen: boolean;
   activePanel: ActivePanel;
   previewSize: PreviewSize;
@@ -45,7 +44,6 @@ interface AppState {
   addProject: (project: Project) => void;
   setProjects: (projects: Project[]) => void;
   setTemplates: (templates: PromptTemplate[]) => void;
-  setShareUrl: (url: string | null) => void;
   setSidebarOpen: (open: boolean) => void;
   setActivePanel: (panel: ActivePanel) => void;
   setPreviewSize: (size: PreviewSize) => void;
@@ -71,7 +69,6 @@ const initialState = {
   theme: 'dark' as ThemeMode,
   style: 'minimal' as DesignStyle,
   templates: [],
-  shareUrl: null,
   sidebarOpen: false,
   activePanel: 'code' as ActivePanel,
   previewSize: 'desktop' as PreviewSize,
@@ -127,7 +124,6 @@ export const useAppStore = create<AppState>()(
       addProject: (project) => set((state) => ({ projects: [project, ...state.projects] })),
       setProjects: (projects) => set({ projects }),
       setTemplates: (templates) => set({ templates }),
-      setShareUrl: (shareUrl) => set({ shareUrl }),
       setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
       setActivePanel: (activePanel) => set({ activePanel }),
       setPreviewSize: (previewSize) => set({ previewSize }),

@@ -24,7 +24,6 @@ const initialState = {
   theme: 'dark' as ThemeMode,
   style: 'minimal' as DesignStyle,
   templates: [] as PromptTemplate[],
-  shareUrl: null as string | null,
   sidebarOpen: false,
   activePanel: 'code' as ActivePanel,
   previewSize: 'desktop' as PreviewSize,
@@ -76,7 +75,6 @@ describe('appStore', () => {
     expect(state.generationError).toBeNull();
     expect(state.prompt).toBe('');
     expect(state.templates).toEqual([]);
-    expect(state.shareUrl).toBeNull();
     expect(state.sidebarOpen).toBe(false);
     expect(state.previewSize).toBe('desktop');
     expect(state.locale).toBe('ru');
@@ -151,14 +149,6 @@ describe('appStore', () => {
     expect(useAppStore.getState().templates).toEqual(templates);
   });
 
-  it('setShareUrl updates the share url', () => {
-    useAppStore.getState().setShareUrl('https://example.com/s/abc');
-    expect(useAppStore.getState().shareUrl).toBe('https://example.com/s/abc');
-
-    useAppStore.getState().setShareUrl(null);
-    expect(useAppStore.getState().shareUrl).toBeNull();
-  });
-
   it('setSidebarOpen updates the sidebar flag', () => {
     useAppStore.getState().setSidebarOpen(true);
     expect(useAppStore.getState().sidebarOpen).toBe(true);
@@ -228,7 +218,6 @@ describe('appStore', () => {
         icon: 'i',
       },
     ]);
-    useAppStore.getState().setShareUrl('https://example.com/s/abc');
     useAppStore.getState().setSidebarOpen(true);
     useAppStore.getState().setActivePanel('chat');
     useAppStore.getState().setPreviewSize('mobile');
@@ -249,7 +238,6 @@ describe('appStore', () => {
     expect(state.currentProject).toBeNull();
     expect(state.projects).toEqual([]);
     expect(state.templates).toEqual([]);
-    expect(state.shareUrl).toBeNull();
     expect(state.sidebarOpen).toBe(false);
     expect(state.activePanel).toBe('code');
     expect(state.previewSize).toBe('desktop');

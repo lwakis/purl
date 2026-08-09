@@ -96,22 +96,6 @@ export async function saveProjectVersion(
   });
 }
 
-export async function createShareLink(
-  projectId: number,
-): Promise<{ short_code: string; url: string }> {
-  return request<{ short_code: string; url: string }>('/api/share', {
-    method: 'POST',
-    body: JSON.stringify({ project_id: projectId }),
-  });
-}
-
-export async function getSharedProject(code: string): Promise<{
-  name: string;
-  code: string;
-}> {
-  return request<{ name: string; code: string }>(`/api/share/${code}`);
-}
-
 export async function createAnonSession(): Promise<{
   token: string;
   session_id: string;

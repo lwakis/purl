@@ -42,7 +42,6 @@ afterEach(() => {
     theme: 'dark',
     style: 'minimal',
     templates: [],
-    shareUrl: null,
     sidebarOpen: false,
     activePanel: 'code',
     previewSize: 'desktop',

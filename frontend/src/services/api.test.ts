@@ -7,8 +7,6 @@ import {
   updateProject,
   deleteProject,
   getProjectVersions,
-  createShareLink,
-  getSharedProject,
   createAnonSession,
 } from './api';
 
@@ -191,33 +189,6 @@ describe('api client', () => {
 
     expect(result).toEqual(versions);
     expect(fetchMock).toHaveBeenCalledWith('/api/projects/4/versions', {
-      headers: { 'Content-Type': 'application/json' },
-    });
-  });
-
-  it('createShareLink POSTs /api/share with project_id', async () => {
-    fetchMock.mockResolvedValue(
-      mockResponse({ short_code: 'abc123', url: '/api/share/abc123' })
-    );
-
-    const result = await createShareLink(5);
-
-    expect(result).toEqual({ short_code: 'abc123', url: '/api/share/abc123' });
-    expect(fetchMock).toHaveBeenCalledWith('/api/share', {
-      headers: { 'Content-Type': 'application/json' },
-      method: 'POST',
-      body: JSON.stringify({ project_id: 5 }),
-    });
-  });
-
-  it('getSharedProject GETs /api/share/:code', async () => {
-    const shared = { name: 'Shared', code: '<div/>' };
-    fetchMock.mockResolvedValue(mockResponse(shared));
-
-    const result = await getSharedProject('abc123');
-
-    expect(result).toEqual(shared);
-    expect(fetchMock).toHaveBeenCalledWith('/api/share/abc123', {
       headers: { 'Content-Type': 'application/json' },
     });
   });
