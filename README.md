@@ -16,13 +16,13 @@ Open-source AI design generator. Type a prompt, get a complete HTML/CSS/JS page,
 ![Docker](https://img.shields.io/badge/docker-compose-2496ED)
 ![Mock mode](https://img.shields.io/badge/mock%20mode-runs%20without%20API%20key-6B7280)
 
-Design at the speed of thought. Purl turns a plain-text description into a working web page: a landing page, a dashboard, a signup form, a pricing page. The backend assembles a system prompt, streams the generation to the browser over Server-Sent Events, and the frontend renders the result in a sandboxed iframe. Keep refining it in a chat, save it as a project, roll back versions, and share a short link with anyone.
+Design at the speed of thought. Purl turns a plain-text description into a working web page: a landing page, a dashboard, a signup form, a pricing page. The backend assembles a system prompt, streams the generation to the browser over Server-Sent Events, and the frontend renders the result in a sandboxed iframe. Keep refining it in a chat — projects autosave as you work, and every iteration is stored in a version history.
 
 Flagship features:
 
 - **Prompt to page.** Describe what you want and get complete, self-contained HTML with inline CSS and JS. Live preview, syntax-highlighted source, copy and download.
 - **Iterate by chat.** "Make the buttons bigger", "switch to a dark theme". Purl rewrites the page and the preview updates.
-- **Projects and sharing.** Save work as projects, keep a version history, publish a public short link.
+- **Projects with autosave.** Work is saved automatically, like chats in AI assistants — no Save button. Projects keep a version history you can roll back.
 - **Mock mode.** With no LLM API key configured, Purl still works end to end. Great for local development, CI, and demos.
 
 ## Quickstart
@@ -75,8 +75,8 @@ You type a prompt. The backend appends theme and style instructions to a curated
 ┌──────────────▼───────────────┐
 │      Backend (FastAPI)       │
 │ /api/generate · /api/iterate │
-│ /api/projects · /api/share   │
-│ /api/auth · /api/templates   │
+│ /api/projects · /api/auth    │
+│ /api/templates               │
 └───┬───────────────────┬──────┘
     │                   │
 ┌───▼────────┐  ┌───────▼──────────┐
@@ -85,7 +85,6 @@ You type a prompt. The backend appends theme and style instructions to a curated
 │   projects │  │  OpenAI-compl. · │
 │  versions  │  │   Anthropic      │
 │   users    │  └──────────────────┘
-│   shares   │
 └────────────┘
 in-memory: rate limiter · TTL cache
 ```
@@ -113,7 +112,7 @@ purl/
 │   │   ├── database.py      # async SQLAlchemy engine + ORM models
 │   │   ├── models.py        # request/response schemas
 │   │   ├── prompts.py       # LLM system prompt
-│   │   ├── routers/         # auth, generate, projects, share, templates
+│   │   ├── routers/         # auth, generate, projects, templates
 │   │   └── services/        # LLM client, prompt builder, cache, rate limiter
 │   ├── tests/               # pytest + pytest-asyncio
 │   ├── .env.example         # environment template
@@ -184,8 +183,6 @@ Interactive docs are served at `/docs` when the backend is running (FastAPI Swag
 | GET | `/api/projects/{id}/versions` | List versions, newest first |
 | POST | `/api/projects/{id}/versions` | Save a new version |
 | GET | `/api/projects/{id}/versions/{version_id}` | Get one version |
-| POST | `/api/share` | Create a short share link |
-| GET | `/api/share/{code}` | Get a shared project (public, no auth) |
 | GET | `/api/templates` | List starter templates (8, auto-seeded) |
 | GET | `/health` | Health check |
 
@@ -228,7 +225,7 @@ Bug reports, feature ideas, and pull requests are welcome. Please read [CONTRIBU
 
 ## Roadmap
 
-The MVP is shipped: generation, streaming, preview, chat, projects, versions, sharing, templates, auth, and mock mode. Next up is Google OAuth, export formats, and a self-hosted path. See [ROADMAP.md](ROADMAP.md) for the full plan.
+The MVP is shipped: generation, streaming, preview, chat, projects with autosave and versions, templates, auth, and mock mode. Next up is Google OAuth, export formats, and a self-hosted path. See [ROADMAP.md](ROADMAP.md) for the full plan.
 
 ## Security
 

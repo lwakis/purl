@@ -6,7 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-No unreleased changes yet.
+### Changed
+
+- Projects are now saved automatically as you work (debounced, like chats in AI assistants); the manual Save button and the Save dialog were removed.
+- Fixed the gray row background in the code panel: the syntax-highlighter override no longer paints every code line gray.
+
+### Removed
+
+- Public share links (short codes): the `/api/share` endpoints, the Share dialog, the Share view, and the `share_links` table were removed because the feature was not working.
 
 ## [0.1.0] - 2026-08-06
 

@@ -15,11 +15,11 @@ What's in the repo right now:
 - [x] Iterative chat on existing designs (history + current code sent with each request)
 - [x] Anonymous usage without registration (JWT sessions via `/api/auth/anon`)
 
-### Projects and sharing
+### Projects
 
 - [x] Project CRUD (`/api/projects`)
 - [x] Version history per project (`/api/projects/{id}/versions`)
-- [x] Public share links with short codes (`/api/share`)
+- [x] Automatic project autosave (no manual Save button)
 - [x] Template gallery with 8 seeded starter prompts (`/api/templates`)
 
 ### Platform
@@ -37,9 +37,7 @@ What's in the repo right now:
 |---|---|
 | [ ] Google OAuth sign-in | The `User` model already has an `auth_provider` column ready for `"google"` |
 | [ ] Password hashing upgrade | Move from SHA-256 to bcrypt/argon2 before production |
-| [ ] Share link expiry and revoke | Links are currently permanent once created |
 | [ ] Project search and pagination | The sidebar lists all projects; no search or limits yet |
-| [ ] Fork a shared project | The spec describes a "Fork" action on shared previews; the API returns the code, the UI button doesn't exist yet |
 | [ ] Template favorites / saved prompts | `PromptTemplate` has no per-user relation yet |
 | [ ] React export | The UI has a placeholder button ("export in React coming soon"); backend has no JSX output |
 
@@ -65,7 +63,7 @@ Ideas that matter for the project as an open-source product:
 | [ ] Export to CodeSandbox / StackBlitz | One-click "open in sandbox" from the code panel |
 | [ ] Persistent prompt cache | The cache is in-memory today; a persistent store would survive restarts and share results across instances |
 | [ ] CLI | Headless generation for scripting and CI |
-| [ ] Usage metrics | Generation counts, iteration depth, share rate (activation, retention, conversion) |
+| [ ] Usage metrics | Generation counts, iteration depth, activation, retention, conversion |
 | [ ] CI badge and release automation | Publish versioned releases and automated changelogs after the first tag |
 
 ## How to help
