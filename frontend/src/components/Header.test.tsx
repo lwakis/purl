@@ -24,8 +24,6 @@ function renderHeader(overrides: Partial<Parameters<typeof Header>[0]> = {}) {
     codeOpen: false,
     onCodeToggle: vi.fn(),
     hasDesign: true,
-    canSave: true,
-    onSave: vi.fn(),
     ...overrides,
   };
   render(<Header {...props} />);
@@ -45,16 +43,14 @@ describe('Header', () => {
     expect(screen.getByText('Мой лендинг')).toBeInTheDocument();
   });
 
-  it('renders Save/Code/Chat buttons only when hasDesign is true', () => {
+  it('renders Code/Chat buttons only when hasDesign is true', () => {
     renderHeader({ hasDesign: false });
-    expect(screen.queryByRole('button', { name: 'Сохранить проект' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Открыть код' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Открыть чат' })).not.toBeInTheDocument();
   });
 
-  it('renders Save/Code/Chat buttons when hasDesign is true', () => {
+  it('renders Code/Chat buttons when hasDesign is true', () => {
     renderHeader();
-    expect(screen.getByRole('button', { name: 'Сохранить проект' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Открыть код' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Открыть чат' })).toBeInTheDocument();
   });
@@ -65,20 +61,35 @@ describe('Header', () => {
     expect(screen.getByRole('button', { name: 'Открыть чат' })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('fires onSave, onCodeToggle and onChatToggle handlers', async () => {
+  it('fires onCodeToggle and onChatToggle handlers', async () => {
     const user = userEvent.setup();
     const props = renderHeader();
-    await user.click(screen.getByRole('button', { name: 'Сохранить проект' }));
-    expect(props.onSave).toHaveBeenCalledTimes(1);
     await user.click(screen.getByRole('button', { name: 'Открыть код' }));
     expect(props.onCodeToggle).toHaveBeenCalledTimes(1);
     await user.click(screen.getByRole('button', { name: 'Открыть чат' }));
     expect(props.onChatToggle).toHaveBeenCalledTimes(1);
   });
 
-  it('disables the save button when canSave is false', () => {
-    renderHeader({ canSave: false });
-    expect(screen.getByRole('button', { name: 'Сохранить проект' })).toBeDisabled();
+  it.each([
+    ['saving', 'Сохранение…'],
+    ['saved', 'Сохранено'],
+    ['error', 'Не удалось сохранить'],
+  ] as const)('renders the %s autosave status text', (saveStatus, label) => {
+    renderHeader({ saveStatus });
+    expect(screen.getByText(label)).toBeInTheDocument();
+    expect(screen.getByText(label)).toHaveAttribute('aria-live', 'polite');
+  });
+
+  it('renders nothing for the idle autosave status', () => {
+    renderHeader({ saveStatus: 'idle' });
+    expect(screen.queryByText('Сохранение…')).not.toBeInTheDocument();
+    expect(screen.queryByText('Сохранено')).not.toBeInTheDocument();
+    expect(screen.queryByText('Не удалось сохранить')).not.toBeInTheDocument();
+  });
+
+  it('does not render autosave status when hasDesign is false', () => {
+    renderHeader({ hasDesign: false, saveStatus: 'saving' });
+    expect(screen.queryByText('Сохранение…')).not.toBeInTheDocument();
   });
 
   it('toggles sidebarOpen in the store via the sidebar button', async () => {

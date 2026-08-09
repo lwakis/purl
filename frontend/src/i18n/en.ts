@@ -7,19 +7,21 @@ function pluralEn(n: number, one: string, other: string): string {
 export const en: RuDictionary = {
   common: {
     close: 'Close',
-    save: 'Save',
     dismissError: 'Dismiss error message',
   },
   header: {
     toggleSidebar: 'Toggle sidebar',
     newDesign: 'New design',
-    saveProject: 'Save project',
-    projectSaved: 'Project saved',
     openCode: 'Open code',
     openChat: 'Open chat',
     code: 'Code',
     chat: 'Chat',
     switchLanguage: 'Switch language',
+  },
+  autosave: {
+    saving: 'Saving…',
+    saved: 'Saved',
+    error: 'Failed to save',
   },
   status: {
     analysis: 'Analyzing prompt...',
@@ -80,8 +82,6 @@ export const en: RuDictionary = {
     downloadTitle: 'Download HTML',
     download: 'Download',
     downloadZipTitle: 'Download as ZIP',
-    shareTitle: 'Share',
-    share: 'Share',
     reactTitle: 'Export to React',
     copied: 'Code copied to clipboard',
     copyFailed: 'Failed to copy code',
@@ -91,34 +91,6 @@ export const en: RuDictionary = {
     zipTitle: 'Purl design export',
     zipGenerated: 'Generated with Purl — AI design generator.',
     zipOpen: 'Open index.html in any browser to view the design.',
-  },
-  saveDialog: {
-    title: 'Save project',
-    nameLabel: 'Project name',
-    namePlaceholder: 'e.g. Landing page for a startup',
-    saving: 'Saving...',
-  },
-  shareDialog: {
-    title: 'Share design',
-    description:
-      'Create a public link to share the design. Anyone with the link will be able to view it.',
-    create: 'Create link',
-    creating: 'Creating...',
-    linkAria: 'Public share link',
-    copyLinkAria: 'Copy link',
-    iframeTitle: 'Shared design preview',
-    anyoneCanView: 'Anyone with this link can view the design',
-    createFailed: 'Failed to create link',
-    copied: 'Link copied',
-    copyFailed: 'Failed to copy link',
-  },
-  shareView: {
-    invalidLink: 'The link is invalid or has expired',
-    notFound: 'Design not found',
-    openPurl: 'Open Purl',
-    openInPurl: 'Open in Purl',
-    iframeTitle: 'Shared design preview',
-    emptyContent: 'This design has no content',
   },
   sidebar: {
     title: 'Projects',

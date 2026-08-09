@@ -2,11 +2,11 @@ import {
   Bars3Icon,
   ChatBubbleLeftRightIcon,
   CodeBracketIcon,
-  BookmarkIcon,
   GlobeAltIcon,
 } from '@heroicons/react/24/outline';
 import { useAppStore } from '../store/appStore';
 import { useT } from '../i18n';
+import type { AutosaveStatus } from '../hooks/useAutosave';
 
 interface HeaderProps {
   chatOpen: boolean;
@@ -14,8 +14,7 @@ interface HeaderProps {
   codeOpen: boolean;
   onCodeToggle: () => void;
   hasDesign: boolean;
-  canSave: boolean;
-  onSave: () => void;
+  saveStatus?: AutosaveStatus;
 }
 
 export default function Header({
@@ -24,13 +23,19 @@ export default function Header({
   codeOpen,
   onCodeToggle,
   hasDesign,
-  canSave,
-  onSave,
+  saveStatus = 'idle',
 }: HeaderProps) {
   const { sidebarOpen, setSidebarOpen, currentProject } = useAppStore();
   const { t, locale, setLocale } = useT();
 
   const toggleLocale = () => setLocale(locale === 'ru' ? 'en' : 'ru');
+
+  const statusLabel =
+    saveStatus === 'saving'
+      ? t('autosave.saving')
+      : saveStatus === 'saved'
+        ? t('autosave.saved')
+        : t('autosave.error');
 
   return (
     <header className="sticky top-0 z-40 h-14 bg-surface-950/80 border-b border-line">
@@ -62,20 +67,16 @@ export default function Header({
         <div className="flex items-center gap-1.5">
           {hasDesign && (
             <>
-              <button
-                onClick={onSave}
-                disabled={!canSave}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors focus-ring disabled:opacity-30 disabled:cursor-not-allowed ${
-                  canSave
-                    ? 'text-surface-400 hover:text-surface-100 hover:bg-white/5 active:scale-[0.98]'
-                    : 'text-surface-600'
-                }`}
-                title={canSave ? t('header.saveProject') : t('header.projectSaved')}
-                aria-label={t('header.saveProject')}
-              >
-                <BookmarkIcon className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">{t('common.save')}</span>
-              </button>
+              {saveStatus !== 'idle' && (
+                <span
+                  aria-live="polite"
+                  className={`text-xs whitespace-nowrap ${
+                    saveStatus === 'error' ? 'text-status-error' : 'text-surface-400'
+                  }`}
+                >
+                  {statusLabel}
+                </span>
+              )}
               <button
                 onClick={onCodeToggle}
                 aria-pressed={codeOpen}

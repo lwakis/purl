@@ -10,19 +10,21 @@ function pluralRu(n: number, one: string, few: string, many: string): string {
 export const ru = {
   common: {
     close: 'Закрыть',
-    save: 'Сохранить',
     dismissError: 'Закрыть сообщение об ошибке',
   },
   header: {
     toggleSidebar: 'Переключить боковую панель',
     newDesign: 'Новый дизайн',
-    saveProject: 'Сохранить проект',
-    projectSaved: 'Проект сохранён',
     openCode: 'Открыть код',
     openChat: 'Открыть чат',
     code: 'Код',
     chat: 'Чат',
     switchLanguage: 'Переключить язык',
+  },
+  autosave: {
+    saving: 'Сохранение…',
+    saved: 'Сохранено',
+    error: 'Не удалось сохранить',
   },
   status: {
     analysis: 'Анализирую промпт...',
@@ -83,8 +85,6 @@ export const ru = {
     downloadTitle: 'Скачать HTML',
     download: 'Скачать',
     downloadZipTitle: 'Скачать как ZIP',
-    shareTitle: 'Поделиться',
-    share: 'Поделиться',
     reactTitle: 'Экспорт в React',
     copied: 'Код скопирован в буфер обмена',
     copyFailed: 'Не удалось скопировать код',
@@ -94,34 +94,6 @@ export const ru = {
     zipTitle: 'Purl design export',
     zipGenerated: 'Generated with Purl — AI design generator.',
     zipOpen: 'Open index.html in any browser to view the design.',
-  },
-  saveDialog: {
-    title: 'Сохранить проект',
-    nameLabel: 'Название проекта',
-    namePlaceholder: 'Например: Лендинг для стартапа',
-    saving: 'Сохранение...',
-  },
-  shareDialog: {
-    title: 'Поделиться дизайном',
-    description:
-      'Создайте публичную ссылку, чтобы поделиться дизайном. Любой, у кого есть ссылка, сможет его просмотреть.',
-    create: 'Создать ссылку',
-    creating: 'Создание...',
-    linkAria: 'Ссылка для публикации',
-    copyLinkAria: 'Скопировать ссылку',
-    iframeTitle: 'Предпросмотр публикации',
-    anyoneCanView: 'Любой, у кого есть эта ссылка, может просмотреть дизайн',
-    createFailed: 'Не удалось создать ссылку',
-    copied: 'Ссылка скопирована',
-    copyFailed: 'Не удалось скопировать ссылку',
-  },
-  shareView: {
-    invalidLink: 'Ссылка недействительна или истекла',
-    notFound: 'Дизайн не найден',
-    openPurl: 'Открыть Purl',
-    openInPurl: 'Открыть в Purl',
-    iframeTitle: 'Предпросмотр опубликованного дизайна',
-    emptyContent: 'В этом дизайне нет содержимого',
   },
   sidebar: {
     title: 'Проекты',

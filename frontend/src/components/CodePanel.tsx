@@ -2,12 +2,7 @@ import { useCallback } from 'react';
 import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 import markup from 'react-syntax-highlighter/dist/esm/languages/prism/markup';
 import oneDark from 'react-syntax-highlighter/dist/esm/styles/prism/one-dark';
-import {
-  ClipboardIcon,
-  ArrowDownTrayIcon,
-  ShareIcon,
-  CodeBracketIcon,
-} from '@heroicons/react/24/outline';
+import { ClipboardIcon, ArrowDownTrayIcon, CodeBracketIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { useAppStore } from '../store/appStore';
 import { useT } from '../i18n';
@@ -16,11 +11,7 @@ import { useT } from '../i18n';
 // lazily-loaded CodePanel chunk far smaller than the full Prism bundle.
 SyntaxHighlighter.registerLanguage('markup', markup);
 
-interface CodePanelProps {
-  onShare: () => void;
-}
-
-export default function CodePanel({ onShare }: CodePanelProps) {
+export default function CodePanel() {
   const { currentCode } = useAppStore();
   const { t } = useT();
 
@@ -107,15 +98,6 @@ export default function CodePanel({ onShare }: CodePanelProps) {
         >
           <ArrowDownTrayIcon className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">ZIP</span>
-        </button>
-        <button
-          onClick={onShare}
-          disabled={!currentCode}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-surface-400 hover:text-surface-100 hover:bg-white/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-ring active:scale-[0.98]"
-          title={t('code.shareTitle')}
-        >
-          <ShareIcon className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">{t('code.share')}</span>
         </button>
         <button
           onClick={handleReactPlaceholder}

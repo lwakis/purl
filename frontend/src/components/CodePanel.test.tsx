@@ -40,23 +40,21 @@ afterEach(() => {
 });
 
 describe('CodePanel', () => {
-  it('disables copy/download/zip/share/react buttons without code', () => {
-    render(<CodePanel onShare={vi.fn()} />);
+  it('disables copy/download/zip/react buttons without code', () => {
+    render(<CodePanel />);
     expect(screen.getByRole('button', { name: /Копировать/ })).toBeDisabled();
     expect(screen.getByRole('button', { name: /Скачать/ })).toBeDisabled();
     expect(screen.getByRole('button', { name: /ZIP/ })).toBeDisabled();
-    expect(screen.getByRole('button', { name: /Поделиться/ })).toBeDisabled();
     expect(screen.getByRole('button', { name: /React/ })).toBeDisabled();
     expect(screen.getByText('Сгенерированный код появится здесь')).toBeInTheDocument();
   });
 
   it('enables the toolbar buttons when code is present', () => {
     useAppStore.setState({ currentCode: CODE });
-    render(<CodePanel onShare={vi.fn()} />);
+    render(<CodePanel />);
     expect(screen.getByRole('button', { name: /Копировать/ })).toBeEnabled();
     expect(screen.getByRole('button', { name: /Скачать/ })).toBeEnabled();
     expect(screen.getByRole('button', { name: /ZIP/ })).toBeEnabled();
-    expect(screen.getByRole('button', { name: /Поделиться/ })).toBeEnabled();
     expect(screen.getByRole('button', { name: /React/ })).toBeEnabled();
   });
 
@@ -68,7 +66,7 @@ describe('CodePanel', () => {
       value: { writeText },
       configurable: true,
     });
-    render(<CodePanel onShare={vi.fn()} />);
+    render(<CodePanel />);
     await user.click(screen.getByRole('button', { name: /Копировать/ }));
     expect(writeText).toHaveBeenCalledWith(CODE);
     expect(toast.success).toHaveBeenCalledWith('Код скопирован в буфер обмена');
@@ -81,7 +79,7 @@ describe('CodePanel', () => {
       value: { writeText: vi.fn().mockRejectedValue(new Error('denied')) },
       configurable: true,
     });
-    render(<CodePanel onShare={vi.fn()} />);
+    render(<CodePanel />);
     await user.click(screen.getByRole('button', { name: /Копировать/ }));
     expect(toast.error).toHaveBeenCalledWith('Не удалось скопировать код');
   });
@@ -94,7 +92,7 @@ describe('CodePanel', () => {
     vi.stubGlobal('URL', { ...URL, createObjectURL, revokeObjectURL });
     const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
-    render(<CodePanel onShare={vi.fn()} />);
+    render(<CodePanel />);
     await user.click(screen.getByRole('button', { name: /Скачать/ }));
 
     expect(createObjectURL).toHaveBeenCalledTimes(1);
@@ -110,7 +108,7 @@ describe('CodePanel', () => {
     vi.stubGlobal('URL', { ...URL, createObjectURL, revokeObjectURL: vi.fn() });
     const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
-    render(<CodePanel onShare={vi.fn()} />);
+    render(<CodePanel />);
     await user.click(screen.getByRole('button', { name: /ZIP/ }));
 
     await waitFor(() => {
@@ -123,23 +121,14 @@ describe('CodePanel', () => {
   it('shows the React export placeholder toast', async () => {
     const user = userEvent.setup();
     useAppStore.setState({ currentCode: CODE });
-    render(<CodePanel onShare={vi.fn()} />);
+    render(<CodePanel />);
     await user.click(screen.getByRole('button', { name: /React/ }));
     expect(toast).toHaveBeenCalledWith('Экспорт в React скоро появится', { icon: '🚧' });
   });
 
-  it('fires onShare when the share button is clicked', async () => {
-    const user = userEvent.setup();
-    useAppStore.setState({ currentCode: CODE });
-    const onShare = vi.fn();
-    render(<CodePanel onShare={onShare} />);
-    await user.click(screen.getByRole('button', { name: /Поделиться/ }));
-    expect(onShare).toHaveBeenCalledTimes(1);
-  });
-
   it('renders the code inside the syntax highlighter', () => {
     useAppStore.setState({ currentCode: CODE });
-    render(<CodePanel onShare={vi.fn()} />);
+    render(<CodePanel />);
     expect(screen.getByText(CODE)).toBeInTheDocument();
   });
 });

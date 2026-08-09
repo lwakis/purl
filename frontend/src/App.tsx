@@ -12,9 +12,7 @@ import PreviewPanel from './components/PreviewPanel';
 import ChatPanel from './components/ChatPanel';
 import TemplateGallery from './components/TemplateGallery';
 import ProjectSidebar from './components/ProjectSidebar';
-import ShareDialog from './components/ShareDialog';
-import SaveDialog from './components/SaveDialog';
-import ShareView from './components/ShareView';
+import { useAutosave } from './hooks/useAutosave';
 import type { PromptTemplate } from './types';
 
 // react-syntax-highlighter is heavy (~300kB) — load CodePanel on demand so
@@ -31,42 +29,25 @@ export default function App() {
     document.documentElement.lang = locale;
   }, [locale]);
 
-  // Share landing: /share/:code renders a dedicated screen, not the generator.
-  const shareMatch = window.location.pathname.match(/^\/share\/([^/]+)\/?$/);
-  if (shareMatch) {
-    return <ShareView code={shareMatch[1]} />;
-  }
-
-  const {
-    currentCode,
-    templates,
-    setTemplates,
-    setSessionId,
-    setPrompt,
-    currentProject,
-    setGenerationError,
-  } = useAppStore();
+  const { currentCode, templates, setTemplates, setSessionId, setPrompt, setGenerationError } =
+    useAppStore();
 
   const [templatesLoading, setTemplatesLoading] = useState(false);
-  const [shareDialogOpen, setShareDialogOpen] = useState(false);
-  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [panelTab, setPanelTab] = useState<PanelTab>(null);
   const hasDesign = !!currentCode;
+  const { status: saveStatus } = useAutosave();
 
-  const closeShare = useCallback(() => setShareDialogOpen(false), []);
-  const closeSave = useCallback(() => setSaveDialogOpen(false), []);
   const closePanel = useCallback(() => setPanelTab(null), []);
 
-  // Escape closes the right panel (chat/code). Save/Share dialogs handle
-  // their own Escape via useDialog — skip while one of them is open.
+  // Escape closes the right panel (chat/code).
   useEffect(() => {
-    if (panelTab === null || saveDialogOpen || shareDialogOpen) return;
+    if (panelTab === null) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setPanelTab(null);
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [panelTab, saveDialogOpen, shareDialogOpen]);
+  }, [panelTab]);
 
   useEffect(() => {
     const init = async () => {
@@ -105,8 +86,6 @@ export default function App() {
     },
     [setPrompt],
   );
-
-  const canSave = currentProject === null || currentProject.current_code !== currentCode;
 
   const chatOpen = panelTab === 'chat';
   const codeOpen = panelTab === 'code';
@@ -152,8 +131,7 @@ export default function App() {
         codeOpen={codeOpen}
         onCodeToggle={onCodeToggle}
         hasDesign={hasDesign}
-        canSave={canSave}
-        onSave={() => setSaveDialogOpen(true)}
+        saveStatus={saveStatus}
       />
 
       <div className="flex-1 flex min-w-0 overflow-hidden">
@@ -248,7 +226,7 @@ export default function App() {
                       </div>
                     }
                   >
-                    <CodePanel onShare={() => setShareDialogOpen(true)} />
+                    <CodePanel />
                   </Suspense>
                 )}
               </div>
@@ -256,10 +234,6 @@ export default function App() {
           </>
         )}
       </div>
-
-      <ShareDialog open={shareDialogOpen} onClose={closeShare} />
-
-      <SaveDialog open={saveDialogOpen} onClose={closeSave} />
     </div>
   );
 }
