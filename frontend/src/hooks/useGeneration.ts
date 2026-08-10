@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { connectGenerateSSE, connectIterateSSE } from '../services/sse';
-import { createAnonSession, saveProjectVersion } from '../services/api';
-import { saveSession } from '../services/session';
+import { saveProjectVersion } from '../services/api';
+import { createSessionId, saveSession } from '../services/session';
 import { useAppStore } from '../store/appStore';
 import { useT } from '../i18n';
 import type { ChatMessage, SSEEvent } from '../types';
@@ -29,16 +29,12 @@ export function useGeneration() {
     generationError,
   } = useAppStore();
 
-  const ensureSession = useCallback(async (): Promise<string | null> => {
+  const ensureSession = useCallback((): string => {
     if (sessionId) return sessionId;
-    try {
-      const anon = await createAnonSession();
-      setSessionId(anon.session_id);
-      saveSession(anon.session_id, anon.token);
-      return anon.session_id;
-    } catch {
-      return null;
-    }
+    const sid = createSessionId();
+    setSessionId(sid);
+    saveSession(sid);
+    return sid;
   }, [sessionId, setSessionId]);
 
   const generate = useCallback(
@@ -95,11 +91,7 @@ export function useGeneration() {
 
   const iterate = useCallback(
     async (message: string) => {
-      const sid = await ensureSession();
-      if (!sid) {
-        setGenerationError(t('errors.sessionCreateFailed'));
-        return;
-      }
+      const sid = ensureSession();
 
       abortRequested = false;
       activeController = new AbortController();

@@ -11,7 +11,7 @@ from app.config import settings
 from app.database import init_db
 
 # ── Routers ──────────────────────────────────────────────────────────────────
-from app.routers import auth, generate, projects, templates
+from app.routers import generate, projects, templates
 
 
 @asynccontextmanager
@@ -41,7 +41,6 @@ app.add_middleware(
 
 # ── Register routers ─────────────────────────────────────────────────────────
 
-app.include_router(auth.router)
 app.include_router(generate.router)
 app.include_router(projects.router)
 app.include_router(templates.router)

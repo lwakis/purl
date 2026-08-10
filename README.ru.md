@@ -72,20 +72,18 @@ Dev-сервер Vite работает на порту 5173 и проксиру�
 │ chat · code · templates      │
 └──────────────┬───────────────┘
                │ HTTP + SSE (JSON)
-┌──────────────▼───────────────┐
-│      Backend (FastAPI)       │
-│ /api/generate · /api/iterate │
-│ /api/projects · /api/auth    │
-│ /api/templates               │
-└───┬───────────────────┬──────┘
-    │                   │
-┌───▼────────┐  ┌───────▼──────────┐
+┌──────────────▼────────────────┐
+│      Backend (FastAPI)        │
+│ /api/generate · /api/iterate  │
+│ /api/projects · /api/templates│
+└───┬────────────────────┬──────┘
+    │                    │
+┌───▼────────┐  ┌────────▼─────────┐
 │   SQLite   │  │     LLM          │
 │ (aiosqlite)│  │   provider:      │
 │   projects │  │  OpenAI-compl. · │
 │  versions  │  │   Anthropic      │
-│   users    │  └──────────────────┘
-└────────────┘
+└────────────┘  └──────────────────┘
 in-memory: rate limiter · TTL cache
 ```
 
@@ -98,7 +96,6 @@ in-memory: rate limiter · TTL cache
 | База данных | SQLite через aiosqlite |
 | Стриминг | Server-Sent Events (SSE) |
 | LLM | Мультипровайдер: OpenAI-совместимые пресеты (OpenAI, OpenRouter, Groq, DeepSeek, Gemini, Ollama) + Anthropic, с фолбэком на mock-режим |
-| Аутентификация | JWT (pyjwt, HS256), анонимные сессии + регистрация по email |
 | Инструменты | ruff, pytest, vitest, pre-commit, Docker Compose |
 
 ## Структура проекта
@@ -112,7 +109,7 @@ purl/
 │   │   ├── database.py      # async SQLAlchemy engine + ORM models
 │   │   ├── models.py        # request/response schemas
 │   │   ├── prompts.py       # LLM system prompt
-│   │   ├── routers/         # auth, generate, projects, templates
+│   │   ├── routers/         # generate, projects, templates
 │   │   └── services/        # LLM client, prompt builder, cache, rate limiter
 │   ├── tests/               # pytest + pytest-asyncio
 │   ├── .env.example         # environment template
@@ -146,11 +143,8 @@ purl/
 | `LLM_TEMPERATURE` | `0.7` | Температура сэмплирования |
 | `LLM_MAX_TOKENS` | `8192` | Максимум токенов на ответ |
 | `DATABASE_URL` | `sqlite+aiosqlite:///./purl.db` | URL async-базы данных для SQLAlchemy |
-| `JWT_SECRET` | dev-значение | Секрет подписи JWT; смените на production |
-| `JWT_ALGORITHM` | `HS256` | Алгоритм подписи JWT |
-| `JWT_EXPIRE_MINUTES` | `1440` | Время жизни токена в минутах |
-| `RATE_LIMIT_ANON` | `100` | Анонимные запросы в час |
-| `RATE_LIMIT_FREE` | `500` | Запросы аутентифицированных пользователей в час |
+| `RATE_LIMIT_ANON` | `100` | Запросы в час без идентификатора браузерной сессии |
+| `RATE_LIMIT_FREE` | `500` | Запросы в час с идентификатором браузерной сессии |
 | `CORS_ORIGINS` | `["http://localhost:5173","http://localhost:5174","http://127.0.0.1:5173","http://127.0.0.1:5174"]` | Разрешённые CORS-источники (JSON-массив) |
 | `MAX_PROMPT_LENGTH` | `2000` | Максимальная длина промпта в символах |
 | `FREE_ITERATIONS_LIMIT` | `10` | Лимит итераций на бесплатном плане |
@@ -172,10 +166,7 @@ Env-переменные фронтенда читаются на этапе с�
 |---|---|---|
 | POST | `/api/generate` | Сгенерировать дизайн; возвращает SSE-стрим |
 | POST | `/api/iterate` | Доработать существующий код через чат; SSE-стрим |
-| POST | `/api/auth/anon` | Создать анонимную сессию (JWT) |
-| POST | `/api/auth/register` | Регистрация с email и паролем |
-| POST | `/api/auth/login` | Вход с email и паролем |
-| GET | `/api/projects` | Список проектов (опционально по `user_id` / `session_id`) |
+| GET | `/api/projects` | Список проектов (опционально по `session_id`) |
 | POST | `/api/projects` | Создать проект |
 | GET | `/api/projects/{id}` | Получить проект |
 | PUT | `/api/projects/{id}` | Обновить проект |
@@ -222,7 +213,7 @@ pre-commit run --all-files     # run all hooks
 
 ## Дорожная карта
 
-MVP уже выпущен: генерация, стриминг, предпросмотр, чат, проекты с автосохранением и версиями, шаблоны, аутентификация и mock-режим. Дальше в планах Google OAuth, экспортные форматы и self-hosted путь. Полный план смотрите в [ROADMAP.md](ROADMAP.md).
+MVP уже выпущен: генерация, стриминг, предпросмотр, чат, проекты с автосохранением и версиями, шаблоны и mock-режим. Дальше в планах экспортные форматы и развитие open-source составляющей. Полный план смотрите в [ROADMAP.md](ROADMAP.md).
 
 ## Безопасность
 

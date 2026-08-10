@@ -13,7 +13,7 @@ What's in the repo right now:
 - [x] Sandboxed iframe preview (`sandbox="allow-scripts"`, no `allow-same-origin`)
 - [x] Copy, download HTML, and download as ZIP
 - [x] Iterative chat on existing designs (history + current code sent with each request)
-- [x] Anonymous usage without registration (JWT sessions via `/api/auth/anon`)
+- [x] Anonymous usage without registration (client-generated browser session id)
 
 ### Projects
 
@@ -24,8 +24,7 @@ What's in the repo right now:
 
 ### Platform
 
-- [x] Email registration and login
-- [x] In-memory rate limiting (anonymous 100 req/h, authenticated 500 req/h)
+- [x] In-memory rate limiting (100 req/h without a browser session id, 500 req/h with one)
 - [x] In-memory TTL result cache (prompt hash, 24 h default)
 - [x] Mock mode: full end-to-end flow without an LLM API key
 - [x] Docker Compose setup, CI workflow, test suites, pre-commit hooks
@@ -35,10 +34,8 @@ What's in the repo right now:
 
 | Item | Notes |
 |---|---|
-| [ ] Google OAuth sign-in | The `User` model already has an `auth_provider` column ready for `"google"` |
-| [ ] Password hashing upgrade | Move from SHA-256 to bcrypt/argon2 before production |
 | [ ] Project search and pagination | The sidebar lists all projects; no search or limits yet |
-| [ ] Template favorites / saved prompts | `PromptTemplate` has no per-user relation yet |
+| [ ] Template favorites / saved prompts | `PromptTemplate` has no per-session relation yet |
 | [ ] React export | The UI has a placeholder button ("export in React coming soon"); backend has no JSX output |
 
 ## Later

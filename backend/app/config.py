@@ -27,11 +27,6 @@ class Settings(BaseSettings):
     rate_limit_anon: int = 100  # requests / hour
     rate_limit_free: int = 500  # requests / hour
 
-    # ── Auth ──────────────────────────────────────────────────────────────
-    jwt_secret: str = 'dev-secret-purl-32-bytes-minimum-!!'
-    jwt_algorithm: str = 'HS256'
-    jwt_expire_minutes: int = 60 * 24  # 24 hours
-
     # ── CORS ──────────────────────────────────────────────────────────────
     cors_origins: list[str] = [
         'http://localhost:5173',

@@ -87,29 +87,3 @@ class TemplateResponse(BaseModel):
     icon: str | None = None
 
     model_config = {'from_attributes': True}
-
-
-# ── Auth ─────────────────────────────────────────────────────────────────────
-
-
-class AnonAuthResponse(BaseModel):
-    session_id: str
-    token: str
-
-
-class RegisterRequest(BaseModel):
-    email: str = Field(..., max_length=255)
-    password: str = Field(..., min_length=6, max_length=128)
-    name: str | None = None
-
-
-class LoginRequest(BaseModel):
-    email: str
-    password: str
-
-
-class AuthResponse(BaseModel):
-    user_id: int
-    email: str
-    name: str | None = None
-    token: str

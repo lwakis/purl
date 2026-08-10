@@ -183,8 +183,6 @@ export const ru = {
     bodyUnreadable: 'Ответ сервера нечитаем',
     connectionLost: 'Соединение с сервером прервано',
     cancelled: 'Генерация отменена',
-    sessionCreateFailed: 'Не удалось создать сессию. Попробуйте ещё раз.',
-    sessionInitFailed: 'Не удалось создать сессию. Обновите страницу и попробуйте снова.',
     loadProjects: 'Не удалось загрузить проекты',
     createProject: 'Не удалось создать проект',
     updateProject: 'Не удалось обновить проект',

@@ -179,8 +179,6 @@ export const en: RuDictionary = {
     bodyUnreadable: 'Response body is not readable',
     connectionLost: 'Connection to the server was interrupted',
     cancelled: 'Generation cancelled',
-    sessionCreateFailed: 'Failed to create a session. Please try again.',
-    sessionInitFailed: 'Failed to create a session. Refresh the page and try again.',
     loadProjects: 'Failed to load projects',
     createProject: 'Failed to create project',
     updateProject: 'Failed to update project',

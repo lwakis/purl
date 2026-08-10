@@ -2,8 +2,8 @@ import { lazy, Suspense, useState, useEffect, useCallback } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { XMarkIcon, ChatBubbleLeftRightIcon, CodeBracketIcon } from '@heroicons/react/24/outline';
 import { useAppStore } from './store/appStore';
-import { fetchTemplates, createAnonSession } from './services/api';
-import { loadSession, saveSession } from './services/session';
+import { fetchTemplates } from './services/api';
+import { createSessionId, loadSession, saveSession } from './services/session';
 import { useT, localizeTemplate } from './i18n';
 import Header from './components/Header';
 import EmptyState from './components/EmptyState';
@@ -29,7 +29,7 @@ export default function App() {
     document.documentElement.lang = locale;
   }, [locale]);
 
-  const { currentCode, templates, setTemplates, setSessionId, setPrompt, setGenerationError } =
+  const { currentCode, templates, setTemplates, setSessionId, setPrompt } =
     useAppStore();
 
   const [templatesLoading, setTemplatesLoading] = useState(false);
@@ -54,15 +54,11 @@ export default function App() {
       // Restore an existing anonymous session so projects/chat survive reloads.
       const stored = loadSession();
       if (stored) {
-        setSessionId(stored.sessionId);
+        setSessionId(stored);
       } else {
-        try {
-          const anon = await createAnonSession();
-          setSessionId(anon.session_id);
-          saveSession(anon.session_id, anon.token);
-        } catch {
-          setGenerationError(t('errors.sessionInitFailed'));
-        }
+        const sid = createSessionId();
+        setSessionId(sid);
+        saveSession(sid);
       }
 
       setTemplatesLoading(true);
@@ -77,7 +73,7 @@ export default function App() {
     };
 
     init();
-  }, [setSessionId, setTemplates, setGenerationError]);
+  }, [setSessionId, setTemplates]);
 
   const handleTemplateSelect = useCallback(
     (template: PromptTemplate) => {

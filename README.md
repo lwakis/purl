@@ -72,20 +72,18 @@ You type a prompt. The backend appends theme and style instructions to a curated
 │ chat · code · templates      │
 └──────────────┬───────────────┘
                │ HTTP + SSE (JSON)
-┌──────────────▼───────────────┐
-│      Backend (FastAPI)       │
-│ /api/generate · /api/iterate │
-│ /api/projects · /api/auth    │
-│ /api/templates               │
-└───┬───────────────────┬──────┘
-    │                   │
-┌───▼────────┐  ┌───────▼──────────┐
+┌──────────────▼────────────────┐
+│      Backend (FastAPI)        │
+│ /api/generate · /api/iterate  │
+│ /api/projects · /api/templates│
+└───┬────────────────────┬──────┘
+    │                    │
+┌───▼────────┐  ┌────────▼─────────┐
 │   SQLite   │  │     LLM          │
 │ (aiosqlite)│  │   provider:      │
 │   projects │  │  OpenAI-compl. · │
 │  versions  │  │   Anthropic      │
-│   users    │  └──────────────────┘
-└────────────┘
+└────────────┘  └──────────────────┘
 in-memory: rate limiter · TTL cache
 ```
 
@@ -98,7 +96,6 @@ in-memory: rate limiter · TTL cache
 | Database | SQLite via aiosqlite |
 | Streaming | Server-Sent Events (SSE) |
 | LLM | Multi-provider: OpenAI-compatible presets (OpenAI, OpenRouter, Groq, DeepSeek, Gemini, Ollama) + Anthropic, with mock-mode fallback |
-| Auth | JWT (pyjwt, HS256), anonymous sessions + email registration |
 | Tooling | ruff, pytest, vitest, pre-commit, Docker Compose |
 
 ## Project structure
@@ -112,7 +109,7 @@ purl/
 │   │   ├── database.py      # async SQLAlchemy engine + ORM models
 │   │   ├── models.py        # request/response schemas
 │   │   ├── prompts.py       # LLM system prompt
-│   │   ├── routers/         # auth, generate, projects, templates
+│   │   ├── routers/         # generate, projects, templates
 │   │   └── services/        # LLM client, prompt builder, cache, rate limiter
 │   ├── tests/               # pytest + pytest-asyncio
 │   ├── .env.example         # environment template
@@ -146,11 +143,8 @@ All variables are optional; defaults live in `backend/app/config.py`. Copy `back
 | `LLM_TEMPERATURE` | `0.7` | Sampling temperature |
 | `LLM_MAX_TOKENS` | `8192` | Max tokens per response |
 | `DATABASE_URL` | `sqlite+aiosqlite:///./purl.db` | Async SQLAlchemy database URL |
-| `JWT_SECRET` | dev value | JWT signing secret; rotate in production |
-| `JWT_ALGORITHM` | `HS256` | JWT signing algorithm |
-| `JWT_EXPIRE_MINUTES` | `1440` | Token lifetime in minutes |
-| `RATE_LIMIT_ANON` | `100` | Anonymous requests per hour |
-| `RATE_LIMIT_FREE` | `500` | Authenticated requests per hour |
+| `RATE_LIMIT_ANON` | `100` | Requests per hour without a browser session id |
+| `RATE_LIMIT_FREE` | `500` | Requests per hour with a browser session id |
 | `CORS_ORIGINS` | `["http://localhost:5173","http://localhost:5174","http://127.0.0.1:5173","http://127.0.0.1:5174"]` | Allowed CORS origins (JSON array) |
 | `MAX_PROMPT_LENGTH` | `2000` | Maximum prompt length in characters |
 | `FREE_ITERATIONS_LIMIT` | `10` | Free-plan iteration limit |
@@ -172,10 +166,7 @@ Interactive docs are served at `/docs` when the backend is running (FastAPI Swag
 |---|---|---|
 | POST | `/api/generate` | Generate a design; returns an SSE stream |
 | POST | `/api/iterate` | Iterate on existing code via chat; SSE stream |
-| POST | `/api/auth/anon` | Create an anonymous session (JWT) |
-| POST | `/api/auth/register` | Register with email and password |
-| POST | `/api/auth/login` | Log in with email and password |
-| GET | `/api/projects` | List projects (optionally by `user_id` / `session_id`) |
+| GET | `/api/projects` | List projects (optionally filtered by `session_id`) |
 | POST | `/api/projects` | Create a project |
 | GET | `/api/projects/{id}` | Get a project |
 | PUT | `/api/projects/{id}` | Update a project |
@@ -225,7 +216,7 @@ Bug reports, feature ideas, and pull requests are welcome. Please read [CONTRIBU
 
 ## Roadmap
 
-The MVP is shipped: generation, streaming, preview, chat, projects with autosave and versions, templates, auth, and mock mode. Next up is Google OAuth, export formats, and a self-hosted path. See [ROADMAP.md](ROADMAP.md) for the full plan.
+The MVP is shipped: generation, streaming, preview, chat, projects with autosave and versions, templates, and mock mode. Next up is export formats and additional open-source growth items. See [ROADMAP.md](ROADMAP.md) for the full plan.
 
 ## Security
 

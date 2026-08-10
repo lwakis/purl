@@ -53,26 +53,6 @@ def _uuid() -> str:
     return uuid.uuid4().hex[:12]
 
 
-# ── User ─────────────────────────────────────────────────────────────────────
-
-
-class User(Base):
-    __tablename__ = 'users'
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    email = Column(String(255), unique=True, nullable=True)
-    name = Column(String(255), nullable=True)
-    avatar_url = Column(String(512), nullable=True)
-    auth_provider = Column(String(50), nullable=True)  # "email" | "google" | "anon"
-    password_hash = Column(String(255), nullable=True)
-    created_at = Column(DateTime(timezone=True), default=_utcnow)
-
-    projects = relationship('Project', back_populates='user')
-
-    def __repr__(self) -> str:
-        return f'<User id={self.id} email={self.email!r}>'
-
-
 # ── Project ──────────────────────────────────────────────────────────────────
 
 
@@ -81,7 +61,6 @@ class Project(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(255), default='Untitled')
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=True)
     session_id = Column(String(50), nullable=True, index=True)
     prompt = Column(Text, nullable=True)
     current_code = Column(Text, nullable=True)
@@ -90,7 +69,6 @@ class Project(Base):
     created_at = Column(DateTime(timezone=True), default=_utcnow)
     updated_at = Column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
 
-    user = relationship('User', back_populates='projects')
     versions = relationship(
         'ProjectVersion', back_populates='project', cascade='all, delete-orphan'
     )

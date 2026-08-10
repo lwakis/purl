@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Removed
 
+- User accounts, email registration/login, and JWT authentication (the `/api/auth` endpoints and users table) were removed: Purl is now a fully anonymous, self-hostable tool. Projects are scoped per browser via a client-generated session id.
 - Public share links (short codes): the `/api/share` endpoints, the Share dialog, the Share view, and the `share_links` table were removed because the feature was not working.
 
 ## [0.1.0] - 2026-08-06
@@ -25,8 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Multi-provider LLM client: OpenAI-compatible presets (OpenAI, OpenRouter, Groq, DeepSeek, Gemini, Ollama) + Anthropic, streaming, with mock fallback
 - Projects with CRUD, version history, and public share links (short codes)
 - Starter template gallery (8 templates, auto-seeded on first access)
-- Anonymous JWT sessions and email registration/login
-- In-memory rate limiting (anonymous 100 req/h, authenticated 500 req/h)
+- In-memory rate limiting (100 req/h without a browser session id, 500 req/h with one)
 - In-memory TTL result cache keyed by prompt hash
 - Mock mode: the backend runs end to end without an LLM API key
 - Docker Compose setup for one-command startup

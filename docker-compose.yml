@@ -10,7 +10,6 @@ services:
       LLM_PROVIDER: ${LLM_PROVIDER:-openai}
       LLM_BASE_URL: ${LLM_BASE_URL:-}
       LLM_MODEL: ${LLM_MODEL:-}
-      JWT_SECRET: ${JWT_SECRET:-dev-secret-purl-32-bytes-minimum-!!}
       CORS_ORIGINS: '["http://localhost:5173"]'
     volumes:
       - purl-data:/app/data

@@ -1,5 +1,4 @@
 import type { ChatMessage, SSEEvent } from '../types';
-import { getToken } from './session';
 import { BASE_URL } from './api';
 import { t } from '../i18n';
 
@@ -34,11 +33,6 @@ function parseSSELine(line: string): SSEEvent | null {
   } catch {
     return null;
   }
-}
-
-function authHeaders(): Record<string, string> {
-  const token = getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 async function connectSSE(url: string, body: unknown, options: SSEOptions): Promise<void> {
@@ -89,7 +83,7 @@ async function connectSSE(url: string, body: unknown, options: SSEOptions): Prom
     try {
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
         signal: controller.signal,
       });

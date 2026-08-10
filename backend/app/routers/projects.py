@@ -60,14 +60,11 @@ def _version_to_response(v: ProjectVersion) -> ProjectVersionResponse:
 @router.get('', response_model=list[ProjectResponse])
 @router.get('/', response_model=list[ProjectResponse])
 async def list_projects(
-    user_id: int | None = Query(None),
     session_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),  # noqa: B008
 ):
-    """List projects, optionally filtered by user_id or session_id."""
+    """List projects, optionally filtered by session_id."""
     stmt = select(Project).order_by(Project.updated_at.desc())
-    if user_id is not None:
-        stmt = stmt.where(Project.user_id == user_id)
     if session_id is not None:
         stmt = stmt.where(Project.session_id == session_id)
     result = await db.execute(stmt)

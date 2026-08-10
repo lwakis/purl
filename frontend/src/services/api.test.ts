@@ -7,7 +7,6 @@ import {
   updateProject,
   deleteProject,
   getProjectVersions,
-  createAnonSession,
 } from './api';
 
 interface MockResponse {
@@ -190,19 +189,6 @@ describe('api client', () => {
     expect(result).toEqual(versions);
     expect(fetchMock).toHaveBeenCalledWith('/api/projects/4/versions', {
       headers: { 'Content-Type': 'application/json' },
-    });
-  });
-
-  it('createAnonSession POSTs /api/auth/anon', async () => {
-    const session = { token: 'tok', session_id: 'sess-2' };
-    fetchMock.mockResolvedValue(mockResponse(session));
-
-    const result = await createAnonSession();
-
-    expect(result).toEqual(session);
-    expect(fetchMock).toHaveBeenCalledWith('/api/auth/anon', {
-      headers: { 'Content-Type': 'application/json' },
-      method: 'POST',
     });
   });
 
