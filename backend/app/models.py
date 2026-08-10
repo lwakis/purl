@@ -78,6 +78,11 @@ class ProjectUpdate(BaseModel):
     style: str | None = None
 
 
+class ProjectVersionCreate(BaseModel):
+    code: str
+    message: str | None = None
+
+
 class TemplateResponse(BaseModel):
     id: int
     title: str

@@ -38,14 +38,14 @@ def test_versions_flow(client, create_project):
 
     v1 = client.post(
         f'/api/projects/{project_id}/versions',
-        params={'code': '<html>v1</html>', 'message': 'first version'},
+        json={'code': '<html>v1</html>', 'message': 'first version'},
     )
     assert v1.status_code == 201
     assert v1.json()['version_num'] == 1
 
     v2 = client.post(
         f'/api/projects/{project_id}/versions',
-        params={'code': '<html>v2</html>', 'message': 'second version'},
+        json={'code': '<html>v2</html>', 'message': 'second version'},
     )
     assert v2.status_code == 201
     assert v2.json()['version_num'] == 2

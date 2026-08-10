@@ -85,9 +85,8 @@ export async function saveProjectVersion(
   code: string,
   message?: string,
 ): Promise<ProjectVersion> {
-  const params = new URLSearchParams({ code });
-  if (message) params.set('message', message);
-  return request<ProjectVersion>(`/api/projects/${projectId}/versions?${params.toString()}`, {
+  return request<ProjectVersion>(`/api/projects/${projectId}/versions`, {
     method: 'POST',
+    body: JSON.stringify({ code, message }),
   });
 }

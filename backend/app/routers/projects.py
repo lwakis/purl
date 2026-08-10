@@ -11,6 +11,7 @@ from app.models import (
     ProjectCreate,
     ProjectResponse,
     ProjectUpdate,
+    ProjectVersionCreate,
     ProjectVersionResponse,
 )
 from app.utils import generate_session_id
@@ -160,8 +161,7 @@ async def list_versions(
 @router.post('/{project_id}/versions', response_model=ProjectVersionResponse, status_code=201)
 async def save_version(
     project_id: int,
-    code: str,
-    message: str | None = Query(None),
+    req: ProjectVersionCreate,
     db: AsyncSession = Depends(get_db),  # noqa: B008
 ):
     """Save a new version of a project."""
@@ -177,8 +177,8 @@ async def save_version(
     version = ProjectVersion(
         project_id=project_id,
         version_num=max_ver + 1,
-        code=code,
-        message=message,
+        code=req.code,
+        message=req.message,
     )
     db.add(version)
     await db.flush()
