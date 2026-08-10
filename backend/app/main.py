@@ -12,6 +12,7 @@ from app.database import init_db
 
 # ── Routers ──────────────────────────────────────────────────────────────────
 from app.routers import generate, projects, templates
+from app.services.llm_service import close_llm_client
 
 
 @asynccontextmanager
@@ -19,6 +20,7 @@ async def lifespan(app: FastAPI):
     """Initialize database tables on startup, clean up on shutdown."""
     await init_db()
     yield
+    await close_llm_client()
 
 
 app = FastAPI(
