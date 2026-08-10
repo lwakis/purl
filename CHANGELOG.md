@@ -6,15 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-10
+
 ### Changed
 
 - Projects are now saved automatically as you work (debounced, like chats in AI assistants); the manual Save button and the Save dialog were removed.
 - Fixed the gray row background in the code panel: the syntax-highlighter override no longer paints every code line gray.
+- `POST /api/projects/{id}/versions` now accepts `code` and `message` in the JSON body instead of URL query parameters (generated HTML can exceed URL length limits).
+- Split `llm_service.py` into orchestration, mock-mode HTML generation, and provider wire protocols; a single shared `httpx.AsyncClient` is reused across requests instead of one per request.
+- Prompt templates are cached in memory (TTL 24 h) instead of being re-read from the database on every request.
 
 ### Removed
 
 - User accounts, email registration/login, and JWT authentication (the `/api/auth` endpoints and users table) were removed: Purl is now a fully anonymous, self-hostable tool. Projects are scoped per browser via a client-generated session id.
-- Public share links (short codes): the `/api/share` endpoints, the Share dialog, the Share view, and the `share_links` table were removed because the feature was not working.
 
 ## [0.1.0] - 2026-08-06
 
@@ -24,7 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Sandboxed iframe preview (`sandbox="allow-scripts"`, no `allow-same-origin`)
 - Iterative chat on existing designs with history and current code
 - Multi-provider LLM client: OpenAI-compatible presets (OpenAI, OpenRouter, Groq, DeepSeek, Gemini, Ollama) + Anthropic, streaming, with mock fallback
-- Projects with CRUD, version history, and public share links (short codes)
+- Projects with CRUD and version history
 - Starter template gallery (8 templates, auto-seeded on first access)
 - In-memory rate limiting (100 req/h without a browser session id, 500 req/h with one)
 - In-memory TTL result cache keyed by prompt hash

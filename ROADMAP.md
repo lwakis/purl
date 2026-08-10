@@ -61,7 +61,7 @@ Ideas that matter for the project as an open-source product:
 | [ ] Persistent prompt cache | The cache is in-memory today; a persistent store would survive restarts and share results across instances |
 | [ ] CLI | Headless generation for scripting and CI |
 | [ ] Usage metrics | Generation counts, iteration depth, activation, retention, conversion |
-| [ ] CI badge and release automation | Publish versioned releases and automated changelogs after the first tag |
+| [x] CI badge and release automation | Publish versioned releases and automated changelogs after the first tag |
 
 ## How to help
 

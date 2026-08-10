@@ -130,7 +130,7 @@ _MOCK_TEMPLATE = """<!DOCTYPE html>
       {features_html}
     </section>
     <footer class="footer">
-      <p>© 2025 Purl. Создано с помощью AI.</p>
+      <p>© 2026 Purl.</p>
     </footer>
   </div>
 </body>
@@ -140,7 +140,7 @@ _MOCK_TEMPLATE = """<!DOCTYPE html>
 def _mock_generate_html(prompt: str, theme: str, style: str) -> str:
     """Return a hardcoded, beautiful HTML page based on prompt keywords."""
     title = 'Purl AI — Ваш дизайн'
-    headline = 'Создано с помощью ИИ'
+    headline = 'Ваш дизайн — уже готов'
     subheadline = 'Профессиональный дизайн-макет на основе вашего описания.'
 
     # Theme colours
