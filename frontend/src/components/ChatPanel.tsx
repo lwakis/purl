@@ -39,7 +39,7 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
   return (
     <div className="flex flex-col h-full">
       {chatHistory.length > 0 && (
-        <div className="text-[11px] text-surface-500 px-1 mb-2">
+        <div className="exposure-label text-surface-500 px-1 mb-2">
           {t('chat.iterations', { n: Math.ceil(chatHistory.length / 2) })}
         </div>
       )}
@@ -55,14 +55,20 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
           chatHistory.map((msg, i) => (
             <div
               key={i}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-slide-up`}
+              className={`flex flex-col ${
+                msg.role === 'user' ? 'items-end' : 'items-start'
+              } animate-slide-up`}
               style={{ animationDelay: `${i * 60}ms` }}
             >
+              <span className="exposure-label text-surface-500 mb-1">
+                {msg.role === 'user' ? t('chat.you') : t('chat.assistant')} ·{' '}
+                {String(i + 1).padStart(2, '0')}
+              </span>
               <div
                 className={`max-w-[85%] rounded-lg px-3.5 py-2.5 text-sm leading-relaxed ${
                   msg.role === 'user'
-                    ? 'bg-primary-500/15 text-surface-100'
-                    : 'bg-surface-800 text-surface-300 border border-white/10'
+                    ? 'bg-primary-600/15 text-surface-100 border border-primary-500/30'
+                    : 'bg-surface-800 text-surface-300 border border-line'
                 }`}
               >
                 {msg.content}
@@ -72,9 +78,10 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
         )}
         {isGenerating && (
           <div className="flex justify-start">
-            <div className="flex flex-col gap-2 w-2/3">
-              <div className="skeleton h-4 w-full" />
-              <div className="skeleton h-4 w-3/4" />
+            <div className="flex items-center gap-1.5 bg-surface-800 border border-line rounded-lg px-3.5 py-2.5">
+              <span className="loading-dot" />
+              <span className="loading-dot" />
+              <span className="loading-dot" />
             </div>
           </div>
         )}
@@ -92,13 +99,13 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
               placeholder={t('chat.inputPlaceholder')}
               aria-label={t('chat.inputAria')}
               rows={1}
-              className="flex-1 bg-surface-950/60 border border-line rounded-lg px-3.5 py-2.5 text-sm text-surface-100 placeholder-surface-500 focus:border-line-strong focus:ring-2 focus:ring-primary-500/20 transition-all resize-none disabled:opacity-30"
+              className="flex-1 bg-surface-900 border border-line rounded-lg px-3 py-2 text-sm text-surface-100 placeholder-surface-500 focus:border-line-strong focus:ring-2 focus:ring-primary-500/40 transition-all resize-none disabled:opacity-30"
             />
             <button
               onClick={handleSend}
               disabled={!message.trim() || isGenerating || !currentCode}
               aria-label={t('app.sendAria')}
-              className="p-2.5 rounded-md bg-primary-600 text-white transition-all hover:bg-primary-500 active:scale-[0.98] disabled:bg-white/10 disabled:text-surface-400 disabled:cursor-not-allowed focus-ring"
+              className="p-2.5 rounded-md bg-primary-600 text-white transition-all hover:bg-primary-500 active:scale-[0.98] disabled:bg-surface-800 disabled:text-surface-500 disabled:cursor-not-allowed focus-ring"
             >
               <PaperAirplaneIcon className="w-4 h-4" />
             </button>

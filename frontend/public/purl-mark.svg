@@ -1,4 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="8" fill="#5E6AD2"/>
-  <path d="M10.5 23V9h5.2c4.3 0 7 2.4 7 6.4S19.9 22 15.6 22h-1.4v1H10.5zm3.7-3.1h1.3c2.6 0 4-1.2 4-3.5s-1.5-3.4-4.2-3.4h-1.1v6.9z" fill="#fff"/>
+  <!-- The darkroom: warm graphite plate with a thin safelight edge. -->
+  <rect width="32" height="32" rx="7" fill="#121113"/>
+  <rect x="0.5" y="0.5" width="31" height="31" rx="6.5" fill="none" stroke="#F1EDE6" stroke-opacity="0.28"/>
+  <!-- The safelight: the room's one color. -->
+  <circle cx="24.2" cy="7.8" r="2.5" fill="#D8492F"/>
+  <!-- The print: a letterpress "P" struck onto the paper. -->
+  <path d="M12.2 21.6V10.4h4.3c3.3 0 5.3 1.8 5.3 4.9 0 3.2-2 4.9-5.2 4.9h-1.2v1.4h-3.2zm3.2-3h1c1.8 0 2.7-.8 2.7-2.3s-.9-2.3-2.7-2.3h-1v4.6z" fill="#F1EDE6"/>
 </svg>

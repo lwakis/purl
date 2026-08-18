@@ -41,8 +41,8 @@ export default function ProjectSidebar() {
   const handleLoadProject = useCallback(
     (project: Project) => {
       setCurrentProject(project);
-      setCurrentCode(project.current_code);
-      setPrompt(project.prompt);
+      setCurrentCode(project.current_code ?? '');
+      setPrompt(project.prompt ?? '');
       setSessionId(project.session_id);
       setChatHistory([]);
       setSidebarOpen(false);
@@ -83,8 +83,8 @@ export default function ProjectSidebar() {
   const handleLoadVersion = useCallback(
     (project: Project, version: ProjectVersion) => {
       setCurrentProject(project);
-      setCurrentCode(version.code);
-      setPrompt(project.prompt);
+      setCurrentCode(version.code ?? '');
+      setPrompt(project.prompt ?? '');
       setSessionId(project.session_id);
       setChatHistory([]);
       setSidebarOpen(false);
@@ -92,29 +92,35 @@ export default function ProjectSidebar() {
     [setCurrentProject, setCurrentCode, setPrompt, setSessionId, setChatHistory, setSidebarOpen],
   );
 
+  const isEmpty = !loading && projects.length === 0;
+
   return (
     <>
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-surface-950/60 z-30 lg:hidden"
+          className="fixed inset-0 bg-surface-950/60 z-30 lg:hidden animate-fade-in"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       <div
-        className={`fixed top-0 left-0 h-full z-40 bg-surface-900 border-r border-line transition-all duration-300 ease-out overflow-hidden flex-shrink-0 ${
+        className={`fixed top-0 left-0 h-full z-40 bg-surface-900 border-r border-line transition-all duration-300 ease-out overflow-hidden flex-shrink-0 shadow-overlay lg:shadow-none ${
           sidebarOpen ? 'translate-x-0 w-72' : '-translate-x-full w-72'
         } lg:translate-x-0 lg:static lg:z-auto ${
           sidebarOpen ? 'lg:w-72 lg:opacity-100 lg:border-r' : 'lg:w-0 lg:opacity-0 lg:border-r-0'
         }`}
       >
         <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between p-4 border-b border-line.subtle">
-            <h2 className="text-sm font-semibold text-surface-100">{t('sidebar.title')}</h2>
-            <div className="flex items-center gap-1">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-line">
+            <h2 className="exposure-label text-surface-500">{t('sidebar.title')}</h2>
+            <div className="flex items-center gap-1.5">
               <button
                 onClick={handleNewProject}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-surface-400 hover:text-surface-100 hover:bg-white/5 active:scale-[0.98] transition-colors focus-ring"
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors focus-ring ${
+                  isEmpty
+                    ? 'bg-primary-600 text-white shadow-cta hover:bg-primary-500 active:bg-primary-700'
+                    : 'border border-line text-surface-200 hover:border-line-strong hover:text-surface-100 hover:bg-surface-800 active:bg-surface-700'
+                }`}
                 title={t('sidebar.newProject')}
                 aria-label={t('sidebar.newProject')}
               >
@@ -123,7 +129,7 @@ export default function ProjectSidebar() {
               </button>
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="p-2 rounded-md text-surface-400 hover:text-surface-100 hover:bg-white/5 active:scale-95 transition-colors focus-ring lg:hidden"
+                className="p-2 rounded-md text-surface-400 hover:text-surface-100 hover:bg-surface-800 active:bg-surface-700 transition-colors focus-ring lg:hidden"
                 aria-label={t('sidebar.closeAria')}
               >
                 <XMarkIcon className="w-4 h-4" />
@@ -135,11 +141,11 @@ export default function ProjectSidebar() {
             {loading ? (
               <div className="space-y-2">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="skeleton h-16" />
+                  <div key={i} className="skeleton h-14" />
                 ))}
               </div>
-            ) : projects.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-32 text-center">
+            ) : isEmpty ? (
+              <div className="flex flex-col items-center justify-center h-40 text-center border border-dashed border-line-subtle rounded-md px-4">
                 <DocumentTextIcon className="w-8 h-8 text-surface-700 mb-2" />
                 <p className="text-surface-400 text-xs">{t('sidebar.emptyTitle')}</p>
                 <p className="text-surface-400 text-xs mt-1">{t('sidebar.emptySubtitle')}</p>
@@ -148,10 +154,10 @@ export default function ProjectSidebar() {
               projects.map((project) => (
                 <div
                   key={project.id}
-                  className={`rounded-lg transition-colors group ${
+                  className={`rounded-md transition-colors group shadow-segment-inset ${
                     currentProject?.id === project.id
-                      ? 'bg-primary-500/10 border border-primary-500/25'
-                      : 'hover:bg-surface-800/60 border border-line hover:border-line-strong'
+                      ? 'bg-primary-600/10 border border-primary-500/70'
+                      : 'bg-surface-800 border border-line hover:border-line-strong'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2 p-3">
@@ -162,20 +168,18 @@ export default function ProjectSidebar() {
                       <p className="text-sm font-medium text-surface-100 truncate">
                         {project.name}
                       </p>
-                      <p className="text-xs text-surface-400 mt-0.5 line-clamp-2">
-                        {project.prompt}
-                      </p>
-                      <p className="text-xs text-surface-600 mt-1">
+                      <p className="text-xs text-surface-400 mt-0.5 truncate">{project.prompt}</p>
+                      <p className="exposure-label text-surface-500 mt-1">
                         {new Date(project.updated_at || project.created_at).toLocaleDateString()}
                       </p>
                     </button>
-                    <div className="flex items-center gap-0.5 flex-shrink-0">
+                    <div className="flex items-center gap-1 flex-shrink-0">
                       <button
                         onClick={(e) => toggleVersions(e, project.id)}
-                        className={`p-1 rounded-md transition-all focus-ring ${
+                        className={`p-1.5 rounded-md border transition-colors focus-ring ${
                           versionsOpen === project.id
-                            ? 'text-primary-400 bg-primary-500/15'
-                            : 'text-surface-400 opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 hover:text-surface-100 hover:bg-white/5'
+                            ? 'text-primary-400 bg-primary-600/10 border-primary-500/40'
+                            : 'text-surface-400 border-line opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 hover:text-surface-100 hover:bg-surface-900/50 hover:border-line-strong'
                         }`}
                         aria-label={t('sidebar.versionsAria')}
                         aria-expanded={versionsOpen === project.id}
@@ -184,7 +188,7 @@ export default function ProjectSidebar() {
                       </button>
                       <button
                         onClick={(e) => handleDelete(e, project.id)}
-                        className="p-1 rounded-md text-surface-400 opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 hover:text-status-error hover:bg-status-error/10 transition-all focus-ring"
+                        className="p-1.5 rounded-md border border-line text-surface-400 opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 hover:text-status-error hover:bg-status-error/10 hover:border-line-strong transition-colors focus-ring"
                         aria-label={t('sidebar.deleteAria')}
                       >
                         <TrashIcon className="w-3.5 h-3.5" />
@@ -193,11 +197,11 @@ export default function ProjectSidebar() {
                   </div>
 
                   {versionsOpen === project.id && (
-                    <div className="px-3 pb-3 space-y-1">
+                    <div className="mx-3 mb-3 p-2 space-y-0.5 rounded-md bg-surface-900/50 border border-line-subtle animate-fade-in">
                       {versionsLoading ? (
-                        <div className="skeleton h-8" />
+                        <div className="skeleton h-7" />
                       ) : versions.length === 0 ? (
-                        <p className="text-xs text-surface-400 px-1 py-1">
+                        <p className="exposure-label text-surface-500 px-1 py-1">
                           {t('sidebar.noVersions')}
                         </p>
                       ) : (
@@ -205,12 +209,12 @@ export default function ProjectSidebar() {
                           <button
                             key={version.id}
                             onClick={() => handleLoadVersion(project, version)}
-                            className="w-full text-left px-2.5 py-1.5 rounded-md text-xs text-surface-400 hover:text-surface-100 hover:bg-white/5 transition-colors focus-ring"
+                            className="w-full text-left px-2 py-1.5 rounded-sm text-xs text-surface-400 hover:text-surface-100 hover:bg-surface-800 transition-colors focus-ring"
                           >
-                            <span className="font-medium text-surface-300">
+                            <span className="font-mono text-surface-300">
                               {t('sidebar.version', { num: version.version_num })}
                             </span>
-                            <span className="ml-2">
+                            <span className="exposure-label text-surface-500 ml-2">
                               {new Date(version.created_at).toLocaleDateString()}
                             </span>
                           </button>

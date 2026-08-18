@@ -134,6 +134,49 @@ describe('ProjectSidebar', () => {
     expect(state.sidebarOpen).toBe(false);
   });
 
+  it('normalizes null code/prompt to empty strings when loading a project', async () => {
+    const nullProject: Project = {
+      id: 3,
+      name: 'Пустой проект',
+      prompt: null,
+      current_code: null,
+      theme: 'dark',
+      style: 'minimal',
+      session_id: 's1',
+      created_at: '2024-01-03T00:00:00Z',
+      updated_at: '2024-01-03T00:00:00Z',
+    };
+    vi.mocked(getProjects).mockResolvedValue([projectA, nullProject]);
+    useAppStore.setState({ projects: [projectA, nullProject] });
+
+    const user = userEvent.setup();
+    render(<ProjectSidebar />);
+    await user.click(await screen.findByText('Пустой проект'));
+    const state = useAppStore.getState();
+    expect(state.currentProject?.id).toBe(3);
+    expect(state.currentCode).toBe('');
+    expect(state.prompt).toBe('');
+  });
+
+  it('normalizes null version code to empty string when loading a version', async () => {
+    const nullVersion: ProjectVersion = {
+      id: 13,
+      project_id: 1,
+      version_num: 3,
+      code: null,
+      message: 'empty',
+      created_at: '2024-01-03T00:00:00Z',
+    };
+    vi.mocked(getProjectVersions).mockResolvedValue([nullVersion]);
+
+    const user = userEvent.setup();
+    render(<ProjectSidebar />);
+    await screen.findByText('Лендинг A');
+    await user.click(screen.getAllByRole('button', { name: 'Версии проекта' })[0]);
+    await user.click(await screen.findByText('Версия 3'));
+    expect(useAppStore.getState().currentCode).toBe('');
+  });
+
   it('starts a new project via the "Новый проект" button', async () => {
     const user = userEvent.setup();
     render(<ProjectSidebar />);

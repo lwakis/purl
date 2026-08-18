@@ -5,7 +5,7 @@
 @layer base {
   * {
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+    scrollbar-color: rgba(241, 237, 230, 0.14) transparent;
   }
 
   *::-webkit-scrollbar {
@@ -18,12 +18,12 @@
   }
 
   *::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.14);
+    background-color: rgba(241, 237, 230, 0.14);
     border-radius: 3px;
   }
 
   *::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(255, 255, 255, 0.22);
+    background-color: rgba(241, 237, 230, 0.24);
   }
 
   html {
@@ -44,6 +44,21 @@
   }
 }
 
+/* Keyframes are defined here (not only in tailwind.config.js) because Tailwind
+   only emits config keyframes when the matching animate-* utility appears in
+   markup; .loading-dot references pulse-dot via a raw animation shorthand, so
+   the dots would otherwise render static. */
+@keyframes pulse-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
 @layer components {
   .syntax-highlighter-override pre {
     background: theme('colors.surface.900') !important;
@@ -52,9 +67,8 @@
     line-height: 1.6 !important;
   }
 
-  /* oneDark paints the inner code element per line (wrapLines makes each
-     line a block-level span); keep it transparent so the container's
-     bg-surface-900 shows uniformly instead of a gray band per line. */
+  /* The code block container is the only background; per-line blocks stay
+     transparent so the warm darkroom surface shows through uniformly. */
   .syntax-highlighter-override pre code[class*='language-'] {
     background: transparent !important;
   }
@@ -72,13 +86,14 @@
     animation-delay: 0.4s;
   }
 
+  /* An undeveloped frame: warm density, a shimmer of light across it. */
   .skeleton {
-    @apply relative overflow-hidden rounded-md bg-white/5;
+    @apply relative overflow-hidden rounded-md bg-surface-800;
   }
 
   .skeleton::before {
     content: '';
-    @apply absolute inset-0 animate-shimmer bg-gradient-to-r from-transparent via-white/10 to-transparent;
+    @apply absolute inset-0 animate-shimmer bg-gradient-to-r from-transparent via-surface-600/40 to-transparent;
   }
 
   .responsive-iframe {
@@ -94,6 +109,12 @@
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  /* Exposure captions: measurement on the margins — versions, timestamps,
+     frame numbers. Mono, small, uppercase, widely tracked. */
+  .exposure-label {
+    @apply font-mono text-[10px] uppercase tracking-[0.14em];
   }
 }
 
