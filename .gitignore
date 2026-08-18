@@ -53,3 +53,5 @@ Thumbs.db
 
 # ── Agent tooling ─────────────────────────────────────────────────────────────
 .omo/
+.playwright-mcp/
+generation-progress-live.png
