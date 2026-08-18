@@ -1,15 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useAppStore } from './appStore';
-import type {
-  ChatMessage,
-  Project,
-  PromptTemplate,
-  ThemeMode,
-  DesignStyle,
-  ActivePanel,
-  PreviewSize,
-  Locale,
-} from '../types';
+import type { ChatMessage, Project, ActivePanel, PreviewSize, Locale } from '../types';
 
 const initialState = {
   projects: [] as Project[],
@@ -21,9 +12,6 @@ const initialState = {
   generationStatus: '',
   generationError: null,
   prompt: '',
-  theme: 'dark' as ThemeMode,
-  style: 'minimal' as DesignStyle,
-  templates: [] as PromptTemplate[],
   sidebarOpen: false,
   activePanel: 'code' as ActivePanel,
   previewSize: 'desktop' as PreviewSize,
@@ -64,8 +52,6 @@ describe('appStore', () => {
 
     expect(state.sessionId).toBe('');
     expect(state.currentCode).toBe('');
-    expect(state.theme).toBe('dark');
-    expect(state.style).toBe('minimal');
     expect(state.activePanel).toBe('code');
     expect(state.projects).toEqual([]);
     expect(state.currentProject).toBeNull();
@@ -74,7 +60,6 @@ describe('appStore', () => {
     expect(state.generationStatus).toBe('');
     expect(state.generationError).toBeNull();
     expect(state.prompt).toBe('');
-    expect(state.templates).toEqual([]);
     expect(state.sidebarOpen).toBe(false);
     expect(state.previewSize).toBe('desktop');
     expect(state.locale).toBe('ru');
@@ -83,16 +68,6 @@ describe('appStore', () => {
   it('setPrompt updates the prompt', () => {
     useAppStore.getState().setPrompt('hello');
     expect(useAppStore.getState().prompt).toBe('hello');
-  });
-
-  it('setTheme updates the theme', () => {
-    useAppStore.getState().setTheme('light');
-    expect(useAppStore.getState().theme).toBe('light');
-  });
-
-  it('setStyle updates the style', () => {
-    useAppStore.getState().setStyle('techno');
-    expect(useAppStore.getState().style).toBe('techno');
   });
 
   it('setCurrentCode updates the current code', () => {
@@ -132,21 +107,6 @@ describe('appStore', () => {
   it('setProjects replaces the projects list', () => {
     useAppStore.getState().setProjects([projectA, projectB]);
     expect(useAppStore.getState().projects).toEqual([projectA, projectB]);
-  });
-
-  it('setTemplates replaces the templates list', () => {
-    const templates: PromptTemplate[] = [
-      {
-        id: 1,
-        title: 'Landing',
-        description: 'd',
-        prompt_text: 'p',
-        category: 'c',
-        icon: 'i',
-      },
-    ];
-    useAppStore.getState().setTemplates(templates);
-    expect(useAppStore.getState().templates).toEqual(templates);
   });
 
   it('setSidebarOpen updates the sidebar flag', () => {
@@ -199,8 +159,6 @@ describe('appStore', () => {
 
   it('reset restores the initial state', () => {
     useAppStore.getState().setPrompt('x');
-    useAppStore.getState().setTheme('light');
-    useAppStore.getState().setStyle('techno');
     useAppStore.getState().setCurrentCode('code');
     useAppStore.getState().setSessionId('s1');
     useAppStore.getState().setChatHistory([{ role: 'user', content: 'hi' }]);
@@ -208,16 +166,6 @@ describe('appStore', () => {
     useAppStore.getState().setGenerationStatus('done');
     useAppStore.getState().setCurrentProject(projectA);
     useAppStore.getState().addProject(projectA);
-    useAppStore.getState().setTemplates([
-      {
-        id: 1,
-        title: 'T',
-        description: 'd',
-        prompt_text: 'p',
-        category: 'c',
-        icon: 'i',
-      },
-    ]);
     useAppStore.getState().setSidebarOpen(true);
     useAppStore.getState().setActivePanel('chat');
     useAppStore.getState().setPreviewSize('mobile');
@@ -227,8 +175,6 @@ describe('appStore', () => {
 
     const state = useAppStore.getState();
     expect(state.prompt).toBe('');
-    expect(state.theme).toBe('dark');
-    expect(state.style).toBe('minimal');
     expect(state.currentCode).toBe('');
     expect(state.sessionId).toBe('');
     expect(state.chatHistory).toEqual([]);
@@ -237,7 +183,6 @@ describe('appStore', () => {
     expect(state.generationError).toBeNull();
     expect(state.currentProject).toBeNull();
     expect(state.projects).toEqual([]);
-    expect(state.templates).toEqual([]);
     expect(state.sidebarOpen).toBe(false);
     expect(state.activePanel).toBe('code');
     expect(state.previewSize).toBe('desktop');

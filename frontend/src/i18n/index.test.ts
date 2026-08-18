@@ -1,38 +1,26 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { localizeTemplate, t } from './index';
+import { t } from './index';
 import { useAppStore } from '../store/appStore';
 
-describe('localizeTemplate', () => {
+describe('translate', () => {
   beforeEach(() => {
-    useAppStore.setState({ locale: 'en' });
-  });
-
-  it('returns English content for a known category in the en locale', () => {
-    const result = localizeTemplate('landing');
-    expect(result).toEqual({
-      title: 'SaaS Landing Page',
-      description: expect.stringContaining('One-page landing'),
-      prompt_text: expect.stringContaining('Create a modern landing page'),
-    });
-    expect(result?.prompt_text).toBe(t('templates.items.landing.prompt'));
-  });
-
-  it('is case-insensitive for category names', () => {
-    expect(localizeTemplate('Landing')).toEqual(localizeTemplate('landing'));
-  });
-
-  it('returns null in the ru locale (backend provides Russian text)', () => {
     useAppStore.setState({ locale: 'ru' });
-    expect(localizeTemplate('landing')).toBeNull();
   });
 
-  it('returns null for an unknown category', () => {
+  it('returns the Russian string in the ru locale', () => {
+    expect(t('common.close')).toBe('Закрыть');
+  });
+
+  it('returns the English string in the en locale', () => {
     useAppStore.setState({ locale: 'en' });
-    expect(localizeTemplate('quantum-fusion')).toBeNull();
+    expect(t('common.close')).toBe('Close');
   });
 
-  it('returns null for null/undefined category', () => {
-    expect(localizeTemplate(null)).toBeNull();
-    expect(localizeTemplate(undefined)).toBeNull();
+  it('interpolates {param} placeholders', () => {
+    expect(t('chat.errorOccurred', { message: 'X' })).toContain('X');
+  });
+
+  it('pluralizes with the n param', () => {
+    expect(t('chat.iterations', { n: 5 })).toBe('5 итераций');
   });
 });

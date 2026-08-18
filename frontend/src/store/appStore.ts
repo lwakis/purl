@@ -1,16 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { StateStorage } from 'zustand/middleware';
-import type {
-  ChatMessage,
-  Project,
-  PromptTemplate,
-  ThemeMode,
-  DesignStyle,
-  ActivePanel,
-  PreviewSize,
-  Locale,
-} from '../types';
+import type { ChatMessage, Project, ActivePanel, PreviewSize, Locale } from '../types';
 
 interface AppState {
   projects: Project[];
@@ -22,17 +13,12 @@ interface AppState {
   generationStatus: string;
   generationError: string | null;
   prompt: string;
-  theme: ThemeMode;
-  style: DesignStyle;
-  templates: PromptTemplate[];
   sidebarOpen: boolean;
   activePanel: ActivePanel;
   previewSize: PreviewSize;
   locale: Locale;
 
   setPrompt: (prompt: string) => void;
-  setTheme: (theme: ThemeMode) => void;
-  setStyle: (style: DesignStyle) => void;
   setCurrentCode: (code: string) => void;
   setChatHistory: (history: ChatMessage[]) => void;
   addChatMessage: (message: ChatMessage) => void;
@@ -43,7 +29,6 @@ interface AppState {
   setCurrentProject: (project: Project | null) => void;
   addProject: (project: Project) => void;
   setProjects: (projects: Project[]) => void;
-  setTemplates: (templates: PromptTemplate[]) => void;
   setSidebarOpen: (open: boolean) => void;
   setActivePanel: (panel: ActivePanel) => void;
   setPreviewSize: (size: PreviewSize) => void;
@@ -66,9 +51,6 @@ const initialState = {
   generationStatus: '',
   generationError: null,
   prompt: '',
-  theme: 'dark' as ThemeMode,
-  style: 'minimal' as DesignStyle,
-  templates: [],
   sidebarOpen: false,
   activePanel: 'code' as ActivePanel,
   previewSize: 'desktop' as PreviewSize,
@@ -110,8 +92,6 @@ export const useAppStore = create<AppState>()(
       ...initialState,
 
       setPrompt: (prompt) => set({ prompt }),
-      setTheme: (theme) => set({ theme }),
-      setStyle: (style) => set({ style }),
       setCurrentCode: (currentCode) => set({ currentCode }),
       setChatHistory: (chatHistory) => set({ chatHistory }),
       addChatMessage: (message) =>
@@ -123,7 +103,6 @@ export const useAppStore = create<AppState>()(
       setCurrentProject: (currentProject) => set({ currentProject }),
       addProject: (project) => set((state) => ({ projects: [project, ...state.projects] })),
       setProjects: (projects) => set({ projects }),
-      setTemplates: (templates) => set({ templates }),
       setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
       setActivePanel: (activePanel) => set({ activePanel }),
       setPreviewSize: (previewSize) => set({ previewSize }),

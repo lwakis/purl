@@ -22,8 +22,6 @@ export function useAutosave() {
     currentCode,
     currentProject,
     prompt,
-    theme,
-    style,
     sessionId,
     isGenerating,
     projects,
@@ -59,8 +57,8 @@ export function useAutosave() {
             name: prompt.trim().slice(0, 40) || 'Untitled',
             prompt,
             current_code: currentCode,
-            theme,
-            style,
+            theme: 'dark',
+            style: 'minimal',
             session_id: sessionId,
           });
           setCurrentProject(created);
@@ -69,8 +67,8 @@ export function useAutosave() {
           const updated = await updateProject(currentProject.id, {
             current_code: currentCode,
             prompt,
-            theme,
-            style,
+            theme: 'dark',
+            style: 'minimal',
           });
           setCurrentProject(updated);
           setProjects(projects.map((p) => (p.id === updated.id ? updated : p)));
@@ -92,8 +90,6 @@ export function useAutosave() {
     currentCode,
     currentProject,
     prompt,
-    theme,
-    style,
     sessionId,
     isGenerating,
     projects,

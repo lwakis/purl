@@ -1,9 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import PromptInput from './PromptInput';
 import { useAppStore } from '../store/appStore';
-import type { PromptTemplate } from '../types';
 
 vi.mock('../services/sse', () => ({
   connectGenerateSSE: vi.fn(),
@@ -12,113 +11,75 @@ vi.mock('../services/sse', () => ({
 
 import { connectGenerateSSE } from '../services/sse';
 
-const templates: PromptTemplate[] = [
-  {
-    id: 1,
-    title: 'Лендинг',
-    description: 'Одностраничник',
-    prompt_text: 'prompt 1',
-    category: 'Landing',
-    icon: '🚀',
-  },
-  {
-    id: 2,
-    title: 'Дашборд',
-    description: 'Аналитика',
-    prompt_text: 'prompt 2',
-    category: 'Dashboard',
-    icon: '📊',
-  },
-];
-
-function renderPromptInput() {
-  const onTemplateSelect = vi.fn();
-  render(<PromptInput templates={templates} onTemplateSelect={onTemplateSelect} />);
-  return { onTemplateSelect };
-}
-
 beforeEach(() => {
   vi.mocked(connectGenerateSSE).mockReset();
   vi.mocked(connectGenerateSSE).mockResolvedValue(undefined);
+  // jsdom does not implement matchMedia; the rotation effect guards on it.
+  window.matchMedia = vi.fn().mockReturnValue({ matches: false });
 });
 
 describe('PromptInput', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('renders the textarea with the "Описание дизайна" label', () => {
-    renderPromptInput();
+    render(<PromptInput />);
     expect(screen.getByRole('textbox', { name: 'Описание дизайна' })).toBeInTheDocument();
   });
 
-  it('shows the 0/2000 char counter initially', () => {
-    renderPromptInput();
-    expect(screen.getByText('0/2000')).toBeInTheDocument();
+  it('shows the headline and subtitle', () => {
+    render(<PromptInput />);
+    expect(
+      screen.getByRole('heading', { name: 'Что вы хотите создать?' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Опишите идею на естественном языке — получите готовую страницу')).toBeInTheDocument();
   });
 
-  it('updates the counter and store prompt while typing', async () => {
-    const user = userEvent.setup();
-    renderPromptInput();
+  it('shows the first rotation example as placeholder when empty and unfocused', () => {
+    render(<PromptInput />);
+    expect(screen.getByPlaceholderText('Лендинг для HR-SaaS')).toBeInTheDocument();
+  });
+
+  it('rotates through examples in the placeholder', () => {
+    vi.useFakeTimers();
+    render(<PromptInput />);
+    act(() => {
+      vi.advanceTimersByTime(3500);
+    });
+    expect(screen.getByPlaceholderText('Дашборд аналитики')).toBeInTheDocument();
+    act(() => {
+      vi.advanceTimersByTime(3500);
+    });
+    expect(screen.getByPlaceholderText('Форма регистрации')).toBeInTheDocument();
+  });
+
+  it('switches to the static question as placeholder when focused', () => {
+    render(<PromptInput />);
     const textarea = screen.getByRole('textbox', { name: 'Описание дизайна' });
-    await user.type(textarea, 'Привет');
-    expect(screen.getByText('6/2000')).toBeInTheDocument();
-    expect(useAppStore.getState().prompt).toBe('Привет');
-  });
-
-  it('renders all theme and style segment buttons', () => {
-    renderPromptInput();
-    for (const label of ['Тёмная', 'Светлая', 'Авто']) {
-      expect(screen.getByRole('button', { name: label })).toBeInTheDocument();
-    }
-    for (const label of ['Минимал', 'Корпоратив', 'Игривый', 'Техно']) {
-      expect(screen.getByRole('button', { name: label })).toBeInTheDocument();
-    }
-  });
-
-  it('sets the theme in the store when a theme button is clicked', async () => {
-    const user = userEvent.setup();
-    renderPromptInput();
-    await user.click(screen.getByRole('button', { name: 'Светлая' }));
-    expect(useAppStore.getState().theme).toBe('light');
-    await user.click(screen.getByRole('button', { name: 'Авто' }));
-    expect(useAppStore.getState().theme).toBe('auto');
-  });
-
-  it('sets the style in the store when a style button is clicked', async () => {
-    const user = userEvent.setup();
-    renderPromptInput();
-    await user.click(screen.getByRole('button', { name: 'Техно' }));
-    expect(useAppStore.getState().style).toBe('techno');
+    fireEvent.focus(textarea);
+    expect(screen.getByPlaceholderText('Опишите, что создать...')).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('Лендинг для HR-SaaS')).toBeNull();
   });
 
   it('disables the Generate button when the prompt is empty', () => {
-    renderPromptInput();
+    render(<PromptInput />);
     expect(screen.getByRole('button', { name: 'Сгенерировать' })).toBeDisabled();
   });
 
-  it('calls generate with prompt, theme and style selections', async () => {
+  it('calls generate with the trimmed prompt and fixed dark/minimal', async () => {
     const user = userEvent.setup();
-    useAppStore.setState({ theme: 'light', style: 'techno' });
-    renderPromptInput();
+    render(<PromptInput />);
     await user.type(screen.getByRole('textbox', { name: 'Описание дизайна' }), '  Лендинг для HR  ');
     await user.click(screen.getByRole('button', { name: 'Сгенерировать' }));
     await waitFor(() => {
-      expect(connectGenerateSSE).toHaveBeenCalledWith('Лендинг для HR', 'light', 'techno', expect.any(Object));
+      expect(connectGenerateSSE).toHaveBeenCalledWith('Лендинг для HR', 'dark', 'minimal', expect.any(Object));
     });
-  });
-
-  it('enforces the 2000 character limit', () => {
-    renderPromptInput();
-    const textarea = screen.getByRole('textbox', { name: 'Описание дизайна' });
-    fireEvent.change(textarea, { target: { value: 'x'.repeat(2000) } });
-    expect(useAppStore.getState().prompt).toHaveLength(2000);
-    expect(screen.getByText('2000/2000')).toBeInTheDocument();
-    // Input beyond the limit is rejected entirely (not truncated).
-    fireEvent.change(textarea, { target: { value: 'x'.repeat(2001) } });
-    expect(useAppStore.getState().prompt).toHaveLength(2000);
-    expect(screen.getByText('2000/2000')).toBeInTheDocument();
   });
 
   it('generates on Ctrl+Enter', async () => {
     const user = userEvent.setup();
-    renderPromptInput();
+    render(<PromptInput />);
     const textarea = screen.getByRole('textbox', { name: 'Описание дизайна' });
     await user.type(textarea, 'быстрый промпт');
     await user.keyboard('{Control>}{Enter}{/Control}');
@@ -127,17 +88,26 @@ describe('PromptInput', () => {
     });
   });
 
-  it('renders template chips and fires onTemplateSelect', async () => {
-    const user = userEvent.setup();
-    const { onTemplateSelect } = renderPromptInput();
-    await user.click(screen.getByRole('button', { name: /Лендинг/ }));
-    expect(onTemplateSelect).toHaveBeenCalledWith(templates[0]);
+  it('enforces the 2000 character limit', () => {
+    render(<PromptInput />);
+    const textarea = screen.getByRole('textbox', { name: 'Описание дизайна' });
+    fireEvent.change(textarea, { target: { value: 'x'.repeat(2000) } });
+    expect(useAppStore.getState().prompt).toHaveLength(2000);
+    // Input beyond the limit is rejected entirely (not truncated).
+    fireEvent.change(textarea, { target: { value: 'x'.repeat(2001) } });
+    expect(useAppStore.getState().prompt).toHaveLength(2000);
   });
 
-  it('shows the error alert when generationError is set and dismisses it', async () => {
+  it('disables Generate while generating', () => {
+    useAppStore.setState({ isGenerating: true });
+    render(<PromptInput />);
+    expect(screen.getByRole('button', { name: 'Сгенерировать' })).toBeDisabled();
+  });
+
+  it('shows the error alert and dismisses it', async () => {
     const user = userEvent.setup();
     useAppStore.setState({ generationError: 'Что-то пошло не так' });
-    renderPromptInput();
+    render(<PromptInput />);
     expect(screen.getByRole('alert')).toHaveTextContent('Что-то пошло не так');
     await user.click(screen.getByRole('button', { name: 'Закрыть сообщение об ошибке' }));
     expect(useAppStore.getState().generationError).toBeNull();

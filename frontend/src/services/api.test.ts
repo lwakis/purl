@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
-  fetchTemplates,
   createProject,
   getProjects,
   getProject,
@@ -37,27 +36,6 @@ afterEach(() => {
 });
 
 describe('api client', () => {
-  it('fetchTemplates GETs /api/templates and returns templates', async () => {
-    const templates = [
-      {
-        id: 1,
-        title: 'Landing',
-        description: 'd',
-        prompt_text: 'p',
-        category: 'c',
-        icon: 'i',
-      },
-    ];
-    fetchMock.mockResolvedValue(mockResponse(templates));
-
-    const result = await fetchTemplates();
-
-    expect(result).toEqual(templates);
-    expect(fetchMock).toHaveBeenCalledWith('/api/templates', {
-      headers: { 'Content-Type': 'application/json' },
-    });
-  });
-
   it('createProject POSTs /api/projects with the full JSON body', async () => {
     const project = {
       id: 1,
@@ -195,14 +173,14 @@ describe('api client', () => {
   it('throws a human-friendly error containing the status when the response is not ok', async () => {
     fetchMock.mockResolvedValue(mockResponse('boom', false, 500));
 
-    await expect(fetchTemplates()).rejects.toThrow('Ошибка сервера (500)');
-    await expect(fetchTemplates()).rejects.toThrow(/500/);
+    await expect(getProjects()).rejects.toThrow('Ошибка сервера (500)');
+    await expect(getProjects()).rejects.toThrow(/500/);
   });
 
   it('maps HTTP 429 to a rate-limit message', async () => {
     fetchMock.mockResolvedValue(mockResponse('rate limited', false, 429));
 
-    await expect(fetchTemplates()).rejects.toThrow(
+    await expect(getProjects()).rejects.toThrow(
       'Превышен лимит запросов, попробуйте позже'
     );
   });
@@ -210,7 +188,7 @@ describe('api client', () => {
   it('maps network failures to a friendly message', async () => {
     fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
 
-    await expect(fetchTemplates()).rejects.toThrow(
+    await expect(getProjects()).rejects.toThrow(
       'Не удалось связаться с сервером'
     );
   });

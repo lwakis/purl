@@ -16,11 +16,15 @@ export interface ChatMessage {
   content: string;
 }
 
+// Code and prompt come from the API as nullable (str | None): a project can be
+// created empty and only later receive generated HTML. The UI normalizes them
+// to '' at the store boundary (see ProjectSidebar.handleLoadProject), so callers
+// can rely on the store keeping plain strings.
 export interface Project {
   id: number;
   name: string;
-  prompt: string;
-  current_code: string;
+  prompt: string | null;
+  current_code: string | null;
   theme: string;
   style: string;
   session_id: string;
@@ -32,18 +36,9 @@ export interface ProjectVersion {
   id: number;
   project_id: number;
   version_num: number;
-  code: string;
+  code: string | null;
   message: string;
   created_at: string;
-}
-
-export interface PromptTemplate {
-  id: number;
-  title: string;
-  description: string;
-  prompt_text: string;
-  category: string;
-  icon: string;
 }
 
 export type SSEEventType = 'analysis' | 'design' | 'code' | 'complete' | 'error';
@@ -54,7 +49,5 @@ export interface SSEEvent {
 }
 
 export type PreviewSize = 'desktop' | 'tablet' | 'mobile';
-export type ThemeMode = 'light' | 'dark' | 'auto';
-export type DesignStyle = 'minimal' | 'corporate' | 'playful' | 'techno';
 export type ActivePanel = 'code' | 'chat';
 export type Locale = 'ru' | 'en';

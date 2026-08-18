@@ -1,4 +1,4 @@
-import type { Project, ProjectVersion, PromptTemplate } from '../types';
+import type { Project, ProjectVersion } from '../types';
 import { t } from '../i18n';
 
 // API base URL. Empty (default) = same origin as the frontend
@@ -34,10 +34,6 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   }
 
   return response.json();
-}
-
-export async function fetchTemplates(): Promise<PromptTemplate[]> {
-  return request<PromptTemplate[]>('/api/templates');
 }
 
 export async function createProject(data: {

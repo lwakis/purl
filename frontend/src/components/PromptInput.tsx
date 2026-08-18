@@ -1,61 +1,43 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { SparklesIcon } from '@heroicons/react/24/outline';
 import { useAppStore } from '../store/appStore';
 import { useGeneration } from '../hooks/useGeneration';
 import GenerationProgress from './GenerationProgress';
 import ErrorAlert from './ErrorAlert';
-import { useT, localizeTemplate } from '../i18n';
-import type { TranslationKey } from '../i18n';
-import type { ThemeMode, DesignStyle, PromptTemplate } from '../types';
+import { useT } from '../i18n';
 
 const MAX_PROMPT_LENGTH = 2000;
 
-const THEMES: { value: ThemeMode; labelKey: TranslationKey; icon: string }[] = [
-  {
-    value: 'dark',
-    labelKey: 'prompt.themeDark',
-    icon: 'M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z',
-  },
-  {
-    value: 'light',
-    labelKey: 'prompt.themeLight',
-    icon: 'M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z',
-  },
-  {
-    value: 'auto',
-    labelKey: 'prompt.themeAuto',
-    icon: 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
-  },
-];
-
-const STYLES: { value: DesignStyle; labelKey: TranslationKey }[] = [
-  { value: 'minimal', labelKey: 'prompt.styleMinimal' },
-  { value: 'corporate', labelKey: 'prompt.styleCorporate' },
-  { value: 'playful', labelKey: 'prompt.stylePlayful' },
-  { value: 'techno', labelKey: 'prompt.styleTechno' },
-];
-
-interface PromptInputProps {
-  templates: PromptTemplate[];
-  onTemplateSelect: (template: PromptTemplate) => void;
-}
-
-export default function PromptInput({ templates, onTemplateSelect }: PromptInputProps) {
-  const {
-    prompt,
-    theme,
-    style,
-    setPrompt,
-    setTheme,
-    setStyle,
-    generationError,
-    setGenerationError,
-  } = useAppStore();
+export default function PromptInput() {
+  const { prompt, setPrompt, generationError, setGenerationError } = useAppStore();
   const { generate, isGenerating } = useGeneration();
   const { t } = useT();
 
-  const charCount = prompt.length;
-  const atLimit = charCount >= MAX_PROMPT_LENGTH;
+  const [focused, setFocused] = useState(false);
+  const [exampleIndex, setExampleIndex] = useState(0);
+
+  const examples = [
+    t('prompt.example1'),
+    t('prompt.example2'),
+    t('prompt.example3'),
+    t('prompt.example4'),
+  ];
+
+  // Rotating placeholder examples only while idle: empty, unfocused, and not
+  // generating. Focused/typed states fall back to the static question.
+  const idle = !focused && prompt.trim() === '' && !isGenerating;
+  const placeholder = idle ? examples[exampleIndex] : t('prompt.placeholder');
+
+  useEffect(() => {
+    if (!idle) return;
+    if (
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    )
+      return;
+    const id = setInterval(() => setExampleIndex((i) => (i + 1) % examples.length), 3500);
+    return () => clearInterval(id);
+  }, [idle, examples.length]);
 
   const handlePromptChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -69,8 +51,8 @@ export default function PromptInput({ templates, onTemplateSelect }: PromptInput
 
   const handleGenerate = useCallback(() => {
     if (!prompt.trim() || isGenerating) return;
-    generate(prompt.trim(), theme, style);
-  }, [prompt, theme, style, generate, isGenerating]);
+    generate(prompt.trim());
+  }, [prompt, generate, isGenerating]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -83,111 +65,59 @@ export default function PromptInput({ templates, onTemplateSelect }: PromptInput
   );
 
   return (
-    <div className="space-y-3.5 animate-fade-in bg-surface-900 border border-line rounded-xl p-4 lg:p-5">
+    <div className="space-y-6 animate-fade-in">
       {generationError && (
         <ErrorAlert message={generationError} onDismiss={() => setGenerationError(null)} />
       )}
+
+      <div className="space-y-2">
+        <h1 className="text-2xl lg:text-3xl font-extrabold tracking-tight text-surface-100 text-balance">
+          {t('prompt.title')}
+        </h1>
+        <p className="text-sm lg:text-base text-surface-400 text-balance">{t('prompt.subtitle')}</p>
+      </div>
 
       <div className="relative">
         <textarea
           value={prompt}
           onChange={handlePromptChange}
           onKeyDown={handleKeyDown}
-          placeholder={t('prompt.placeholder')}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
           aria-label={t('prompt.aria')}
           data-testid="prompt-input"
-          className="w-full bg-surface-950/60 border border-line rounded-lg px-4 py-3 text-sm text-surface-100 placeholder-surface-500 focus:border-line-strong focus:ring-2 focus:ring-primary-500/20 transition-all resize-none min-h-[110px] leading-relaxed focus:outline-none"
-          rows={3}
           disabled={isGenerating}
+          placeholder={placeholder}
+          className="w-full bg-surface-900 border border-line rounded-xl px-5 py-4 text-base text-surface-100 placeholder:text-surface-500 focus:border-primary-500/60 focus:ring-2 focus:ring-primary-500/30 focus:outline-none transition-shadow resize-none min-h-[200px] leading-relaxed pr-20"
+          rows={4}
         />
-        <div
-          className={`absolute bottom-3 right-3 text-xs ${
-            atLimit ? 'text-status-error font-semibold' : 'text-surface-500'
-          }`}
-        >
-          {charCount}/{MAX_PROMPT_LENGTH}
-        </div>
-      </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-0.5 bg-surface-800/70 border border-line rounded-lg p-0.5">
-          {THEMES.map((th) => (
-            <button
-              key={th.value}
-              onClick={() => setTheme(th.value)}
-              disabled={isGenerating}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors focus-ring ${
-                theme === th.value
-                  ? 'bg-surface-700 text-surface-100'
-                  : 'text-surface-400 hover:text-surface-200'
-              }`}
-            >
-              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                <path d={th.icon} />
-              </svg>
-              {t(th.labelKey)}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-0.5 bg-surface-800/70 border border-line rounded-lg p-0.5">
-          {STYLES.map((st) => (
-            <button
-              key={st.value}
-              onClick={() => setStyle(st.value)}
-              disabled={isGenerating}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors focus-ring ${
-                style === st.value
-                  ? 'bg-surface-700 text-surface-100'
-                  : 'text-surface-400 hover:text-surface-200'
-              }`}
-            >
-              {t(st.labelKey)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <GenerationProgress />
-
-      <div className="flex gap-2">
         <button
           onClick={handleGenerate}
           disabled={!prompt.trim() || isGenerating}
           data-testid="generate-button"
-          className="flex-1 flex items-center justify-center gap-2 bg-primary-600 text-white font-medium px-4 py-2.5 rounded-md text-sm transition-all hover:bg-primary-500 active:scale-[0.98] disabled:bg-white/10 disabled:text-surface-400 disabled:cursor-not-allowed focus-ring"
+          aria-label={t('prompt.generate')}
+          className={`absolute bottom-3 right-3 z-10 flex items-center justify-center gap-2 p-3 rounded-lg transition-all focus-ring ${
+            isGenerating
+              ? 'bg-primary-600 text-white shadow-cta animate-safelight-breathe'
+              : prompt.trim()
+                ? 'bg-primary-600 text-white shadow-cta hover:bg-primary-500 active:scale-[0.98]'
+                : 'bg-surface-800 text-surface-500 border-line cursor-not-allowed'
+          }`}
         >
           {isGenerating ? (
             <>
               <span className="loading-dot" />
               <span className="loading-dot" />
               <span className="loading-dot" />
-              <span className="ml-1">{t('prompt.generating')}</span>
             </>
           ) : (
-            <>
-              <SparklesIcon className="w-4 h-4" />
-              {t('prompt.generate')}
-            </>
+            <SparklesIcon className="w-5 h-5" />
           )}
         </button>
       </div>
 
-      {templates.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {templates.slice(0, 5).map((tpl) => (
-            <button
-              key={tpl.id}
-              onClick={() => onTemplateSelect(tpl)}
-              disabled={isGenerating}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-surface-800/60 border border-line text-surface-400 hover:text-surface-200 hover:bg-surface-800 transition-colors text-xs disabled:opacity-40 focus-ring"
-            >
-              <span className="text-surface-400">{tpl.icon || '#'}</span>
-              {localizeTemplate(tpl.category)?.title ?? tpl.title}
-            </button>
-          ))}
-        </div>
-      )}
+      <GenerationProgress />
     </div>
   );
 }

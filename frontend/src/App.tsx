@@ -2,18 +2,14 @@ import { lazy, Suspense, useState, useEffect, useCallback } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { XMarkIcon, ChatBubbleLeftRightIcon, CodeBracketIcon } from '@heroicons/react/24/outline';
 import { useAppStore } from './store/appStore';
-import { fetchTemplates } from './services/api';
 import { createSessionId, loadSession, saveSession } from './services/session';
-import { useT, localizeTemplate } from './i18n';
+import { useT } from './i18n';
 import Header from './components/Header';
-import EmptyState from './components/EmptyState';
 import PromptInput from './components/PromptInput';
 import PreviewPanel from './components/PreviewPanel';
 import ChatPanel from './components/ChatPanel';
-import TemplateGallery from './components/TemplateGallery';
 import ProjectSidebar from './components/ProjectSidebar';
 import { useAutosave } from './hooks/useAutosave';
-import type { PromptTemplate } from './types';
 
 // react-syntax-highlighter is heavy (~300kB) — load CodePanel on demand so
 // it lands in its own chunk instead of the main bundle.
@@ -29,10 +25,8 @@ export default function App() {
     document.documentElement.lang = locale;
   }, [locale]);
 
-  const { currentCode, templates, setTemplates, setSessionId, setPrompt } =
-    useAppStore();
+  const { currentCode, setSessionId } = useAppStore();
 
-  const [templatesLoading, setTemplatesLoading] = useState(false);
   const [panelTab, setPanelTab] = useState<PanelTab>(null);
   const hasDesign = !!currentCode;
   const { status: saveStatus } = useAutosave();
@@ -60,28 +54,10 @@ export default function App() {
         setSessionId(sid);
         saveSession(sid);
       }
-
-      setTemplatesLoading(true);
-      try {
-        const data = await fetchTemplates();
-        setTemplates(data);
-      } catch {
-        // Templates are optional
-      } finally {
-        setTemplatesLoading(false);
-      }
     };
 
     init();
-  }, [setSessionId, setTemplates]);
-
-  const handleTemplateSelect = useCallback(
-    (template: PromptTemplate) => {
-      const text = localizeTemplate(template.category)?.prompt_text ?? template.prompt_text;
-      setPrompt(text);
-    },
-    [setPrompt],
-  );
+  }, [setSessionId]);
 
   const chatOpen = panelTab === 'chat';
   const codeOpen = panelTab === 'code';
@@ -96,26 +72,38 @@ export default function App() {
 
   return (
     <div className="h-dvh flex flex-col bg-surface-950 text-surface-100">
+      {/* Darkroom — the world contract.
+          1. The room: warm graphite surfaces lit by one safelight.
+             Work happens here; nothing performs for the visitor.
+          2. One color: safelight red marks action and exposure.
+             It is never decoration.
+          3. One light surface: the paper. A developed print,
+             never a card. Everything else stays in the dark.
+          4. Captions: exposure data in mono on the margins —
+             versions, timestamps, frame numbers. Measurement.
+          5. Motion: frames develop. When an exposure starts it
+             flashes into being; the rest stays quiet. */}
       <Toaster
         position="top-right"
         toastOptions={{
           style: {
-            background: '#0F1113',
-            color: '#F7F8F8',
-            border: '1px solid rgba(255,255,255,0.08)',
-            borderRadius: '12px',
+            background: '#1A1917',
+            color: '#F1EDE6',
+            border: '1px solid rgba(241,237,230,0.14)',
+            borderRadius: '8px',
             fontSize: '14px',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.4), 0 12px 40px rgba(0,0,0,0.55)',
           },
           success: {
             iconTheme: {
-              primary: '#8B93FF',
-              secondary: '#F7F8F8',
+              primary: '#F06A52',
+              secondary: '#1A1917',
             },
           },
           error: {
             iconTheme: {
-              primary: '#EF4444',
-              secondary: '#F7F8F8',
+              primary: '#F2555A',
+              secondary: '#1A1917',
             },
           },
         }}
@@ -135,14 +123,8 @@ export default function App() {
 
         {!hasDesign ? (
           <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-            <div className="max-w-5xl mx-auto px-4 py-8 lg:py-12 space-y-6 w-full">
-              <EmptyState />
-              <PromptInput templates={templates} onTemplateSelect={handleTemplateSelect} />
-              <TemplateGallery
-                templates={templates}
-                loading={templatesLoading}
-                onSelect={handleTemplateSelect}
-              />
+            <div className="w-full max-w-5xl mx-auto px-4 py-10 lg:py-16 flex-1 flex flex-col justify-center space-y-6">
+              <PromptInput />
             </div>
           </main>
         ) : (
@@ -171,7 +153,7 @@ export default function App() {
                 <div
                   role="tablist"
                   aria-label={t('app.tabsAria')}
-                  className="flex items-center gap-0.5 bg-surface-800/70 border border-line rounded-lg p-0.5 flex-1"
+                  className="flex items-center gap-0.5 bg-surface-800 shadow-segment-inset border border-line rounded-md p-0.5 flex-1"
                 >
                   <button
                     role="tab"
@@ -179,7 +161,7 @@ export default function App() {
                     onClick={() => setPanelTab('chat')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors focus-ring ${
                       panelTab === 'chat'
-                        ? 'bg-surface-700 text-surface-100'
+                        ? 'bg-primary-600/10 text-primary-400'
                         : 'text-surface-400 hover:text-surface-200'
                     }`}
                   >
@@ -192,7 +174,7 @@ export default function App() {
                     onClick={() => setPanelTab('code')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors focus-ring ${
                       panelTab === 'code'
-                        ? 'bg-surface-700 text-surface-100'
+                        ? 'bg-primary-600/10 text-primary-400'
                         : 'text-surface-400 hover:text-surface-200'
                     }`}
                   >
@@ -202,7 +184,7 @@ export default function App() {
                 </div>
                 <button
                   onClick={closePanel}
-                  className="p-2 rounded-md text-surface-400 hover:text-surface-100 hover:bg-white/5 transition-colors focus-ring"
+                  className="p-2 rounded-md text-surface-400 hover:text-surface-100 hover:bg-surface-800 transition-colors focus-ring"
                   aria-label={t('app.closePanelAria')}
                 >
                   <XMarkIcon className="w-4 h-4" />
@@ -215,7 +197,7 @@ export default function App() {
                   <Suspense
                     fallback={
                       <div className="flex h-full items-center justify-center">
-                        <div className="w-full max-w-sm animate-pulse rounded-xl border border-line bg-surface-800 p-4">
+                        <div className="w-full max-w-sm animate-pulse rounded-md border border-line bg-surface-800 p-4">
                           <div className="mb-3 h-4 w-2/3 rounded bg-surface-700" />
                           <div className="h-40 rounded bg-surface-700/70" />
                         </div>
