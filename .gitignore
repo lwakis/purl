@@ -19,7 +19,7 @@ venv/
 env/
 
 # Python/version managers
-.python-version
+/.python-version
 
 # ── Secrets — NEVER commit real credentials ───────────────────────────────────
 .env
