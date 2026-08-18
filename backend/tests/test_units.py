@@ -1,7 +1,13 @@
 """Unit tests for utils and prompt_service."""
 
 from app.config import settings
-from app.services.llm_service import resolve_provider
+from app.services.llm_service import (
+    FenceStripper,
+    _sse_event,
+    _stream_cleaned_code,
+    _strip_code_fences,
+    resolve_provider,
+)
 from app.services.prompt_service import (
     build_generate_prompt,
     build_iterate_prompt,
@@ -132,3 +138,93 @@ def test_resolve_provider_unknown_name_not_ready(monkeypatch):
     monkeypatch.setattr(settings, 'llm_api_key', 'sk-test')
     provider = resolve_provider()
     assert provider.ready is False
+
+
+# ── Fence stripper ────────────────────────────────────────────────────────────
+
+
+def test_strip_code_fences_removes_leading_and_trailing_fences():
+    html = '```html\n<!DOCTYPE html>\n<body>hi</body>\n```\n'
+    result = _strip_code_fences(html)
+    assert result.startswith('<!DOCTYPE html>')
+    assert result.endswith('</body>')
+    assert '```' not in result
+
+
+def test_strip_code_fences_removes_mid_document_fences():
+    html = '<body>\n```\n<extra>\n```\n</body>'
+    assert '<extra>' in _strip_code_fences(html)
+    assert '```' not in _strip_code_fences(html)
+
+
+def test_strip_code_fences_is_idempotent():
+    html = '<!DOCTYPE html>\n<body>hi</body>\n'
+    once = _strip_code_fences(html)
+    assert _strip_code_fences(once) == once
+
+
+def test_strip_code_fences_handles_bare_python_fence():
+    html = '```python\nprint(1)\n```\n'
+    result = _strip_code_fences(html)
+    assert result == 'print(1)'
+
+
+def test_fence_stripper_removes_fences_from_single_chunk():
+    stripper = FenceStripper()
+    chunk = stripper.feed('```html\n<!DOCTYPE html>\n<body>hi</body>\n```\n')
+    assert chunk == '<!DOCTYPE html>\n<body>hi</body>\n'
+    assert stripper.flush() == ''
+
+
+def test_fence_stripper_buffers_fence_split_across_chunks():
+    stripper = FenceStripper()
+    assert stripper.feed('```ht') == ''
+    assert stripper.feed('ml\n<body>hi</body>\n') == '<body>hi</body>\n'
+    assert stripper.flush() == ''
+
+
+def test_fence_stripper_drops_closing_fence_in_separate_chunk():
+    stripper = FenceStripper()
+    assert stripper.feed('```html\n') == ''
+    assert stripper.feed('<body>hi</body>\n') == '<body>hi</body>\n'
+    assert stripper.feed('```') == ''
+    assert stripper.flush() == ''
+
+
+def test_fence_stripper_passes_plain_html_unchanged():
+    stripper = FenceStripper()
+    chunk = stripper.feed('<!DOCTYPE html>\n<body>hi</body>\n')
+    assert chunk == '<!DOCTYPE html>\n<body>hi</body>\n'
+    assert stripper.flush() == ''
+
+
+def test_fence_stripper_flushes_trailing_partial_line():
+    stripper = FenceStripper()
+    assert stripper.feed('<body>') == ''
+    assert stripper.flush() == '<body>'
+
+
+async def test_stream_cleaned_code_relays_events_and_cleans_code():
+    async def source():
+        yield _sse_event('analysis', 'Анализирую ваш запрос...')
+        yield _sse_event('code', '```html\n<body>')
+        yield _sse_event('code', 'hi</body>\n```\n')
+        yield _sse_event('complete', '_DONE_')
+
+    collected = [pair async for pair in _stream_cleaned_code(source())]
+    assert collected[0] == (_sse_event('analysis', 'Анализирую ваш запрос...'), '')
+
+    code_pairs = [pair for pair in collected if pair[1]]
+    assert code_pairs
+    assert code_pairs[-1][1] == '<body>hi</body>\n'
+
+    completes = [pair for pair in collected if pair[0].startswith('data: {"type": "complete"')]
+    assert completes[0][0] == _sse_event('complete', '_DONE_')
+
+
+async def test_stream_cleaned_code_flushes_trailing_tail():
+    async def source():
+        yield _sse_event('code', '```html\n<body>hi</body>')
+
+    collected = [pair async for pair in _stream_cleaned_code(source())]
+    assert collected[-1][1] == '<body>hi</body>'

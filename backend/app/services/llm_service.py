@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import dataclasses
 import json
+import re
 from collections.abc import AsyncGenerator
 
 import httpx
@@ -65,12 +66,100 @@ def _sse_event(event_type: str, content: str) -> str:
 
 
 def _strip_code_fences(html: str) -> str:
-    import re
-
-    html = re.sub(r'^```(?:html)?\s*\n?', '', html)
+    """Remove markdown code-fence markers from a finished HTML document."""
+    html = re.sub(r'^```[a-zA-Z0-9_-]*\s*\n?', '', html)
     html = re.sub(r'\n```\s*$', '', html)
-    html = re.sub(r'\n```\n', '\n', html)
+    html = re.sub(r'\n```[a-zA-Z0-9_-]*\s*\n', '\n', html)
     return html.strip()
+
+
+class FenceStripper:
+    """Strip markdown code fences from a stream of code chunks.
+
+    LLMs commonly wrap their HTML output in ```html ... ``` fences. The
+    ``complete`` event cleans them up via ``_strip_code_fences``, but the
+    intermediate ``code`` chunks are streamed raw — so the opening fence
+    (````` ```html ````) and the closing one (````` ``` ````) flash in the live
+    preview during generation. This stripper removes fence markers on the fly,
+    tolerating fences split across chunk boundaries.
+    """
+
+    def __init__(self) -> None:
+        self._buffer = ''
+        self._seen_code = False
+
+    def feed(self, chunk: str) -> str:
+        """Return *chunk* with fence markers removed, preserving newlines.
+
+        Incomplete trailing lines are buffered until the rest of the line
+        arrives, so a fence split across two chunks is still recognised.
+        """
+        self._buffer += chunk
+        out: list[str] = []
+        while '\n' in self._buffer:
+            line, sep, self._buffer = self._buffer.partition('\n')
+            cleaned = self._clean_line(line)
+            if cleaned is not None:
+                out.append(cleaned + sep)
+        return ''.join(out)
+
+    def flush(self) -> str:
+        """Emit any buffered tail, dropping a trailing fence marker."""
+        if not self._buffer:
+            return ''
+        tail, self._buffer = self._buffer, ''
+        cleaned = self._clean_line(tail)
+        return cleaned if cleaned is not None else ''
+
+    def _clean_line(self, line: str) -> str | None:
+        """Return the line with fence markers removed, or None to drop it."""
+        stripped = line.rstrip('\r\n')
+        if not self._seen_code and self._is_opening_fence(stripped):
+            self._seen_code = True
+            return None
+        if self._seen_code and self._is_closing_fence(stripped):
+            self._seen_code = False
+            return None
+        if self._seen_code and self._is_opening_fence(stripped):
+            return None
+        return line
+
+    @staticmethod
+    def _is_opening_fence(line: str) -> bool:
+        return re.fullmatch(r'```(?:[a-zA-Z0-9_-]+)?', line) is not None
+
+    @staticmethod
+    def _is_closing_fence(line: str) -> bool:
+        return line == '```'
+
+
+async def _stream_cleaned_code(
+    events: AsyncGenerator[str],
+) -> AsyncGenerator[tuple[str, str]]:
+    """Yield ``(sse, cleaned)`` pairs for an SSE event stream.
+
+    ``code`` events have markdown fences removed from their content; every
+    other event type passes through untouched (``cleaned`` is ``''``). The
+    final buffered tail is flushed as one last ``code`` event so no content is
+    lost at the end of the stream.
+    """
+    stripper = FenceStripper()
+    async for sse in events:
+        if sse.startswith('data: '):
+            try:
+                payload = json.loads(sse[6:])
+            except (json.JSONDecodeError, IndexError):
+                pass
+            else:
+                if payload.get('type') == 'code':
+                    cleaned = stripper.feed(payload.get('content', ''))
+                    yield _sse_event('code', cleaned), cleaned
+                    continue
+        yield sse, ''
+
+    tail = stripper.flush()
+    if tail:
+        yield _sse_event('code', tail), tail
 
 
 # ── Shared HTTP client ────────────────────────────────────────────────────────
@@ -159,14 +248,10 @@ async def generate(
         async for sse in _stream_mock(full_html):
             yield sse
     else:
-        async for sse in _stream_llm(provider, system, user_msg):
-            if sse.startswith('data: '):
-                try:
-                    payload = json.loads(sse[6:])
-                    if payload.get('type') == 'code':
-                        full_html += payload.get('content', '')
-                except (json.JSONDecodeError, IndexError):
-                    pass
+        async for sse, cleaned in _stream_cleaned_code(
+            _stream_llm(provider, system, user_msg)
+        ):
+            full_html += cleaned
             yield sse
 
     yield _sse_event('complete', _strip_code_fences(full_html))
@@ -212,14 +297,10 @@ async def iterate_stream(
         async for sse in _stream_mock(full_html, intro='Обновляю макет...\n'):
             yield sse
     else:
-        async for sse in _stream_llm(provider, system_prompt, iterate_msg):
-            if sse.startswith('data: '):
-                try:
-                    payload = json.loads(sse[6:])
-                    if payload.get('type') == 'code':
-                        full_html += payload.get('content', '')
-                except (json.JSONDecodeError, IndexError):
-                    pass
+        async for sse, cleaned in _stream_cleaned_code(
+            _stream_llm(provider, system_prompt, iterate_msg)
+        ):
+            full_html += cleaned
             yield sse
 
     yield _sse_event('complete', _strip_code_fences(full_html))
