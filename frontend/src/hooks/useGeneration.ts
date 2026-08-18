@@ -11,6 +11,51 @@ import type { ChatMessage, SSEEvent } from '../types';
 // active AbortController must be shared across all useGeneration() callers.
 let abortRequested = false;
 let activeController: AbortController | null = null;
+let activePublisher: CodePublisher | null = null;
+
+// How often the preview may refresh while a stream is running. Code chunks
+// arrive far faster than the iframe can meaningfully re-render, and each
+// srcDoc swap reloads the whole generated page — dozens of them per second
+// read as a violent flicker. Accumulate locally, publish on a throttle.
+const CODE_FLUSH_MS = 300;
+
+interface CodePublisher {
+  push: (chunk: string) => void;
+  finalize: (html: string) => void;
+  dispose: () => void;
+}
+
+function createCodePublisher(setCurrentCode: (code: string) => void): CodePublisher {
+  let accumulated = '';
+  let timer: ReturnType<typeof setTimeout> | null = null;
+
+  const flush = () => {
+    if (timer !== null) {
+      clearTimeout(timer);
+      timer = null;
+    }
+    setCurrentCode(accumulated);
+  };
+
+  return {
+    push(chunk) {
+      accumulated += chunk;
+      if (timer === null) {
+        timer = setTimeout(flush, CODE_FLUSH_MS);
+      }
+    },
+    finalize(html) {
+      accumulated = html;
+      flush();
+    },
+    dispose() {
+      if (timer !== null) {
+        clearTimeout(timer);
+        timer = null;
+      }
+    },
+  };
+}
 
 export function useGeneration() {
   const { t } = useT();
@@ -38,7 +83,7 @@ export function useGeneration() {
   }, [sessionId, setSessionId]);
 
   const generate = useCallback(
-    async (prompt: string, theme?: string, style?: string) => {
+    async (prompt: string) => {
       abortRequested = false;
       activeController = new AbortController();
       setGenerationError(null);
@@ -46,7 +91,8 @@ export function useGeneration() {
       setGenerationStatus('status.analysis');
       setCurrentCode('');
 
-      let accumulatedCode = '';
+      const publisher = createCodePublisher(setCurrentCode);
+      activePublisher = publisher;
 
       const handleEvent = (event: SSEEvent) => {
         if (abortRequested) return;
@@ -60,14 +106,15 @@ export function useGeneration() {
             break;
           case 'code':
             setGenerationStatus('status.code');
-            accumulatedCode += event.content;
-            setCurrentCode(accumulatedCode);
+            publisher.push(event.content);
             break;
         }
       };
 
       const handleError = (err: Error) => {
         if (abortRequested) return;
+        activePublisher = null;
+        publisher.dispose();
         setGenerationError(err.message);
         setGenerating(false);
         setGenerationStatus('');
@@ -75,12 +122,13 @@ export function useGeneration() {
 
       const handleComplete = (finalHtml: string) => {
         if (abortRequested) return;
-        setCurrentCode(finalHtml);
+        activePublisher = null;
+        publisher.finalize(finalHtml);
         setGenerating(false);
         setGenerationStatus('status.done');
       };
 
-      await connectGenerateSSE(prompt, theme || 'dark', style || 'minimal', {
+      await connectGenerateSSE(prompt, 'dark', 'minimal', {
         onEvent: handleEvent,
         onError: handleError,
         onComplete: handleComplete,
@@ -103,7 +151,9 @@ export function useGeneration() {
       addChatMessage(userMessage);
 
       const updatedHistory = [...chatHistory, userMessage];
-      let accumulatedCode = '';
+
+      const publisher = createCodePublisher(setCurrentCode);
+      activePublisher = publisher;
 
       const handleEvent = (event: SSEEvent) => {
         if (abortRequested) return;
@@ -117,14 +167,15 @@ export function useGeneration() {
             break;
           case 'code':
             setGenerationStatus('status.code');
-            accumulatedCode += event.content;
-            setCurrentCode(accumulatedCode);
+            publisher.push(event.content);
             break;
         }
       };
 
       const handleError = (err: Error) => {
         if (abortRequested) return;
+        activePublisher = null;
+        publisher.dispose();
         setGenerationError(err.message);
         setGenerating(false);
         setGenerationStatus('');
@@ -136,7 +187,8 @@ export function useGeneration() {
 
       const handleComplete = (finalHtml: string) => {
         if (abortRequested) return;
-        setCurrentCode(finalHtml);
+        activePublisher = null;
+        publisher.finalize(finalHtml);
         setGenerating(false);
         setGenerationStatus('');
 
@@ -178,6 +230,8 @@ export function useGeneration() {
     abortRequested = true;
     activeController?.abort();
     activeController = null;
+    activePublisher?.dispose();
+    activePublisher = null;
     setGenerating(false);
     setGenerationStatus('');
   }, [setGenerating, setGenerationStatus]);

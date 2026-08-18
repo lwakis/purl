@@ -6,7 +6,7 @@ import type { TranslationKey } from '../i18n';
 
 // Status keys stored in the store double as stage markers: prefix matching
 // works for both generate ('status.analysis') and iterate ('status.analysisEdits')
-// variants, so the progress bar stays correct in any locale.
+// variants, so the strip stays correct in any locale.
 const STAGES = [
   { key: 'status.analysis', labelKey: 'progress.analysis' },
   { key: 'status.design', labelKey: 'progress.design' },
@@ -27,7 +27,12 @@ const STATUS_KEYS = [
 ] as const satisfies readonly TranslationKey[];
 
 export default function GenerationProgress() {
-  const { generationStatus, isGenerating } = useAppStore();
+  // Subscribe to the two fields that drive this panel only. Streaming code
+  // chunks update the store every few hundred milliseconds; re-rendering the
+  // progress panel on each flush would churn the DOM and re-announce the
+  // live region for screen readers.
+  const isGenerating = useAppStore((s) => s.isGenerating);
+  const generationStatus = useAppStore((s) => s.generationStatus);
   const { cancel } = useGeneration();
   const { t } = useT();
 
@@ -38,45 +43,67 @@ export default function GenerationProgress() {
 
   return (
     <div className="bg-surface-900 border border-line rounded-xl p-4 mb-4 animate-fade-in">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-sm text-surface-300">{statusLabel ? t(statusLabel) : null}</span>
-        <button
-          onClick={cancel}
-          disabled={!isGenerating}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-surface-400 hover:text-surface-100 hover:bg-white/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-ring"
-          aria-label={t('progress.cancelAria')}
-        >
-          <XMarkIcon className="w-3.5 h-3.5" />
-          {t('progress.cancel')}
-        </button>
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <span role="status" className="exposure-label text-surface-500 truncate">
+          {statusLabel ? t(statusLabel) : null}
+        </span>
+        <div className="flex items-center gap-4 shrink-0">
+          <span className="exposure-label text-primary-400">
+            {String(currentIndex + 1).padStart(2, '0')}/{STAGES.length}
+          </span>
+          <button
+            onClick={cancel}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium bg-surface-900 border border-line text-surface-300 hover:text-surface-100 hover:border-line-strong transition-colors focus-ring active:scale-[0.98]"
+            aria-label={t('progress.cancelAria')}
+          >
+            <XMarkIcon className="w-3.5 h-3.5" />
+            {t('progress.cancel')}
+          </button>
+        </div>
       </div>
-      <div className="flex items-center gap-2">
-        {STAGES.map((stage, i) => (
-          <div key={stage.key} className="flex items-center gap-2 flex-1">
-            <div
-              className={`h-1 rounded-full flex-1 transition-all duration-300 ${
-                i < currentIndex
-                  ? 'bg-primary-500'
-                  : i === currentIndex
-                    ? 'bg-primary-400 relative overflow-hidden before:absolute before:inset-0 before:animate-shimmer before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent'
-                    : 'bg-white/8'
-              }`}
-            />
-            <span
-              className={`text-xs whitespace-nowrap ${
-                i <= currentIndex ? 'text-primary-400' : 'text-surface-400'
-              }`}
-            >
-              {t(stage.labelKey)}
-            </span>
-          </div>
-        ))}
-      </div>
-      <div className="flex items-center gap-1.5 mt-3">
-        <span className="text-xs text-surface-400">{t('progress.processing')}</span>
-        <span className="loading-dot" />
-        <span className="loading-dot" />
-        <span className="loading-dot" />
+
+      {/* The development strip — a film strip, not a card grid. Each stage is
+          a frame: an exposure number, a caption, and a line that "develops"
+          (fills with safelight) once its frame is exposed. The active frame
+          breathes; everything else stays quiet. No borders, no gradients. */}
+      <div className="flex gap-1.5">
+        {STAGES.map((stage, i) => {
+          const isDone = i < currentIndex;
+          const isActive = i === currentIndex;
+          return (
+            <div key={stage.key} className="flex-1 min-w-0">
+              <div className="flex items-baseline gap-1.5 mb-2">
+                <span
+                  className={`exposure-label ${
+                    isActive ? 'text-primary-400' : isDone ? 'text-surface-400' : 'text-surface-500'
+                  }`}
+                >
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span
+                  className={`text-xs truncate ${
+                    isActive
+                      ? 'text-surface-100 font-medium'
+                      : isDone
+                        ? 'text-surface-300'
+                        : 'text-surface-500'
+                  }`}
+                >
+                  {t(stage.labelKey)}
+                </span>
+              </div>
+              <div
+                className={`h-0.5 rounded-full transition-colors duration-500 ${
+                  isActive
+                    ? 'bg-primary-500 animate-safelight-breathe'
+                    : isDone
+                      ? 'bg-primary-600'
+                      : 'bg-surface-700'
+                }`}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );

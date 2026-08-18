@@ -18,6 +18,7 @@ describe('GenerationProgress', () => {
     expect(screen.getByText('Анализ промпта')).toBeInTheDocument();
     expect(screen.getByText('Разработка дизайна')).toBeInTheDocument();
     expect(screen.getByText('Генерация кода')).toBeInTheDocument();
+    expect(screen.getByText('01/3')).toBeInTheDocument();
   });
 
   it('cancels generation via the cancel button', async () => {
