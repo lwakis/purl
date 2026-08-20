@@ -1,4 +1,4 @@
-import type { Project, ProjectVersion } from '../types';
+import type { Project, ProjectVersion, ProviderInfo } from '../types';
 import { t } from '../i18n';
 
 // API base URL. Empty (default) = same origin as the frontend
@@ -53,6 +53,11 @@ export async function createProject(data: {
 export async function getProjects(sessionId?: string): Promise<Project[]> {
   const query = sessionId ? `?session_id=${encodeURIComponent(sessionId)}` : '';
   return request<Project[]>(`/api/projects${query}`);
+}
+
+export async function getModels(): Promise<ProviderInfo[]> {
+  const data = await request<{ providers: ProviderInfo[] }>('/api/models');
+  return data.providers;
 }
 
 export async function getProject(id: number): Promise<Project> {

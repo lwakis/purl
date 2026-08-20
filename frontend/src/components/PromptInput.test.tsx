@@ -73,7 +73,13 @@ describe('PromptInput', () => {
     await user.type(screen.getByRole('textbox', { name: 'Описание дизайна' }), '  Лендинг для HR  ');
     await user.click(screen.getByRole('button', { name: 'Сгенерировать' }));
     await waitFor(() => {
-      expect(connectGenerateSSE).toHaveBeenCalledWith('Лендинг для HR', 'dark', 'minimal', expect.any(Object));
+      expect(connectGenerateSSE).toHaveBeenCalledWith(
+        'Лендинг для HR',
+        'dark',
+        'minimal',
+        expect.any(Object),
+        expect.any(Object),
+      );
     });
   });
 
@@ -84,7 +90,13 @@ describe('PromptInput', () => {
     await user.type(textarea, 'быстрый промпт');
     await user.keyboard('{Control>}{Enter}{/Control}');
     await waitFor(() => {
-      expect(connectGenerateSSE).toHaveBeenCalledWith('быстрый промпт', 'dark', 'minimal', expect.any(Object));
+      expect(connectGenerateSSE).toHaveBeenCalledWith(
+        'быстрый промпт',
+        'dark',
+        'minimal',
+        expect.any(Object),
+        expect.any(Object),
+      );
     });
   });
 

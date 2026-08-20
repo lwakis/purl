@@ -6,6 +6,7 @@ import {
   updateProject,
   deleteProject,
   getProjectVersions,
+  getModels,
 } from './api';
 
 interface MockResponse {
@@ -166,6 +167,25 @@ describe('api client', () => {
 
     expect(result).toEqual(versions);
     expect(fetchMock).toHaveBeenCalledWith('/api/projects/4/versions', {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  });
+
+  it('getModels GETs /api/models and returns the providers array', async () => {
+    const providers = [
+      {
+        id: 'openai',
+        name: 'OpenAI',
+        models: [{ id: 'gpt-4o', label: 'GPT-4o' }],
+        ready: true,
+      },
+    ];
+    fetchMock.mockResolvedValue(mockResponse({ providers }));
+
+    const result = await getModels();
+
+    expect(result).toEqual(providers);
+    expect(fetchMock).toHaveBeenCalledWith('/api/models', {
       headers: { 'Content-Type': 'application/json' },
     });
   });

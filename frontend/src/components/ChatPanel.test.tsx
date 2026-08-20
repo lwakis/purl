@@ -49,7 +49,8 @@ describe('ChatPanel', () => {
         'Сделай кнопки больше',
         '<html>design</html>',
         expect.any(Array),
-        expect.any(Object)
+        expect.any(Object),
+        expect.any(Object),
       );
     });
     expect(screen.getByText('Сделай кнопки больше')).toBeInTheDocument();

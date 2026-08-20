@@ -128,11 +128,22 @@ export function useGeneration() {
         setGenerationStatus('status.done');
       };
 
-      await connectGenerateSSE(prompt, 'dark', 'minimal', {
-        onEvent: handleEvent,
-        onError: handleError,
-        onComplete: handleComplete,
-      });
+      const { selectedModel, planOn, attachments } = useAppStore.getState();
+      await connectGenerateSSE(
+        prompt,
+        'dark',
+        'minimal',
+        {
+          onEvent: handleEvent,
+          onError: handleError,
+          onComplete: handleComplete,
+        },
+        {
+          model: selectedModel,
+          plan: planOn,
+          images: attachments.map((a) => a.dataUrl),
+        },
+      );
     },
     [setGenerating, setGenerationStatus, setGenerationError, setCurrentCode],
   );
@@ -192,6 +203,10 @@ export function useGeneration() {
         setGenerating(false);
         setGenerationStatus('');
 
+        // The selected element is a one-shot hint for this iteration; drop it
+        // so a later chat message does not silently re-target the same node.
+        useAppStore.getState().clearSelectedElement();
+
         const assistantMessage: ChatMessage = {
           role: 'assistant',
           content: t('chat.designUpdated'),
@@ -206,11 +221,34 @@ export function useGeneration() {
         }
       };
 
-      await connectIterateSSE(sid, message, currentCode, updatedHistory, {
-        onEvent: handleEvent,
-        onError: handleError,
-        onComplete: handleComplete,
-      });
+      const { selectedModel, planOn, attachments, selectedElement } = useAppStore.getState();
+      const selectedElementJson = selectedElement
+        ? JSON.stringify({
+            tag: selectedElement.tag,
+            id: selectedElement.id,
+            classes: selectedElement.classes,
+            text: selectedElement.text,
+            selector: selectedElement.selector,
+          })
+        : null;
+
+      await connectIterateSSE(
+        sid,
+        message,
+        currentCode,
+        updatedHistory,
+        {
+          onEvent: handleEvent,
+          onError: handleError,
+          onComplete: handleComplete,
+        },
+        {
+          model: selectedModel,
+          plan: planOn,
+          images: attachments.map((a) => a.dataUrl),
+          selected_element: selectedElementJson,
+        },
+      );
     },
     [
       ensureSession,

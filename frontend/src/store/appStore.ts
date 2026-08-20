@@ -8,6 +8,8 @@ import type {
   PreviewSize,
   WorkspaceView,
   Locale,
+  Attachment,
+  SelectedElement,
 } from '../types';
 
 interface AppState {
@@ -26,6 +28,11 @@ interface AppState {
   workspaceView: WorkspaceView;
   previewRefreshKey: number;
   locale: Locale;
+  selectedModel: string | null;
+  planOn: boolean;
+  selectMode: boolean;
+  selectedElement: SelectedElement | null;
+  attachments: Attachment[];
 
   setPrompt: (prompt: string) => void;
   setCurrentCode: (code: string) => void;
@@ -44,6 +51,14 @@ interface AppState {
   setWorkspaceView: (view: WorkspaceView) => void;
   bumpPreviewRefresh: () => void;
   setLocale: (locale: Locale) => void;
+  setSelectedModel: (model: string | null) => void;
+  setPlanOn: (on: boolean) => void;
+  setSelectMode: (on: boolean) => void;
+  setSelectedElement: (element: SelectedElement | null) => void;
+  clearSelectedElement: () => void;
+  addAttachment: (attachment: Attachment) => void;
+  removeAttachment: (id: string) => void;
+  clearAttachments: () => void;
   reset: () => void;
 }
 
@@ -68,6 +83,11 @@ const initialState = {
   workspaceView: 'preview' as WorkspaceView,
   previewRefreshKey: 0,
   locale: 'ru' as Locale,
+  selectedModel: null,
+  planOn: false,
+  selectMode: false,
+  selectedElement: null,
+  attachments: [] as Attachment[],
 };
 
 // Resolve localStorage lazily on every call. In the test environment the
@@ -123,6 +143,20 @@ export const useAppStore = create<AppState>()(
       bumpPreviewRefresh: () =>
         set((state) => ({ previewRefreshKey: state.previewRefreshKey + 1 })),
       setLocale: (locale) => set({ locale }),
+      setSelectedModel: (selectedModel) => set({ selectedModel }),
+      setPlanOn: (planOn) => set({ planOn }),
+      setSelectMode: (selectMode) => set({ selectMode }),
+      setSelectedElement: (selectedElement) => set({ selectedElement }),
+      clearSelectedElement: () => set({ selectedElement: null }),
+      addAttachment: (attachment) =>
+        set((state) => {
+          if (state.attachments.some((a) => a.name === attachment.name)) return state;
+          if (state.attachments.length >= 8) return state;
+          return { attachments: [...state.attachments, attachment] };
+        }),
+      removeAttachment: (id) =>
+        set((state) => ({ attachments: state.attachments.filter((a) => a.id !== id) })),
+      clearAttachments: () => set({ attachments: [] }),
       reset: () => set(initialState),
     }),
     {

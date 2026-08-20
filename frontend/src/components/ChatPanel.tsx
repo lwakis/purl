@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowUpIcon,
+  CheckIcon,
   ChevronDownIcon,
   ClipboardIcon,
   CursorArrowRaysIcon,
@@ -10,13 +11,14 @@ import {
   LightBulbIcon,
   PaperClipIcon,
   SparklesIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { useAppStore } from '../store/appStore';
 import { useGeneration } from '../hooks/useGeneration';
-import { getProjectVersions } from '../services/api';
+import { getModels, getProjectVersions } from '../services/api';
 import { useT } from '../i18n';
-import type { ProjectVersion } from '../types';
+import type { ProjectVersion, ProviderInfo } from '../types';
 import MarkdownMessage from './MarkdownMessage';
 import VersionCard from './VersionCard';
 
@@ -25,19 +27,43 @@ interface ChatPanelProps {
 }
 
 const MAX_VERSIONS_SHOWN = 3;
+const MAX_ATTACHMENTS = 8;
+const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 
 export default function ChatPanel({ hideInput }: ChatPanelProps) {
-  const { chatHistory, isGenerating, currentCode, currentProject, setCurrentCode } = useAppStore();
+  const {
+    chatHistory,
+    isGenerating,
+    currentCode,
+    currentProject,
+    setCurrentCode,
+    selectedModel,
+    setSelectedModel,
+    planOn,
+    setPlanOn,
+    selectMode,
+    setSelectMode,
+    selectedElement,
+    clearSelectedElement,
+    attachments,
+    addAttachment,
+    removeAttachment,
+    clearAttachments,
+  } = useAppStore();
   const { iterate } = useGeneration();
   const { t } = useT();
   const [message, setMessage] = useState('');
   const [inputHeight, setInputHeight] = useState(40);
-  const [planOn, setPlanOn] = useState(false);
   const [liked, setLiked] = useState<Set<number>>(new Set());
   const [disliked, setDisliked] = useState<Set<number>>(new Set());
   const [versions, setVersions] = useState<ProjectVersion[]>([]);
   const [bookmarks, setBookmarks] = useState<Set<number>>(new Set());
+  const [modelPopoverOpen, setModelPopoverOpen] = useState(false);
+  const [providers, setProviders] = useState<ProviderInfo[] | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const modelButtonRef = useRef<HTMLButtonElement>(null);
+  const modelPopoverRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -56,11 +82,63 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
     };
   }, [currentProject?.id, chatHistory.length]);
 
+  // Fetch the provider list lazily on first open of the model popover.
+  useEffect(() => {
+    if (!modelPopoverOpen || providers !== null) return;
+    let alive = true;
+    getModels()
+      .then((data) => alive && setProviders(data))
+      .catch(() => {
+        if (!alive) return;
+        setProviders([]);
+        toast.error(t('chat.modelLoadFailed'));
+      });
+    return () => {
+      alive = false;
+    };
+  }, [modelPopoverOpen, providers, t]);
+
+  // Close the model popover on outside click or Escape (Topbar convention).
+  useEffect(() => {
+    if (!modelPopoverOpen) return;
+    const handleMouseDown = (event: MouseEvent) => {
+      if (modelPopoverRef.current?.contains(event.target as Node)) return;
+      if (modelButtonRef.current?.contains(event.target as Node)) return;
+      setModelPopoverOpen(false);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setModelPopoverOpen(false);
+    };
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [modelPopoverOpen]);
+
+  const selectedModelLabel = useMemo(() => {
+    if (!selectedModel || !providers) return null;
+    const [providerId, modelId] = selectedModel.split(':');
+    const provider = providers.find((p) => p.id === providerId);
+    return provider?.models.find((m) => m.id === modelId)?.label ?? null;
+  }, [selectedModel, providers]);
+
+  const elementSummary = useMemo(() => {
+    if (!selectedElement) return '';
+    const raw = `${selectedElement.tag}${selectedElement.id ? `#${selectedElement.id}` : ''}${
+      selectedElement.classes.length ? `.${selectedElement.classes.join('.')}` : ''
+    }`;
+    return raw.length > 40 ? `${raw.slice(0, 40)}…` : raw;
+  }, [selectedElement]);
+
   const handleSend = useCallback(() => {
     if (!message.trim() || isGenerating || !currentCode) return;
     iterate(message.trim());
     setMessage('');
-  }, [message, isGenerating, currentCode, iterate]);
+    // The hook captured the data synchronously at call time; safe to clear.
+    clearAttachments();
+  }, [message, isGenerating, currentCode, iterate, clearAttachments]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -77,6 +155,37 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
     el.style.height = 'auto';
     setInputHeight(Math.min(el.scrollHeight, 160));
   }, []);
+
+  const handleFiles = useCallback(
+    (files: FileList | null) => {
+      if (!files || files.length === 0) return;
+      let count = useAppStore.getState().attachments.length;
+      for (const file of Array.from(files)) {
+        if (file.size > MAX_ATTACHMENT_BYTES) {
+          toast.error(t('chat.attachTooLarge'));
+          continue;
+        }
+        if (count >= MAX_ATTACHMENTS) {
+          toast.error(t('chat.attachMax'));
+          break;
+        }
+        count += 1;
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result !== 'string') return;
+          addAttachment({
+            id: crypto.randomUUID(),
+            name: file.name,
+            type: file.type || 'image/*',
+            dataUrl: reader.result,
+          });
+        };
+        reader.readAsDataURL(file);
+      }
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    },
+    [addAttachment, t],
+  );
 
   const handleCopy = useCallback(
     async (content: string) => {
@@ -158,11 +267,6 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
     [t],
   );
 
-  const togglePlan = useCallback(() => {
-    setPlanOn((prev) => !prev);
-    toast(t('chat.planSoon'));
-  }, [t]);
-
   return (
     <div className="flex flex-col h-full min-h-0">
       {chatHistory.length > 0 && (
@@ -171,9 +275,9 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
         </div>
       )}
 
-      <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-4">
+      <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-4 flex flex-col">
         {chatHistory.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
+          <div className="flex-1 flex items-center justify-center min-h-0">
             <p className="text-surface-400 text-sm text-center">
               {currentCode ? t('chat.whatToChange') : t('chat.createFirst')}
             </p>
@@ -293,36 +397,172 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
               style={{ minHeight: '40px', maxHeight: '160px', height: inputHeight }}
               className="block w-full bg-transparent px-4 pt-3 pb-1 text-sm text-surface-100 placeholder:text-surface-500 resize-none focus:outline-none disabled:opacity-30"
             />
+            {(selectedElement || attachments.length > 0) && (
+              <div className="flex flex-wrap gap-1.5 px-3 pt-2">
+                {selectedElement && (
+                  <div
+                    title={t('chat.selectedElement')}
+                    className="bg-surface-700/60 border border-line rounded-md px-2 py-1 text-xs text-surface-300 flex items-center gap-1.5"
+                  >
+                    <span className="max-w-[200px] truncate">{elementSummary}</span>
+                    <button
+                      type="button"
+                      onClick={clearSelectedElement}
+                      aria-label={t('chat.clearElement')}
+                      className="text-surface-500 hover:text-surface-200 transition-colors focus-ring rounded-sm"
+                    >
+                      <XMarkIcon className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+                {attachments.map((attachment) => (
+                  <div
+                    key={attachment.id}
+                    className="flex items-center gap-1.5 bg-surface-700/60 border border-line rounded-md pl-1 pr-1.5 py-1 text-xs"
+                  >
+                    <img src={attachment.dataUrl} alt="" className="w-7 h-7 object-cover rounded" />
+                    <span className="max-w-[96px] truncate text-surface-300">
+                      {attachment.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeAttachment(attachment.id)}
+                      aria-label={t('chat.removeAttachment')}
+                      className="text-surface-500 hover:text-surface-200 transition-colors focus-ring rounded-sm"
+                    >
+                      <XMarkIcon className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="flex items-center justify-between px-2 pb-2 pt-1">
               <div className="flex items-center gap-0.5">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => handleFiles(e.target.files)}
+                />
                 <button
-                  onClick={() => toast(t('chat.attachSoon'))}
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
                   title={t('chat.attach')}
                   aria-label={t('chat.attach')}
                   className="w-8 h-8 flex items-center justify-center rounded-md text-surface-500 hover:text-surface-200 hover:bg-surface-700 transition-colors focus-ring active:scale-[0.98]"
                 >
                   <PaperClipIcon className="w-4 h-4" />
                 </button>
+                <div className="relative">
+                  <button
+                    ref={modelButtonRef}
+                    type="button"
+                    onClick={() => setModelPopoverOpen((open) => !open)}
+                    title={t('chat.modelSelect')}
+                    aria-label={t('chat.modelSelect')}
+                    aria-haspopup="listbox"
+                    aria-expanded={modelPopoverOpen}
+                    className="h-8 flex items-center gap-1.5 px-2 rounded-md text-xs text-surface-300 hover:text-surface-100 hover:bg-surface-700 transition-colors focus-ring active:scale-[0.98]"
+                  >
+                    <SparklesIcon className="w-4 h-4" />
+                    <span className="max-w-[120px] truncate">
+                      {selectedModelLabel ?? t('chat.modelAuto')}
+                    </span>
+                    <ChevronDownIcon className="w-3 h-3 text-surface-500" />
+                  </button>
+                  {modelPopoverOpen && (
+                    <div
+                      ref={modelPopoverRef}
+                      role="listbox"
+                      aria-label={t('chat.modelSelect')}
+                      className="absolute bottom-full left-0 mb-2 w-60 rounded-lg bg-surface-800 border border-line shadow-overlay z-30 overflow-y-auto max-h-64 animate-fade-in"
+                    >
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={selectedModel === null}
+                        onClick={() => {
+                          setSelectedModel(null);
+                          setModelPopoverOpen(false);
+                        }}
+                        className="w-full text-left text-xs px-2.5 py-1.5 rounded-md hover:bg-surface-700 transition-colors focus-ring flex items-center justify-between gap-2"
+                      >
+                        <span
+                          className={
+                            selectedModel === null ? 'text-primary-400' : 'text-surface-100'
+                          }
+                        >
+                          {t('chat.modelAuto')}
+                        </span>
+                        {selectedModel === null && (
+                          <CheckIcon className="w-3 h-3 text-primary-400 flex-shrink-0" />
+                        )}
+                      </button>
+                      {providers?.map((provider) => (
+                        <div key={provider.id}>
+                          <div className="exposure-label text-surface-500 px-2.5 py-1">
+                            {provider.name}
+                          </div>
+                          {provider.models.map((model) => {
+                            const value = `${provider.id}:${model.id}`;
+                            const selected = selectedModel === value;
+                            const disabled = !provider.ready;
+                            return (
+                              <button
+                                key={model.id}
+                                type="button"
+                                role="option"
+                                aria-selected={selected}
+                                disabled={disabled}
+                                onClick={() => {
+                                  setSelectedModel(value);
+                                  setModelPopoverOpen(false);
+                                }}
+                                className={`w-full text-left text-xs px-2.5 py-1.5 rounded-md transition-colors focus-ring flex items-center justify-between gap-2 ${
+                                  disabled
+                                    ? 'opacity-40 cursor-not-allowed'
+                                    : 'hover:bg-surface-700'
+                                }`}
+                              >
+                                <span
+                                  className={`truncate ${
+                                    selected ? 'text-primary-400' : 'text-surface-100'
+                                  }`}
+                                >
+                                  {model.label}
+                                </span>
+                                <span className="flex items-center gap-1 flex-shrink-0">
+                                  {selected && (
+                                    <CheckIcon className="w-3 h-3 text-primary-400" />
+                                  )}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <button
-                  onClick={() => toast(t('chat.modelSoon'))}
-                  title={`${t('chat.model')}: Opus 4.7`}
-                  aria-label={`${t('chat.model')}: Opus 4.7`}
-                  className="h-8 flex items-center gap-1.5 px-2 rounded-md text-xs text-surface-300 hover:text-surface-100 hover:bg-surface-700 transition-colors focus-ring active:scale-[0.98]"
-                >
-                  <SparklesIcon className="w-4 h-4" />
-                  <span>Opus 4.7</span>
-                  <ChevronDownIcon className="w-3 h-3 text-surface-500" />
-                </button>
-                <button
-                  onClick={() => toast(t('chat.modeSoon'))}
-                  title={`${t('chat.mode')}: Select`}
-                  aria-label={`${t('chat.mode')}: Select`}
-                  className="w-8 h-8 flex items-center justify-center rounded-md text-surface-500 hover:text-surface-200 hover:bg-surface-700 transition-colors focus-ring active:scale-[0.98]"
+                  type="button"
+                  onClick={() => setSelectMode(!selectMode)}
+                  title={selectMode ? t('chat.selectElementHint') : t('chat.mode')}
+                  aria-label={selectMode ? t('chat.selectElementHint') : t('chat.mode')}
+                  aria-pressed={selectMode}
+                  className={`w-8 h-8 flex items-center justify-center rounded-md transition-colors focus-ring active:scale-[0.98] ${
+                    selectMode
+                      ? 'text-primary-400 bg-primary-600/10 border border-primary-500/40'
+                      : 'text-surface-500 hover:text-surface-200 hover:bg-surface-700'
+                  }`}
                 >
                   <CursorArrowRaysIcon className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={togglePlan}
+                  type="button"
+                  onClick={() => setPlanOn(!planOn)}
                   title={t('chat.plan')}
                   aria-label={t('chat.plan')}
                   aria-pressed={planOn}

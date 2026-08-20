@@ -43,6 +43,11 @@ afterEach(() => {
     activePanel: 'code',
     previewSize: 'desktop',
     locale: 'ru',
+    selectedModel: null,
+    planOn: false,
+    selectMode: false,
+    selectedElement: null,
+    attachments: [],
   });
   window.localStorage.clear();
 });

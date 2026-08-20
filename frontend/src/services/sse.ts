@@ -8,6 +8,21 @@ interface SSEOptions {
   onComplete: (finalHtml: string) => void;
 }
 
+// Optional extra fields forwarded into the request body. Kept separate from
+// the positional args so existing callers stay source-compatible.
+export interface GenerateSSEExtras {
+  model?: string | null;
+  plan?: boolean;
+  images?: string[];
+}
+
+export interface IterateSSEExtras {
+  model?: string | null;
+  plan?: boolean;
+  images?: string[];
+  selected_element?: string | null;
+}
+
 const INACTIVITY_TIMEOUT_MS = 120_000;
 const RETRY_BACKOFF_MS = 800;
 
@@ -181,8 +196,13 @@ export function connectGenerateSSE(
   theme: string,
   style: string,
   options: SSEOptions,
+  extras?: GenerateSSEExtras,
 ): Promise<void> {
-  return connectSSE(`${BASE_URL}/api/generate`, { prompt, theme, style }, options);
+  return connectSSE(
+    `${BASE_URL}/api/generate`,
+    { prompt, theme, style, ...(extras ?? {}) },
+    options,
+  );
 }
 
 export function connectIterateSSE(
@@ -191,6 +211,7 @@ export function connectIterateSSE(
   currentCode: string,
   history: ChatMessage[],
   options: SSEOptions,
+  extras?: IterateSSEExtras,
 ): Promise<void> {
   return connectSSE(
     `${BASE_URL}/api/iterate`,
@@ -199,6 +220,7 @@ export function connectIterateSSE(
       message,
       current_code: currentCode,
       history: history.slice(-10),
+      ...(extras ?? {}),
     },
     options,
   );

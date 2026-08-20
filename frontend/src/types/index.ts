@@ -2,6 +2,9 @@ export interface GenerateRequest {
   prompt: string;
   theme?: 'light' | 'dark' | 'auto';
   style?: 'minimal' | 'corporate' | 'playful' | 'techno';
+  model?: string | null;
+  plan?: boolean;
+  images?: string[];
 }
 
 export interface IterateRequest {
@@ -9,6 +12,10 @@ export interface IterateRequest {
   message: string;
   current_code: string;
   history: ChatMessage[];
+  model?: string | null;
+  plan?: boolean;
+  images?: string[];
+  selected_element?: string | null;
 }
 
 export interface ChatMessage {
@@ -52,3 +59,30 @@ export type PreviewSize = 'desktop' | 'tablet' | 'mobile';
 export type ActivePanel = 'code' | 'chat';
 export type WorkspaceView = 'preview' | 'code';
 export type Locale = 'ru' | 'en';
+
+export interface ModelInfo {
+  id: string;
+  label: string;
+}
+
+export interface ProviderInfo {
+  id: string;
+  name: string;
+  models: ModelInfo[];
+  ready: boolean;
+}
+
+export interface Attachment {
+  id: string;
+  name: string;
+  type: string;
+  dataUrl: string;
+}
+
+export interface SelectedElement {
+  tag: string;
+  id: string | null;
+  classes: string[];
+  text: string;
+  selector: string;
+}

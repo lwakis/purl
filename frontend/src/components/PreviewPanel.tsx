@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ComputerDesktopIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { useAppStore } from '../store/appStore';
-import type { PreviewSize } from '../types';
+import type { PreviewSize, SelectedElement } from '../types';
 import GenerationProgress from './GenerationProgress';
 import ErrorAlert from './ErrorAlert';
 import { useT } from '../i18n';
@@ -53,6 +53,96 @@ const NAVIGATION_GUARD = `<script>
 })();
 </script>`;
 
+// Select-mode guard: armed by the host via postMessage, highlights hovered
+// elements and reports the clicked one back. PRIMARY_HEX is the safelight
+// accent (tailwind primary-500).
+const SELECT_GUARD = `<script>
+(function () {
+  'use strict';
+  var active = false;
+  var current = null;
+  var PRIMARY_HEX = '#F06A52';
+
+  function clearHighlight() {
+    if (current) {
+      current.style.outline = '';
+      current.style.outlineOffset = '';
+      current = null;
+    }
+  }
+
+  function buildSelector(el) {
+    var tag = el.tagName.toLowerCase();
+    if (el.id) { return tag + '#' + el.id; }
+    var classes = Array.prototype.slice.call(el.classList || []).filter(function (c) {
+      return c.indexOf('__purl') !== 0;
+    });
+    if (classes.length) { return tag + '.' + classes.join('.'); }
+    var parent = el.parentNode;
+    var n = 1;
+    if (parent && parent.children) {
+      for (var i = 0; i < parent.children.length; i++) {
+        var child = parent.children[i];
+        if (child === el) { break; }
+        if (child.tagName === el.tagName) { n++; }
+      }
+    }
+    return tag + ':nth-of-type(' + n + ')';
+  }
+
+  window.addEventListener('message', function (e) {
+    var data = e.data;
+    if (!data || data.type !== 'purl:select-toggle') { return; }
+    active = !!data.active;
+    document.body.style.cursor = active ? 'crosshair' : '';
+    clearHighlight();
+  });
+
+  document.addEventListener('mouseover', function (e) {
+    if (!active) { return; }
+    var node = e.target;
+    while (node && node.nodeType !== 1) { node = node.parentNode; }
+    if (!node || node === document.documentElement || node === document.body) { return; }
+    clearHighlight();
+    current = node;
+    current.style.outline = '2px solid ' + PRIMARY_HEX;
+    current.style.outlineOffset = '1px';
+  });
+
+  document.addEventListener('mouseout', function (e) {
+    if (!active || !current) { return; }
+    var to = e.relatedTarget;
+    if (!to || !current.contains(to)) { clearHighlight(); }
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!active) { return; }
+    e.preventDefault();
+    e.stopPropagation();
+    var node = e.target;
+    while (node && node.nodeType !== 1) { node = node.parentNode; }
+    if (!node || node === document.documentElement || node === document.body) { return; }
+    var el = node;
+    var classes = Array.prototype.slice.call(el.classList || []).filter(function (c) {
+      return c.indexOf('__purl') !== 0;
+    });
+    var info = {
+      tag: el.tagName.toLowerCase(),
+      id: el.id || null,
+      classes: classes,
+      text: (el.textContent || '').trim().slice(0, 80),
+      selector: buildSelector(el)
+    };
+    clearHighlight();
+    active = false;
+    document.body.style.cursor = '';
+    try {
+      window.parent.postMessage({ type: 'purl:selected', element: info }, '*');
+    } catch (err) {}
+  }, true);
+})();
+</script>`;
+
 export default function PreviewPanel() {
   const {
     currentCode,
@@ -61,6 +151,9 @@ export default function PreviewPanel() {
     previewRefreshKey,
     generationError,
     setGenerationError,
+    selectMode,
+    setSelectMode,
+    setSelectedElement,
   } = useAppStore();
   const { t } = useT();
   // The frame the preview actually renders. Streamed code commits here only
@@ -68,6 +161,7 @@ export default function PreviewPanel() {
   // every few hundred milliseconds (violent flicker) and partial HTML renders
   // broken. The code panel streams live; the print develops once, at the end.
   const [displayCode, setDisplayCode] = useState(currentCode);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     if (!isGenerating && currentCode !== displayCode) {
@@ -90,6 +184,39 @@ export default function PreviewPanel() {
     return () => window.removeEventListener('message', onMessage);
   }, [t]);
 
+  // Arm/disarm the select guard inside the preview iframe. The sandbox has no
+  // allow-same-origin, so the guard is driven purely by postMessage; re-send
+  // whenever the frame reloads (new code or a refresh bump) so an armed mode
+  // survives a reload.
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+    iframe.contentWindow?.postMessage({ type: 'purl:select-toggle', active: selectMode }, '*');
+  }, [selectMode, previewRefreshKey, displayCode]);
+
+  // Reports from the select guard inside the preview iframe.
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      const data = e.data as { type?: unknown; element?: unknown } | null;
+      if (!data || data.type !== 'purl:selected') return;
+      const el = data.element as SelectedElement | null;
+      if (!el || typeof el !== 'object') return;
+      if (typeof el.tag !== 'string' || typeof el.selector !== 'string') return;
+      if (typeof el.text !== 'string' || !Array.isArray(el.classes)) return;
+      setSelectedElement({
+        tag: el.tag,
+        id: typeof el.id === 'string' ? el.id : null,
+        classes: el.classes.filter((c): c is string => typeof c === 'string'),
+        text: el.text,
+        selector: el.selector,
+      });
+      setSelectMode(false);
+      toast.success(t('chat.elementSelected'));
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [setSelectedElement, setSelectMode, t]);
+
   const selectedSize = PREVIEW_SIZES.find((s) => s.value === previewSize) || PREVIEW_SIZES[0];
 
   return (
@@ -111,8 +238,9 @@ export default function PreviewPanel() {
                 className="w-full h-full min-h-[300px] bg-paper shadow-canvas overflow-hidden"
               >
                 <iframe
+                  ref={iframeRef}
                   key={previewRefreshKey}
-                  srcDoc={displayCode + NAVIGATION_GUARD}
+                  srcDoc={displayCode + NAVIGATION_GUARD + SELECT_GUARD}
                   sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
                   title={t('preview.iframeTitle')}
                   data-testid="preview-iframe"
@@ -131,6 +259,12 @@ export default function PreviewPanel() {
             )}
           </div>
         </div>
+
+        {selectMode && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 bg-surface-800/95 border border-line rounded-full px-3 py-1.5 text-xs text-surface-300 pointer-events-none">
+            {t('chat.selectElementHint')}
+          </div>
+        )}
 
         {isGenerating && displayCode && (
           <div className="absolute inset-0 bg-surface-950/70 flex items-center justify-center">
