@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CodePanel from './CodePanel';
 import { useAppStore } from '../store/appStore';
@@ -40,11 +40,10 @@ afterEach(() => {
 });
 
 describe('CodePanel', () => {
-  it('disables copy/download/zip/react buttons without code', () => {
+  it('disables copy/download/react buttons without code', () => {
     render(<CodePanel />);
     expect(screen.getByRole('button', { name: /Копировать/ })).toBeDisabled();
     expect(screen.getByRole('button', { name: /Скачать/ })).toBeDisabled();
-    expect(screen.getByRole('button', { name: /ZIP/ })).toBeDisabled();
     expect(screen.getByRole('button', { name: /React/ })).toBeDisabled();
     expect(screen.getByText('Сгенерированный код появится здесь')).toBeInTheDocument();
   });
@@ -54,7 +53,6 @@ describe('CodePanel', () => {
     render(<CodePanel />);
     expect(screen.getByRole('button', { name: /Копировать/ })).toBeEnabled();
     expect(screen.getByRole('button', { name: /Скачать/ })).toBeEnabled();
-    expect(screen.getByRole('button', { name: /ZIP/ })).toBeEnabled();
     expect(screen.getByRole('button', { name: /React/ })).toBeEnabled();
   });
 
@@ -98,23 +96,6 @@ describe('CodePanel', () => {
     expect(createObjectURL).toHaveBeenCalledTimes(1);
     expect(clickSpy).toHaveBeenCalledTimes(1);
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
-    expect(toast.success).toHaveBeenCalledWith('Скачивание начато');
-  });
-
-  it('downloads the ZIP variant via jszip', async () => {
-    const user = userEvent.setup();
-    useAppStore.setState({ currentCode: CODE });
-    const createObjectURL = vi.fn(() => 'blob:mock-url');
-    vi.stubGlobal('URL', { ...URL, createObjectURL, revokeObjectURL: vi.fn() });
-    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
-
-    render(<CodePanel />);
-    await user.click(screen.getByRole('button', { name: /ZIP/ }));
-
-    await waitFor(() => {
-      expect(clickSpy).toHaveBeenCalledTimes(1);
-    });
-    expect(createObjectURL).toHaveBeenCalledTimes(1);
     expect(toast.success).toHaveBeenCalledWith('Скачивание начато');
   });
 

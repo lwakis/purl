@@ -114,7 +114,6 @@ purl/
 │   ├── .env.example         # environment template
 │   └── pyproject.toml       # deps, ruff and pytest config
 ├── frontend/                # React SPA (Vite)
-│   ├── DESIGN.md           # design contract for the app shell
 │   ├── src/
 │   │   ├── components/      # preview, code, chat, templates, sidebar
 │   │   ├── hooks/           # generation and project hooks

@@ -1,7 +1,14 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { StateStorage } from 'zustand/middleware';
-import type { ChatMessage, Project, ActivePanel, PreviewSize, Locale } from '../types';
+import type {
+  ChatMessage,
+  Project,
+  ActivePanel,
+  PreviewSize,
+  WorkspaceView,
+  Locale,
+} from '../types';
 
 interface AppState {
   projects: Project[];
@@ -16,6 +23,8 @@ interface AppState {
   sidebarOpen: boolean;
   activePanel: ActivePanel;
   previewSize: PreviewSize;
+  workspaceView: WorkspaceView;
+  previewRefreshKey: number;
   locale: Locale;
 
   setPrompt: (prompt: string) => void;
@@ -32,6 +41,8 @@ interface AppState {
   setSidebarOpen: (open: boolean) => void;
   setActivePanel: (panel: ActivePanel) => void;
   setPreviewSize: (size: PreviewSize) => void;
+  setWorkspaceView: (view: WorkspaceView) => void;
+  bumpPreviewRefresh: () => void;
   setLocale: (locale: Locale) => void;
   reset: () => void;
 }
@@ -54,6 +65,8 @@ const initialState = {
   sidebarOpen: false,
   activePanel: 'code' as ActivePanel,
   previewSize: 'desktop' as PreviewSize,
+  workspaceView: 'preview' as WorkspaceView,
+  previewRefreshKey: 0,
   locale: 'ru' as Locale,
 };
 
@@ -106,6 +119,9 @@ export const useAppStore = create<AppState>()(
       setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
       setActivePanel: (activePanel) => set({ activePanel }),
       setPreviewSize: (previewSize) => set({ previewSize }),
+      setWorkspaceView: (workspaceView) => set({ workspaceView }),
+      bumpPreviewRefresh: () =>
+        set((state) => ({ previewRefreshKey: state.previewRefreshKey + 1 })),
       setLocale: (locale) => set({ locale }),
       reset: () => set(initialState),
     }),

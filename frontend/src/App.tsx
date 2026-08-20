@@ -1,10 +1,11 @@
 import { lazy, Suspense, useState, useEffect, useCallback } from 'react';
 import { Toaster } from 'react-hot-toast';
-import { XMarkIcon, ChatBubbleLeftRightIcon, CodeBracketIcon } from '@heroicons/react/24/outline';
+import { ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 import { useAppStore } from './store/appStore';
 import { createSessionId, loadSession, saveSession } from './services/session';
 import { useT } from './i18n';
 import Header from './components/Header';
+import Topbar from './components/Topbar';
 import PromptInput from './components/PromptInput';
 import PreviewPanel from './components/PreviewPanel';
 import ChatPanel from './components/ChatPanel';
@@ -15,7 +16,22 @@ import { useAutosave } from './hooks/useAutosave';
 // it lands in its own chunk instead of the main bundle.
 const CodePanel = lazy(() => import('./components/CodePanel'));
 
-type PanelTab = 'chat' | 'code' | null;
+// Landing screen mounts its own autosave-aware header; the workspace mounts
+// Topbar (which owns its own useAutosave instance). Never both at once, so
+// the debounced save loop never runs twice.
+function LandingHeader() {
+  const { status } = useAutosave();
+  return (
+    <Header
+      chatOpen={false}
+      onChatToggle={() => {}}
+      codeOpen={false}
+      onCodeToggle={() => {}}
+      hasDesign={false}
+      saveStatus={status}
+    />
+  );
+}
 
 export default function App() {
   const { t, locale } = useT();
@@ -25,23 +41,20 @@ export default function App() {
     document.documentElement.lang = locale;
   }, [locale]);
 
-  const { currentCode, setSessionId } = useAppStore();
+  const { currentCode, setSessionId, workspaceView } = useAppStore();
 
-  const [panelTab, setPanelTab] = useState<PanelTab>(null);
+  const [chatMobileOpen, setChatMobileOpen] = useState(false);
   const hasDesign = !!currentCode;
-  const { status: saveStatus } = useAutosave();
 
-  const closePanel = useCallback(() => setPanelTab(null), []);
-
-  // Escape closes the right panel (chat/code).
+  // Escape closes the mobile chat overlay.
   useEffect(() => {
-    if (panelTab === null) return;
+    if (!chatMobileOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setPanelTab(null);
+      if (e.key === 'Escape') setChatMobileOpen(false);
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [panelTab]);
+  }, [chatMobileOpen]);
 
   useEffect(() => {
     const init = async () => {
@@ -59,16 +72,7 @@ export default function App() {
     init();
   }, [setSessionId]);
 
-  const chatOpen = panelTab === 'chat';
-  const codeOpen = panelTab === 'code';
-  const onChatToggle = useCallback(
-    () => setPanelTab((prev) => (prev === 'chat' ? null : 'chat')),
-    [],
-  );
-  const onCodeToggle = useCallback(
-    () => setPanelTab((prev) => (prev === 'code' ? null : 'code')),
-    [],
-  );
+  const closeChatMobile = useCallback(() => setChatMobileOpen(false), []);
 
   return (
     <div className="h-dvh flex flex-col bg-surface-950 text-surface-100">
@@ -109,90 +113,46 @@ export default function App() {
         }}
       />
 
-      <Header
-        chatOpen={chatOpen}
-        onChatToggle={onChatToggle}
-        codeOpen={codeOpen}
-        onCodeToggle={onCodeToggle}
-        hasDesign={hasDesign}
-        saveStatus={saveStatus}
-      />
+      {!hasDesign ? (
+        <>
+          <LandingHeader />
+          <div className="flex-1 flex min-w-0 overflow-hidden">
+            <ProjectSidebar />
+            <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+              <div className="w-full max-w-5xl mx-auto px-4 py-10 lg:py-16 flex-1 flex flex-col justify-center space-y-6">
+                <PromptInput />
+              </div>
+            </main>
+          </div>
+        </>
+      ) : (
+        <>
+          <Topbar />
 
-      <div className="flex-1 flex min-w-0 overflow-hidden">
-        <ProjectSidebar />
-
-        {!hasDesign ? (
-          <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-            <div className="w-full max-w-5xl mx-auto px-4 py-10 lg:py-16 flex-1 flex flex-col justify-center space-y-6">
-              <PromptInput />
-            </div>
-          </main>
-        ) : (
-          <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-            {/* Canvas area */}
-            <div className="flex-1 min-h-0 px-4 pt-4 pb-3 lg:px-6 lg:pt-6">
-              <PreviewPanel />
-            </div>
-          </main>
-        )}
-
-        {/* Right panel (chat / code): static column on lg+, overlay on mobile */}
-        {hasDesign && panelTab !== null && (
-          <>
-            <div
-              className="fixed inset-0 z-40 bg-surface-950/60 lg:hidden animate-fade-in"
-              onClick={closePanel}
-            />
+          <div className="flex-1 flex min-w-0 overflow-hidden">
+            {/* Chat overlay on mobile, static column on md+ */}
+            {chatMobileOpen && (
+              <div
+                className="fixed inset-0 z-40 bg-surface-950/60 md:hidden animate-fade-in"
+                onClick={closeChatMobile}
+              />
+            )}
             <aside
               role="dialog"
               aria-modal="true"
               aria-label={t('app.panelAria')}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-[420px] lg:static lg:z-auto lg:w-[380px] lg:max-w-none lg:shrink-0 flex flex-col bg-surface-900 border-l border-line shadow-overlay lg:shadow-none animate-slide-in-right lg:animate-none"
+              className={`fixed inset-y-0 left-0 z-50 w-[85vw] max-w-[380px] md:static md:z-auto md:w-[360px] md:max-w-none md:shrink-0 flex-col bg-surface-900 border-r border-line shadow-overlay md:shadow-none ${
+                chatMobileOpen ? 'flex animate-slide-in-left' : 'hidden'
+              } md:flex`}
             >
-              <div className="flex items-center gap-1 px-3 py-2.5 border-b border-line">
-                <div
-                  role="tablist"
-                  aria-label={t('app.tabsAria')}
-                  className="flex items-center gap-0.5 bg-surface-800 shadow-segment-inset border border-line rounded-md p-0.5 flex-1"
-                >
-                  <button
-                    role="tab"
-                    aria-selected={panelTab === 'chat'}
-                    onClick={() => setPanelTab('chat')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors focus-ring ${
-                      panelTab === 'chat'
-                        ? 'bg-primary-600/10 text-primary-400'
-                        : 'text-surface-400 hover:text-surface-200'
-                    }`}
-                  >
-                    <ChatBubbleLeftRightIcon className="w-3.5 h-3.5" />
-                    {t('header.chat')}
-                  </button>
-                  <button
-                    role="tab"
-                    aria-selected={panelTab === 'code'}
-                    onClick={() => setPanelTab('code')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors focus-ring ${
-                      panelTab === 'code'
-                        ? 'bg-primary-600/10 text-primary-400'
-                        : 'text-surface-400 hover:text-surface-200'
-                    }`}
-                  >
-                    <CodeBracketIcon className="w-3.5 h-3.5" />
-                    {t('header.code')}
-                  </button>
-                </div>
-                <button
-                  onClick={closePanel}
-                  className="p-2 rounded-md text-surface-400 hover:text-surface-100 hover:bg-surface-800 transition-colors focus-ring"
-                  aria-label={t('app.closePanelAria')}
-                >
-                  <XMarkIcon className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="flex-1 min-h-0 overflow-y-auto p-4">
-                {panelTab === 'chat' ? (
-                  <ChatPanel />
+              <ChatPanel />
+            </aside>
+
+            {/* Canvas area */}
+            <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+              <div className="flex-1 min-h-0">
+                {workspaceView === 'preview' ? (
+                  <PreviewPanel />
                 ) : (
                   <Suspense
                     fallback={
@@ -208,10 +168,21 @@ export default function App() {
                   </Suspense>
                 )}
               </div>
-            </aside>
-          </>
-        )}
-      </div>
+            </main>
+          </div>
+
+          {/* Floating chat trigger on mobile */}
+          {!chatMobileOpen && (
+            <button
+              onClick={() => setChatMobileOpen(true)}
+              className="fixed bottom-4 left-4 z-40 md:hidden p-3 rounded-full bg-surface-800 border border-line text-surface-200 shadow-overlay hover:text-surface-100 hover:border-line-strong transition-colors focus-ring active:scale-95"
+              aria-label={t('app.panelAria')}
+            >
+              <ChatBubbleLeftRightIcon className="w-5 h-5" />
+            </button>
+          )}
+        </>
+      )}
     </div>
   );
 }

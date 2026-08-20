@@ -76,83 +76,13 @@ export default function CodePanel() {
     toast.success(t('code.downloadStarted'));
   }, [currentCode, t]);
 
-  const handleDownloadZip = useCallback(async () => {
-    if (!currentCode) return;
-    // Dynamic import keeps jszip (and its deps) out of the main bundle;
-    // CodePanel is itself lazily loaded (see App.tsx).
-    const { default: JSZip } = await import('jszip');
-    const zip = new JSZip();
-    zip.file('index.html', currentCode);
-    zip.file(
-      'README.txt',
-      [
-        t('code.zipTitle'),
-        '',
-        t('code.zipGenerated'),
-        'https://github.com/lwakis/purl',
-        '',
-        t('code.zipOpen'),
-      ].join('\n'),
-    );
-    const blob = await zip.generateAsync({ type: 'blob' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'purl-design.zip';
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success(t('code.downloadStarted'));
-  }, [currentCode, t]);
-
   const handleReactPlaceholder = useCallback(() => {
     toast(t('code.reactSoon'), { icon: '🚧' });
   }, [t]);
 
   return (
-    <div className="flex flex-col h-full animate-fade-in">
-      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-        <span className="exposure-label text-surface-500">{t('code.source')}</span>
-        <div className="flex flex-wrap items-center justify-end gap-1">
-          <button
-            onClick={handleCopy}
-            disabled={!currentCode}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium bg-surface-900 border border-line text-surface-300 hover:text-surface-100 hover:border-line-strong transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-ring active:scale-[0.98]"
-            title={t('code.copyTitle')}
-          >
-            <ClipboardIcon className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{t('code.copy')}</span>
-          </button>
-          <button
-            onClick={handleDownload}
-            disabled={!currentCode}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium bg-surface-900 border border-line text-surface-300 hover:text-surface-100 hover:border-line-strong transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-ring active:scale-[0.98]"
-            title={t('code.downloadTitle')}
-          >
-            <ArrowDownTrayIcon className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{t('code.download')}</span>
-          </button>
-          <button
-            onClick={handleDownloadZip}
-            disabled={!currentCode}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium bg-surface-900 border border-line text-surface-300 hover:text-surface-100 hover:border-line-strong transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-ring active:scale-[0.98]"
-            title={t('code.downloadZipTitle')}
-          >
-            <ArrowDownTrayIcon className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">ZIP</span>
-          </button>
-          <button
-            onClick={handleReactPlaceholder}
-            disabled={!currentCode}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium bg-surface-900 border border-line text-surface-300 hover:text-surface-100 hover:border-line-strong transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-ring active:scale-[0.98]"
-            title={t('code.reactTitle')}
-          >
-            <CodeBracketIcon className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">React</span>
-          </button>
-        </div>
-      </div>
-
-      <div className="flex-1 relative bg-surface-900 border border-line rounded-xl overflow-hidden">
+    <div className="relative h-full animate-fade-in">
+      <div className="absolute inset-0 bg-surface-900 border border-line rounded-xl overflow-hidden">
         {currentCode ? (
           <div className="absolute inset-0 overflow-auto syntax-highlighter-override">
             <SyntaxHighlighter
@@ -179,6 +109,36 @@ export default function CodePanel() {
             </div>
           </div>
         )}
+
+        <div className="absolute top-3 right-3 z-10 flex items-center gap-1">
+          <button
+            onClick={handleCopy}
+            disabled={!currentCode}
+            title={t('code.copyTitle')}
+            aria-label={t('code.copyTitle')}
+            className="w-8 h-8 flex items-center justify-center rounded-md bg-surface-800 border border-line text-surface-400 shadow-overlay hover:text-surface-100 hover:border-line-strong transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-ring active:scale-[0.98]"
+          >
+            <ClipboardIcon className="w-4 h-4" />
+          </button>
+          <button
+            onClick={handleDownload}
+            disabled={!currentCode}
+            title={t('code.downloadTitle')}
+            aria-label={t('code.downloadTitle')}
+            className="w-8 h-8 flex items-center justify-center rounded-md bg-surface-800 border border-line text-surface-400 shadow-overlay hover:text-surface-100 hover:border-line-strong transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-ring active:scale-[0.98]"
+          >
+            <ArrowDownTrayIcon className="w-4 h-4" />
+          </button>
+          <button
+            onClick={handleReactPlaceholder}
+            disabled={!currentCode}
+            title={t('code.reactTitle')}
+            aria-label={t('code.reactTitle')}
+            className="w-8 h-8 flex items-center justify-center rounded-md bg-surface-800 border border-line text-surface-400 shadow-overlay hover:text-surface-100 hover:border-line-strong transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-ring active:scale-[0.98]"
+          >
+            <CodeBracketIcon className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   );
