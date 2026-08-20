@@ -534,9 +534,7 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
                                   {model.label}
                                 </span>
                                 <span className="flex items-center gap-1 flex-shrink-0">
-                                  {selected && (
-                                    <CheckIcon className="w-3 h-3 text-primary-400" />
-                                  )}
+                                  {selected && <CheckIcon className="w-3 h-3 text-primary-400" />}
                                 </span>
                               </button>
                             );
