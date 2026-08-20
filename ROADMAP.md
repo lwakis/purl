@@ -1,6 +1,6 @@
 # Roadmap
 
-Legend: `[x]` shipped, `[ ]` planned. This roadmap is derived from the product spec (`PRODUCT.md`) and reflects what is actually in the repository today, separated from what is still on the drawing board.
+Legend: `[x]` shipped, `[ ]` planned. This roadmap reflects what is actually in the repository today, separated from what is still on the drawing board. The product spec lives in `PRODUCT.md`; Purl is open-source and self-hostable, so it has no paid gating or SaaS-only features.
 
 ## Shipped (MVP)
 
@@ -11,23 +11,34 @@ What's in the repo right now:
 - [x] Text prompt to HTML generation (self-contained HTML with inline CSS and JS)
 - [x] Streaming output over SSE (`analysis` → `design` → `code` → `complete`)
 - [x] Sandboxed iframe preview (`sandbox="allow-scripts"`, no `allow-same-origin`)
-- [x] Copy, download HTML, and download as ZIP
+- [x] Copy and download HTML
 - [x] Iterative chat on existing designs (history + current code sent with each request)
-- [x] Anonymous usage without registration (client-generated browser session id)
+- [x] Plan mode — a design-planning pass before code generation
+- [x] Element selection — click a preview element to iterate on it directly
+- [x] Reference image attachments — multimodal input (OpenAI and Anthropic wire formats; cache is skipped when images are present)
+- [x] Local-first: projects and versions stored in SQLite via the backend (no accounts, no signup)
+
+### Models and providers
+
+- [x] Multi-provider LLM layer (OpenAI, OpenRouter, Groq, DeepSeek, Gemini, Ollama, Anthropic, custom OpenAI-compatible endpoint)
+- [x] Model selector in the chat UI with a provider catalog (`GET /api/models`), per-request `provider:model` override, and a fallback to the configured default
+- [x] Self-hosted LLM support (Ollama is always ready; `custom` preset for any OpenAI-compatible local endpoint)
 
 ### Projects
 
 - [x] Project CRUD (`/api/projects`)
-- [x] Version history per project (`/api/projects/{id}/versions`)
+- [x] Version history per project (`/api/projects/{id}/versions`) with restore / download / bookmark from the chat
 - [x] Automatic project autosave (no manual Save button)
+- [x] Inline project rename
 - [x] Template gallery with 8 seeded starter prompts (`/api/templates`)
 
 ### Platform
 
-- [x] In-memory rate limiting (100 req/h without a browser session id, 500 req/h with one)
+- [x] In-memory rate limiting (100 req/h per client IP)
 - [x] In-memory TTL result cache (prompt hash, 24 h default)
 - [x] Mock mode: full end-to-end flow without an LLM API key
 - [x] Docker Compose setup, CI workflow, test suites, pre-commit hooks
+- [x] Versioned releases and changelogs (release workflow; tags `v0.1.0`/`v0.2.0` published)
 - [x] Open-source documentation (README, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY)
 
 ## v1.1 (next)
@@ -37,31 +48,31 @@ What's in the repo right now:
 | [ ] Project search and pagination | The sidebar lists all projects; no search or limits yet |
 | [ ] Template favorites / saved prompts | `PromptTemplate` has no per-session relation yet |
 | [ ] React export | The UI has a placeholder button ("export in React coming soon"); backend has no JSX output |
+| [ ] Token usage display | Track tokens spent per session/project — useful for self-hosted users who pay for their own LLM API; purely informational, for a single user |
 
-## Later
+## Possible (not committed)
 
-| Item | Notes |
-|---|---|
-| [ ] React/JSX component export | Spec: paid-plan feature |
-| [ ] Reference image upload | Screenshot, logo, or brand colors as generation input |
-| [ ] Figma-compatible export | Spec: roadmap item |
-| [ ] Team workspaces | Multi-user projects and shared team access |
-| [ ] Custom system prompts | For agencies; user-defined generation instructions |
-| [ ] Queued generation | Spec mentions a task queue for peak load |
-
-## Open source growth
-
-Ideas that matter for the project as an open-source product:
+Ideas that may or may not be worth building. Nothing here is a promise.
 
 | Item | Notes |
 |---|---|
-| [ ] Self-hosted LLM support | e.g. Ollama or any OpenAI-compatible local endpoint. The provider layer already ships Ollama and `custom` presets |
-| [ ] Plugin / theme system | Community themes and generation presets |
-| [ ] Export to CodeSandbox / StackBlitz | One-click "open in sandbox" from the code panel |
-| [ ] Persistent prompt cache | The cache is in-memory today; a persistent store would survive restarts and share results across instances |
+| [ ] Figma-compatible export | Would need design-token mapping from generated HTML; large effort, unclear payoff for the core use case |
+| [ ] Custom system prompts | User-defined generation instructions; useful for power users who run their own models |
+| [ ] Plugin / theme system | Community themes and generation presets — only if there is a community to serve them |
+| [ ] Persistent prompt cache | The cache is in-memory today; a persistent store would survive restarts (SQLite is already a dependency, so this is small) |
+| [ ] Export to CodeSandbox / StackBlitz | One-click "open in sandbox" — mostly a wrapper around existing download/export, low effort |
 | [ ] CLI | Headless generation for scripting and CI |
-| [ ] Usage metrics | Generation counts, iteration depth, activation, retention, conversion |
-| [x] CI badge and release automation | Publish versioned releases and automated changelogs after the first tag |
+
+## Out of scope
+
+Deliberately not planned. Purl stays a self-hostable single-user tool.
+
+| Item | Notes |
+|---|---|
+| Team workspaces | Multi-user projects and shared access — the product is personal by design |
+| Queued generation | Task queue for peak load — a single self-hosted instance does not need it |
+| SaaS monetization / paid tiers | No paid gating, no paywalls, no subscriptions — open-source core is the whole product |
+| Usage metrics beyond token counts | No analytics, no tracking, no activation/retention/conversion instrumentation |
 
 ## How to help
 
