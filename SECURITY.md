@@ -33,11 +33,11 @@ The preview iframe is sandboxed with `sandbox="allow-scripts"` and **without** `
 | Area | Current posture |
 |---|---|
 | Generated code | Rendered in an iframe with `sandbox="allow-scripts"` only. No `allow-same-origin`, no `allow-top-navigation`, no `allow-forms`. |
-| Rate limiting | In-memory sliding window: 100 requests/hour without a browser session id, 500/hour with one. Note: in-memory means limits reset on restart and apply per process. |
+| Rate limiting | In-memory sliding window: `RATE_LIMIT_PER_HOUR` (default 100 requests/hour) per client IP. Note: in-memory means limits reset on restart and apply per process. |
 | Accounts | None. The app is anonymous-only and self-hosted; projects are scoped by a client-generated browser session id, which is not a security boundary. |
 | Secrets | Never commit `.env` files or API keys. The repo's `.gitignore` excludes `.env`; the LLM API key is read from the environment only. |
-| CORS | Restricted to the origins in `CORS_ORIGINS` (default `["http://localhost:5173"]`). |
-| Cache | In-memory TTL cache keyed by a SHA-256 hash of prompt + theme + style. No user data is stored in cache keys. |
+| CORS | Restricted to the origins in `CORS_ORIGINS` (default `["http://localhost:5173","http://localhost:5174","http://127.0.0.1:5173","http://127.0.0.1:5174"]`). |
+| Cache | In-memory TTL cache keyed by a SHA-256 hash of prompt + theme + style + model + plan. No user data is stored in cache keys. |
 | LLM provider | The API key is passed to the configured OpenAI-compatible endpoint over HTTPS. The system prompt instructs the model not to generate malicious JavaScript. |
 
 ## Reporting expectations

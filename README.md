@@ -22,6 +22,7 @@ Flagship features:
 - **Prompt to page.** Describe what you want and get complete, self-contained HTML with inline CSS and JS. Live preview, syntax-highlighted source, copy and download.
 - **Iterate by chat.** "Make the buttons bigger", "switch to a dark theme". Purl rewrites the page and the preview updates.
 - **Projects with autosave.** Work is saved automatically, like chats in AI assistants — no Save button. Projects keep a version history you can roll back.
+- **Your model, your context.** Pick a provider and model from a catalog (`GET /api/models`), ask for a plan before code, attach up to 8 images (5 MB each), or click an element in the preview to iterate on it.
 - **Mock mode.** With no LLM API key configured, Purl still works end to end. Great for local development, CI, and demos.
 
 ## Quickstart
@@ -160,6 +161,7 @@ Interactive docs are served at `/docs` when the backend is running (FastAPI Swag
 
 | Method | Path | Description |
 |---|---|---|
+| GET | `/api/models` | List available LLM providers and their models |
 | POST | `/api/generate` | Generate a design; returns an SSE stream |
 | POST | `/api/iterate` | Iterate on existing code via chat; SSE stream |
 | GET | `/api/projects` | List projects (optionally filtered by `session_id`) |

@@ -4,7 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.3.0] - 2026-08-20
+
+### Added
+
+- Model picker: a `GET /api/models` endpoint returns the provider catalog; the frontend lets you choose a model (or reset to auto).
+- Plan mode: ask for a plan before code (`plan: true` on generate/iterate).
+- Image attachments: up to 8 images / 5 MB each, sent to the LLM as multimodal content.
+- Element selection: click an element in the preview iframe to iterate on it directly (`selected_element`).
+- Simplified top bar: the omnibox and settings/help placeholders were removed.
 
 ### Changed
 
