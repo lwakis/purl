@@ -29,11 +29,15 @@ jobs:
         run: uvx bandit -r app -q
         continue-on-error: true
       # Coverage upload (only runs once the CODECOV_TOKEN secret is configured).
+      # Note: `secrets` can't be referenced in `if:` conditions, so the token
+      # is passed via `env:` and checked there.
       - name: Upload coverage to Codecov
-        if: ${{ secrets.CODECOV_TOKEN != '' }}
+        if: ${{ env.CODECOV_TOKEN != '' }}
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         uses: codecov/codecov-action@v5
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ env.CODECOV_TOKEN }}
           files: backend/coverage.xml
           flags: backend
           fail_ci_if_error: false
@@ -58,11 +62,15 @@ jobs:
         run: npm audit --audit-level=high
         continue-on-error: true
       # Coverage upload (requires the CODECOV_TOKEN secret, fails open otherwise).
+      # Note: `secrets` can't be referenced in `if:` conditions, so the token
+      # is passed via `env:` and checked there.
       - name: Upload coverage to Codecov
-        if: ${{ secrets.CODECOV_TOKEN != '' }}
+        if: ${{ env.CODECOV_TOKEN != '' }}
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         uses: codecov/codecov-action@v5
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ env.CODECOV_TOKEN }}
           files: frontend/coverage/lcov.info
           flags: frontend
           fail_ci_if_error: false
