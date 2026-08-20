@@ -58,7 +58,7 @@ export default function App() {
 
   useEffect(() => {
     const init = async () => {
-      // Restore an existing anonymous session so projects/chat survive reloads.
+      // Restore the stored browser session so projects/chat survive reloads.
       const stored = loadSession();
       if (stored) {
         setSessionId(stored);

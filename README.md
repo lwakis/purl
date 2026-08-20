@@ -141,11 +141,9 @@ All variables are optional; defaults live in `backend/app/config.py`. Copy `back
 | `LLM_TEMPERATURE` | `0.7` | Sampling temperature |
 | `LLM_MAX_TOKENS` | `8192` | Max tokens per response |
 | `DATABASE_URL` | `sqlite+aiosqlite:///./purl.db` | Async SQLAlchemy database URL |
-| `RATE_LIMIT_ANON` | `100` | Requests per hour without a browser session id |
-| `RATE_LIMIT_FREE` | `500` | Requests per hour with a browser session id |
+| `RATE_LIMIT_PER_HOUR` | `100` | Requests per hour per client IP |
 | `CORS_ORIGINS` | `["http://localhost:5173","http://localhost:5174","http://127.0.0.1:5173","http://127.0.0.1:5174"]` | Allowed CORS origins (JSON array) |
 | `MAX_PROMPT_LENGTH` | `2000` | Maximum prompt length in characters |
-| `FREE_ITERATIONS_LIMIT` | `10` | Free-plan iteration limit |
 | `CACHE_TTL_SECONDS` | `86400` | Result cache TTL in seconds |
 
 ### Frontend

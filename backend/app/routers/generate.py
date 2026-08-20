@@ -19,12 +19,10 @@ from app.services.rate_limiter import rate_limiter
 router = APIRouter(prefix='/api', tags=['generate'])
 
 
-def _get_rate_limit_key(request: Request, session_id: str | None) -> tuple[str, int]:
+def _get_rate_limit_key(request: Request) -> tuple[str, int]:
     """Determine rate-limit bucket and limit for a request."""
-    if session_id:
-        return session_id, settings.rate_limit_free
     client_ip = request.client.host if request.client else 'unknown'
-    return f'anon:{client_ip}', settings.rate_limit_anon
+    return client_ip, settings.rate_limit_per_hour
 
 
 async def _stream_events(
@@ -82,7 +80,7 @@ async def api_generate(
 
     Returns an SSE stream with events: analysis, design, code, complete.
     """
-    rate_key, limit = _get_rate_limit_key(request, req.session_id)
+    rate_key, limit = _get_rate_limit_key(request)
     result = rate_limiter.check(rate_key, limit)
     if not result.allowed:
         return _rate_limit_error(int(result.reset_time))
@@ -130,7 +128,7 @@ async def api_iterate(
     """
     from app.services.prompt_service import build_system_prompt
 
-    rate_key, limit = _get_rate_limit_key(request, req.session_id)
+    rate_key, limit = _get_rate_limit_key(request)
     result = rate_limiter.check(rate_key, limit)
     if not result.allowed:
         return _rate_limit_error(int(result.reset_time))

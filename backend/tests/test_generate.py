@@ -36,7 +36,7 @@ def test_generate_second_identical_call_served_from_cache(client):
 
 
 def test_generate_rate_limit_returns_429(client, monkeypatch):
-    monkeypatch.setattr(settings, 'rate_limit_anon', 2)
+    monkeypatch.setattr(settings, 'rate_limit_per_hour', 2)
     payload = {'prompt': 'Портфолио'}
 
     assert client.post('/api/generate', json=payload).status_code == 200

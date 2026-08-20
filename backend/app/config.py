@@ -24,8 +24,7 @@ class Settings(BaseSettings):
     llm_max_tokens: int = 8192
 
     # ── Rate limiting ─────────────────────────────────────────────────────
-    rate_limit_anon: int = 100  # requests / hour
-    rate_limit_free: int = 500  # requests / hour
+    rate_limit_per_hour: int = 100  # requests / hour per client IP
 
     # ── CORS ──────────────────────────────────────────────────────────────
     cors_origins: list[str] = [
@@ -37,7 +36,6 @@ class Settings(BaseSettings):
 
     # ── Limits ────────────────────────────────────────────────────────────
     max_prompt_length: int = 2000
-    free_iterations_limit: int = 10
 
     # ── Cache ─────────────────────────────────────────────────────────────
     cache_ttl_seconds: int = 86_400  # 24 hours

@@ -14,7 +14,7 @@ class RateLimitResult(NamedTuple):
 
 
 class InMemoryRateLimiter:
-    """Sliding-window rate limiter keyed by session ID."""
+    """Sliding-window rate limiter keyed by client IP."""
 
     def __init__(self) -> None:
         self._buckets: dict[str, list[float]] = defaultdict(list)

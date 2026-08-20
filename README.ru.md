@@ -141,11 +141,9 @@ purl/
 | `LLM_TEMPERATURE` | `0.7` | Температура сэмплирования |
 | `LLM_MAX_TOKENS` | `8192` | Максимум токенов на ответ |
 | `DATABASE_URL` | `sqlite+aiosqlite:///./purl.db` | URL async-базы данных для SQLAlchemy |
-| `RATE_LIMIT_ANON` | `100` | Запросы в час без идентификатора браузерной сессии |
-| `RATE_LIMIT_FREE` | `500` | Запросы в час с идентификатором браузерной сессии |
+| `RATE_LIMIT_PER_HOUR` | `100` | Запросы в час на один клиентский IP |
 | `CORS_ORIGINS` | `["http://localhost:5173","http://localhost:5174","http://127.0.0.1:5173","http://127.0.0.1:5174"]` | Разрешённые CORS-источники (JSON-массив) |
 | `MAX_PROMPT_LENGTH` | `2000` | Максимальная длина промпта в символах |
-| `FREE_ITERATIONS_LIMIT` | `10` | Лимит итераций на бесплатном плане |
 | `CACHE_TTL_SECONDS` | `86400` | TTL кэша результатов в секундах |
 
 ### Фронтенд

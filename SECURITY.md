@@ -53,5 +53,5 @@ Before deploying Purl anywhere public:
 - [ ] Set `CORS_ORIGINS` to your real frontend origin(s)
 - [ ] Keep `LLM_API_KEY` in the environment, never in the repo
 - [ ] Run behind HTTPS (reverse proxy or platform TLS)
-- [ ] Review the rate limits (`RATE_LIMIT_ANON`, `RATE_LIMIT_FREE`) for your expected load
+- [ ] Review the rate limits (`RATE_LIMIT_PER_HOUR`) for your expected load
 - [ ] Confirm the preview iframe still uses `sandbox="allow-scripts"` without `allow-same-origin`
