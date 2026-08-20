@@ -10,9 +10,15 @@ def generate_session_id() -> str:
     return uuid.uuid4().hex[:16]
 
 
-def hash_prompt(prompt: str, theme: str, style: str) -> str:
-    """Return SHA-256 hex digest of prompt + theme + style for cache keys."""
-    raw = f'{prompt}||{theme}||{style}'
+def hash_prompt(
+    prompt: str,
+    theme: str,
+    style: str,
+    model: str = '',
+    plan: bool = False,
+) -> str:
+    """Return SHA-256 hex digest of prompt + theme + style + model + plan for cache keys."""
+    raw = f'{prompt}||{theme}||{style}||{model}||{plan}'
     return hashlib.sha256(raw.encode()).hexdigest()
 
 

@@ -12,7 +12,7 @@ import asyncio
 import dataclasses
 import json
 import re
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Sequence
 
 import httpx
 
@@ -31,14 +31,29 @@ class ProviderConfig:
     ready: bool
 
 
-def resolve_provider() -> ProviderConfig:
+def resolve_provider(model: str | None = None) -> ProviderConfig:
     """Resolve settings into a concrete provider endpoint.
+
+    ``model`` may be a ``"provider:model"`` override (e.g. ``"openai:gpt-4o"``).
+    When the override names a known preset whose provider is ready (API key set;
+    ``ollama`` is always ready), the preset's base URL and wire protocol are used
+    with the requested model id. Otherwise — unknown provider, invalid format, or
+    not-ready provider — the override is ignored and settings-based resolution
+    proceeds as before.
 
     ``custom`` uses LLM_BASE_URL/LLM_MODEL verbatim (any OpenAI-compatible
     endpoint). ``ollama`` needs no API key; every other preset does. An unknown
     provider name or a missing required endpoint yields ``ready=False``.
     """
     name = settings.llm_provider.lower()
+
+    if model:
+        provider_key, sep, model_id = model.partition(':')
+        if sep and model_id and provider_key in LLM_PRESETS:
+            base_url, _default_model, api = LLM_PRESETS[provider_key]
+            api_key = settings.llm_api_key
+            if provider_key == 'ollama' or bool(api_key):
+                return ProviderConfig(provider_key, base_url, model_id, api, api_key, True)
 
     if name == 'custom':
         if not settings.llm_base_url:
@@ -192,16 +207,17 @@ async def _stream_llm(
     provider: ProviderConfig,
     system_prompt: str,
     user_message: str,
+    images: Sequence[str] = (),
 ) -> AsyncGenerator[str]:
     """Dispatch to the provider's wire protocol, translating failures to SSE error events."""
     from app.services.providers import _stream_anthropic, _stream_provider
 
     try:
         if provider.api == 'anthropic':
-            async for sse in _stream_anthropic(provider, system_prompt, user_message):
+            async for sse in _stream_anthropic(provider, system_prompt, user_message, images):
                 yield sse
         else:
-            async for sse in _stream_provider(provider, system_prompt, user_message):
+            async for sse in _stream_provider(provider, system_prompt, user_message, images):
                 yield sse
     except httpx.HTTPError as exc:
         status = exc.response.status_code if exc.response is not None else ''
@@ -215,6 +231,10 @@ async def generate(
     prompt: str,
     theme: str = 'auto',
     style: str = 'minimal',
+    *,
+    model: str | None = None,
+    plan: bool = False,
+    images: Sequence[str] = (),
 ) -> AsyncGenerator[str]:
     """Generate a design as an SSE event stream.
 
@@ -230,7 +250,7 @@ async def generate(
     from app.services.mock_provider import _mock_generate_html, _stream_mock
     from app.services.prompt_service import build_generate_prompt, build_system_prompt
 
-    system = build_system_prompt(theme, style)
+    system = build_system_prompt(theme, style, plan=plan)
     user_msg = build_generate_prompt(prompt)
 
     yield _sse_event('analysis', 'Анализирую ваш запрос...')
@@ -239,17 +259,17 @@ async def generate(
     yield _sse_event('design', 'Создаю дизайн и токен-систему...')
     await asyncio.sleep(0.3)
 
-    provider = resolve_provider()
+    provider = resolve_provider(model)
 
     full_html = ''
 
     if not provider.ready:
-        full_html = _mock_generate_html(prompt, theme, style)
+        full_html = _mock_generate_html(prompt, theme, style, plan=plan)
         async for sse in _stream_mock(full_html):
             yield sse
     else:
         async for sse, cleaned in _stream_cleaned_code(
-            _stream_llm(provider, system, user_msg)
+            _stream_llm(provider, system, user_msg, images)
         ):
             full_html += cleaned
             yield sse
@@ -262,6 +282,11 @@ async def iterate_stream(
     history: list[dict[str, str]],
     current_code: str,
     user_message: str,
+    *,
+    model: str | None = None,
+    plan: bool = False,
+    images: Sequence[str] = (),
+    selected_element: str | None = None,
 ) -> AsyncGenerator[str]:
     """Iterate on existing design, yielding SSE events.
 
@@ -270,10 +295,10 @@ async def iterate_stream(
     *current_code* – the current HTML code.
     *user_message* – the user's iteration request.
     """
-    from app.services.mock_provider import _stream_mock
+    from app.services.mock_provider import _PLAN_COMMENT, _stream_mock
     from app.services.prompt_service import build_iterate_prompt
 
-    iterate_msg = build_iterate_prompt(history, current_code, user_message)
+    iterate_msg = build_iterate_prompt(history, current_code, user_message, selected_element)
 
     yield _sse_event('analysis', 'Анализирую запрос на доработку...')
     await asyncio.sleep(0.3)
@@ -281,7 +306,7 @@ async def iterate_stream(
     yield _sse_event('design', 'Вношу изменения в дизайн...')
     await asyncio.sleep(0.3)
 
-    provider = resolve_provider()
+    provider = resolve_provider(model)
 
     full_html = ''
 
@@ -294,11 +319,13 @@ async def iterate_stream(
             )
             if full_html == current_code:
                 full_html += f'\n<!-- Iteration: {user_message} -->\n'
+        if plan:
+            full_html = _PLAN_COMMENT + '\n' + full_html
         async for sse in _stream_mock(full_html, intro='Обновляю макет...\n'):
             yield sse
     else:
         async for sse, cleaned in _stream_cleaned_code(
-            _stream_llm(provider, system_prompt, iterate_msg)
+            _stream_llm(provider, system_prompt, iterate_msg, images)
         ):
             full_html += cleaned
             yield sse

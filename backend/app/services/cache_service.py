@@ -44,16 +44,30 @@ class TTLCache:
         if len(self._data) > 500:
             self._data.popitem(last=False)
 
-    def get_cached(self, prompt: str, theme: str, style: str) -> str | None:
-        """Convenience: hash prompt+theme+style and return cached HTML if any."""
-        key = hash_prompt(prompt, theme, style)
+    def get_cached(
+        self,
+        prompt: str,
+        theme: str,
+        style: str,
+        model: str | None = None,
+        plan: bool = False,
+    ) -> str | None:
+        """Convenience: hash prompt+theme+style+model+plan and return cached HTML if any."""
+        key = hash_prompt(prompt, theme, style, model or '', plan)
         return self.get(key)
 
     def set_cache(
-        self, prompt: str, theme: str, style: str, html: str, ttl: int | None = None
+        self,
+        prompt: str,
+        theme: str,
+        style: str,
+        html: str,
+        model: str | None = None,
+        plan: bool = False,
+        ttl: int | None = None,
     ) -> None:
-        """Convenience: hash prompt+theme+style and cache the HTML."""
-        key = hash_prompt(prompt, theme, style)
+        """Convenience: hash prompt+theme+style+model+plan and cache the HTML."""
+        key = hash_prompt(prompt, theme, style, model or '', plan)
         self.set(key, html, ttl)
 
 

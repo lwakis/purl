@@ -40,18 +40,31 @@ _STYLE_INSTRUCTIONS: dict[str, str] = {
 }
 
 
-def build_system_prompt(theme: str = 'auto', style: str = 'minimal') -> str:
+_PLAN_INSTRUCTION = (
+    'Before generating code, write a concise markdown plan of the implementation steps, '
+    'then generate the code.'
+)
+
+
+def build_system_prompt(
+    theme: str = 'auto',
+    style: str = 'minimal',
+    plan: bool = False,
+) -> str:
     """Return the full system prompt with theme/style instructions appended."""
     theme_instruction = _THEME_INSTRUCTIONS.get(theme, _THEME_INSTRUCTIONS['auto'])
     style_instruction = _STYLE_INSTRUCTIONS.get(style, _STYLE_INSTRUCTIONS['minimal'])
 
-    return (
+    prompt = (
         SYSTEM_PROMPT
         + '\n\nДОПОЛНИТЕЛЬНЫЕ ТРЕБОВАНИЯ К СТИЛЮ:\n'
         + theme_instruction
         + '\n'
         + style_instruction
     )
+    if plan:
+        prompt += '\n\n' + _PLAN_INSTRUCTION
+    return prompt
 
 
 def build_generate_prompt(user_prompt: str) -> str:
@@ -66,6 +79,7 @@ def build_iterate_prompt(
     history: list[dict[str, str]],
     current_code: str,
     user_message: str,
+    selected_element: str | None = None,
 ) -> str:
     """Assemble the iteration context with history and current code."""
     parts: list[str] = [
@@ -91,6 +105,13 @@ def build_iterate_prompt(
         [
             '',
             f'НОВЫЙ ЗАПРОС ПОЛЬЗОВАТЕЛЯ: {user_message}',
+        ]
+    )
+    if selected_element:
+        parts.append(f'Selected element: {selected_element}')
+
+    parts.extend(
+        [
             '',
             'Важно: верни только изменённый полный HTML-код (всегда с <!DOCTYPE html>), без пояснений.',
         ]

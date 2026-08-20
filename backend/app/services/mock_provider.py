@@ -11,6 +11,14 @@ from collections.abc import AsyncGenerator
 
 from app.services.llm_service import _sse_event
 
+_PLAN_COMMENT = (
+    '<!-- PLAN:\n'
+    '- Анализ требований и структуры страницы\n'
+    '- Создание токен-системы и макета\n'
+    '- Вёрстка, стилизация и адаптивность\n'
+    '-->'
+)
+
 _MOCK_TEMPLATE = """<!DOCTYPE html>
 <html lang="ru" data-theme="{theme}">
 <head>
@@ -137,7 +145,7 @@ _MOCK_TEMPLATE = """<!DOCTYPE html>
 </html>"""
 
 
-def _mock_generate_html(prompt: str, theme: str, style: str) -> str:
+def _mock_generate_html(prompt: str, theme: str, style: str, plan: bool = False) -> str:
     """Return a hardcoded, beautiful HTML page based on prompt keywords."""
     title = 'Purl AI — Ваш дизайн'
     headline = 'Ваш дизайн — уже готов'
@@ -209,7 +217,7 @@ def _mock_generate_html(prompt: str, theme: str, style: str) -> str:
         <p>{desc}</p>
       </div>"""
 
-    return _MOCK_TEMPLATE.format(
+    html = _MOCK_TEMPLATE.format(
         theme=theme,
         title=title,
         bg=bg,
@@ -223,6 +231,9 @@ def _mock_generate_html(prompt: str, theme: str, style: str) -> str:
         subheadline=subheadline,
         features_html=features_html,
     )
+    if plan:
+        html = _PLAN_COMMENT + '\n' + html
+    return html
 
 
 async def _stream_mock(full_html: str, intro: str = 'Генерирую макет...\n') -> AsyncGenerator[str]:

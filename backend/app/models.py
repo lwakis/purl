@@ -14,7 +14,12 @@ class GenerateRequest(BaseModel):
     prompt: str = Field(..., max_length=2000, description='User prompt describing the design')
     theme: Literal['light', 'dark', 'auto'] = 'auto'
     style: Literal['minimal', 'corporate', 'playful', 'techno'] = 'minimal'
-    session_id: str | None = Field(None, description='Anonymous session identifier')
+    session_id: str | None = Field(None, description='Client-generated browser session identifier')
+    model: str | None = Field(None, description='Provider override in "provider:model" format')
+    plan: bool = Field(False, description='Ask the model to plan before generating code')
+    images: list[str] = Field(
+        default_factory=list, description='Base64 data URLs for multimodal input'
+    )
 
 
 class IterateRequest(BaseModel):
@@ -22,6 +27,14 @@ class IterateRequest(BaseModel):
     message: str = Field(..., max_length=2000)
     current_code: str
     history: list[ChatMessage] = Field(default_factory=list)
+    model: str | None = Field(None, description='Provider override in "provider:model" format')
+    plan: bool = Field(False, description='Ask the model to plan before generating code')
+    images: list[str] = Field(
+        default_factory=list, description='Base64 data URLs for multimodal input'
+    )
+    selected_element: str | None = Field(
+        None, description='Element the user clicked for iteration context'
+    )
 
 
 class ChatMessage(BaseModel):

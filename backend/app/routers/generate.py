@@ -14,9 +14,16 @@ from app.database import get_db
 from app.models import GenerateRequest, IterateRequest
 from app.services.cache_service import cache
 from app.services.llm_service import generate, iterate_stream
+from app.services.provider_catalog import list_providers
 from app.services.rate_limiter import rate_limiter
 
 router = APIRouter(prefix='/api', tags=['generate'])
+
+
+@router.get('/models')
+async def api_models():
+    """List available LLM providers and their models."""
+    return {'providers': list_providers()}
 
 
 def _get_rate_limit_key(request: Request) -> tuple[str, int]:
@@ -85,19 +92,30 @@ async def api_generate(
     if not result.allowed:
         return _rate_limit_error(int(result.reset_time))
 
-    # Check cache
-    cached_html = cache.get_cached(req.prompt, req.theme, req.style)
-    if cached_html is not None:
+    # Check cache — skipped entirely when images are present (data URLs are huge)
+    if not req.images:
+        cached_html = cache.get_cached(req.prompt, req.theme, req.style, req.model, req.plan)
+        if cached_html is not None:
 
-        async def _cached() -> AsyncGenerator[bytes]:
-            yield f'data: {json.dumps({"type": "analysis", "content": "Загрузка из кеша..."}, ensure_ascii=False)}\n\n'.encode()
-            yield f'data: {json.dumps({"type": "complete", "content": cached_html}, ensure_ascii=False)}\n\n'.encode()
+            async def _cached() -> AsyncGenerator[bytes]:
+                yield f'data: {json.dumps({"type": "analysis", "content": "Загрузка из кеша..."}, ensure_ascii=False)}\n\n'.encode()
+                yield f'data: {json.dumps({"type": "complete", "content": cached_html}, ensure_ascii=False)}\n\n'.encode()
 
-        return _build_sse_response(_cached())
+            return _build_sse_response(_cached())
 
     async def _generate_sse() -> AsyncGenerator[bytes]:
         collected_html: str | None = None
-        async for event in _stream_events(generate(req.prompt, req.theme, req.style), request):
+        async for event in _stream_events(
+            generate(
+                req.prompt,
+                req.theme,
+                req.style,
+                model=req.model,
+                plan=req.plan,
+                images=req.images,
+            ),
+            request,
+        ):
             line = event if event.endswith('\n') else event + '\n'
             yield line.encode()
 
@@ -109,8 +127,8 @@ async def api_generate(
                 except (json.JSONDecodeError, IndexError):
                     pass
 
-        if collected_html:
-            cache.set_cache(req.prompt, req.theme, req.style, collected_html)
+        if collected_html and not req.images:
+            cache.set_cache(req.prompt, req.theme, req.style, collected_html, req.model, req.plan)
 
     return _build_sse_response(_generate_sse())
 
@@ -133,7 +151,7 @@ async def api_iterate(
     if not result.allowed:
         return _rate_limit_error(int(result.reset_time))
 
-    system_prompt = build_system_prompt('auto', 'minimal')
+    system_prompt = build_system_prompt('auto', 'minimal', plan=req.plan)
 
     history_dicts: list[dict[str, str]] = [
         {'role': m.role, 'content': m.content} for m in req.history
@@ -141,7 +159,16 @@ async def api_iterate(
 
     async def _iterate_sse() -> AsyncGenerator[bytes]:
         async for event in _stream_events(
-            iterate_stream(system_prompt, history_dicts, req.current_code, req.message),
+            iterate_stream(
+                system_prompt,
+                history_dicts,
+                req.current_code,
+                req.message,
+                model=req.model,
+                plan=req.plan,
+                images=req.images,
+                selected_element=req.selected_element,
+            ),
             request,
         ):
             line = event if event.endswith('\n') else event + '\n'
