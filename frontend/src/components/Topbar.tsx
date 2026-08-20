@@ -5,14 +5,11 @@ import {
   ArrowsPointingOutIcon,
   ClockIcon,
   CodeBracketIcon,
-  Cog6ToothIcon,
-  CommandLineIcon,
   DevicePhoneMobileIcon,
   DocumentTextIcon,
   EyeIcon,
   GlobeAltIcon,
   PlusIcon,
-  QuestionMarkCircleIcon,
   TrashIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
@@ -258,8 +255,8 @@ const ProjectsPopover = forwardRef<HTMLDivElement, ProjectsPopoverProps>(functio
 
 /**
  * Workspace topbar: logo + project switcher on the left,
- * view segmented control + omnibox in the center, locale / GitHub / help on
- * the right. The popover anchors to the header: a sticky header is a
+ * view segmented control + preview actions in the center, locale / GitHub /
+ * help on the right. The popover anchors to the header: a sticky header is a
  * positioned box, so it establishes the containing block for the popover.
  */
 export default function Topbar() {
@@ -280,7 +277,6 @@ export default function Topbar() {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
-  const [command, setCommand] = useState('');
 
   const popoverRef = useRef<HTMLDivElement>(null);
   const logoButtonRef = useRef<HTMLButtonElement>(null);
@@ -367,9 +363,6 @@ export default function Topbar() {
     }
   }, []);
 
-  const ghostIconButton =
-    'p-1 rounded-md text-surface-500 hover:text-surface-100 hover:bg-surface-700 transition-colors focus-ring active:scale-95';
-
   const statusLabel =
     status === 'saving'
       ? t('autosave.saving')
@@ -436,7 +429,7 @@ export default function Topbar() {
           )}
         </div>
 
-        {/* Center: view segmented control, settings, omnibox */}
+        {/* Center: view segmented control, preview actions */}
         <div className="flex-1 flex items-center justify-center gap-2 min-w-0">
           <div className="flex items-center gap-0.5 bg-surface-800 border border-line rounded-lg p-0.5 shadow-segment-inset">
             <button
@@ -470,71 +463,43 @@ export default function Topbar() {
           </div>
           <button
             type="button"
-            onClick={() => toast(t('topbar.settingsSoon'))}
-            aria-label={t('topbar.settings')}
-            title={t('topbar.settings')}
+            onClick={bumpPreviewRefresh}
             className="p-2 rounded-md text-surface-400 hover:text-surface-100 hover:bg-surface-800 active:scale-95 transition-colors focus-ring"
+            title={t('topbar.refresh')}
+            aria-label={t('topbar.refresh')}
           >
-            <Cog6ToothIcon className="w-4 h-4" />
+            <ArrowPathIcon className="w-4 h-4" />
           </button>
-          <div className="hidden sm:flex items-center gap-1.5 bg-surface-800 border border-line rounded-lg h-9 px-2.5 flex-1 min-w-0 max-w-xl focus-within:border-primary-500/60 focus-within:ring-2 focus-within:ring-primary-500/30 focus-within:outline-none transition-all">
-            <CommandLineIcon className="w-3.5 h-3.5 text-surface-500 flex-shrink-0" />
-            <input
-              type="text"
-              value={command}
-              onChange={(e) => setCommand(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && command.trim()) {
-                  setCommand('');
-                  toast(t('topbar.commandSoon'));
-                }
-              }}
-              placeholder={t('topbar.commandPlaceholder')}
-              aria-label={t('topbar.commandPlaceholder')}
-              className="flex-1 bg-transparent text-sm text-surface-100 placeholder:text-surface-500 focus:outline-none min-w-0"
-            />
-            <div className="flex items-center gap-0.5 flex-shrink-0">
-              <button
-                type="button"
-                onClick={bumpPreviewRefresh}
-                className={ghostIconButton}
-                title={t('topbar.refresh')}
-                aria-label={t('topbar.refresh')}
-              >
-                <ArrowPathIcon className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={openInNewTab}
-                className={ghostIconButton}
-                title={t('topbar.openNewTab')}
-                aria-label={t('topbar.openNewTab')}
-              >
-                <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={cyclePreviewSize}
-                className={ghostIconButton}
-                title={t('topbar.devicePreview')}
-                aria-label={t('topbar.devicePreview')}
-              >
-                <DevicePhoneMobileIcon className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={handleFullscreen}
-                className={ghostIconButton}
-                title={t('topbar.fullscreen')}
-                aria-label={t('topbar.fullscreen')}
-              >
-                <ArrowsPointingOutIcon className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={openInNewTab}
+            className="p-2 rounded-md text-surface-400 hover:text-surface-100 hover:bg-surface-800 active:scale-95 transition-colors focus-ring"
+            title={t('topbar.openNewTab')}
+            aria-label={t('topbar.openNewTab')}
+          >
+            <ArrowTopRightOnSquareIcon className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={cyclePreviewSize}
+            className="p-2 rounded-md text-surface-400 hover:text-surface-100 hover:bg-surface-800 active:scale-95 transition-colors focus-ring"
+            title={t('topbar.devicePreview')}
+            aria-label={t('topbar.devicePreview')}
+          >
+            <DevicePhoneMobileIcon className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={handleFullscreen}
+            className="p-2 rounded-md text-surface-400 hover:text-surface-100 hover:bg-surface-800 active:scale-95 transition-colors focus-ring"
+            title={t('topbar.fullscreen')}
+            aria-label={t('topbar.fullscreen')}
+          >
+            <ArrowsPointingOutIcon className="w-4 h-4" />
+          </button>
         </div>
 
-        {/* Right: language, GitHub, help */}
+        {/* Right: language, GitHub */}
         <div className="flex items-center gap-1.5">
           <button
             type="button"
@@ -556,15 +521,6 @@ export default function Topbar() {
           >
             <GitHubMarkIcon />
           </a>
-          <button
-            type="button"
-            onClick={() => toast(t('topbar.helpSoon'))}
-            aria-label={t('topbar.help')}
-            title={t('topbar.help')}
-            className="p-2 rounded-md text-surface-400 hover:text-surface-100 hover:bg-surface-800 active:scale-95 transition-colors focus-ring"
-          >
-            <QuestionMarkCircleIcon className="w-5 h-5" />
-          </button>
         </div>
       </div>
 
