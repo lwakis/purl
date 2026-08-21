@@ -5,7 +5,6 @@
 Открытый AI-генератор дизайнов. Введите промпт и получите готовую HTML/CSS/JS страницу: она стримится в реальном времени и отображается в sandboxed iframe. Дорабатывайте результат в чате, пока он не станет таким, как нужно. По духу похож на Vercel v0 и Lovable, но его можно разместить у себя.
 
 [![CI](https://img.shields.io/github/actions/workflow/status/lwakis/purl/ci.yml)](https://github.com/lwakis/purl/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/lwakis/purl/graph/badge.svg)](https://codecov.io/gh/lwakis/purl)
 [![Release](https://img.shields.io/github/v/tag/lwakis/purl?sort=semver)](https://github.com/lwakis/purl/releases)
 [![Stars](https://img.shields.io/github/stars/lwakis/purl)](https://github.com/lwakis/purl/stargazers)
 [![Last commit](https://img.shields.io/github/last-commit/lwakis/purl)](https://github.com/lwakis/purl/commits/main)
