@@ -17,6 +17,10 @@ Open-source AI design generator. Type a prompt, get a complete HTML/CSS/JS page,
 
 Design at the speed of thought. Purl turns a plain-text description into a working web page: a landing page, a dashboard, a signup form, a pricing page. The backend assembles a system prompt, streams the generation to the browser over Server-Sent Events, and the frontend renders the result in a sandboxed iframe. Keep refining it in a chat — projects autosave as you work, and every iteration is stored in a version history.
 
+<p align="center">
+  <img src="docs/screenshots/workspace-preview.png" alt="Purl workspace: prompt to live preview with chat iterations" width="820">
+</p>
+
 Flagship features:
 
 - **Prompt to page.** Describe what you want and get complete, self-contained HTML with inline CSS and JS. Live preview, syntax-highlighted source, copy and download.
@@ -25,12 +29,22 @@ Flagship features:
 - **Your model, your context.** Pick a provider and model from a catalog (`GET /api/models`), ask for a plan before code, attach up to 8 images (5 MB each), or click an element in the preview to iterate on it.
 - **Mock mode.** With no LLM API key configured, Purl still works end to end. Great for local development, CI, and demos.
 
+## Screenshots
+
+| Landing | Code view |
+|---|---|
+| ![Landing page with hero prompt](docs/screenshots/landing.png) | ![Generated source with syntax highlighting](docs/screenshots/workspace-code.png) |
+
+Iterate by chat — every change becomes a restorable version snapshot:
+
+![Chat iteration with version snapshots](docs/screenshots/chat-iteration.png)
+
 ## Quickstart
 
 ### Docker
 
 ```bash
-git clone git@github.com:lwakis/purl.git && cd purl
+git clone https://github.com/lwakis/purl.git && cd purl
 docker compose up --build
 ```
 
