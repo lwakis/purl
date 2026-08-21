@@ -41,7 +41,7 @@ What's in the repo right now:
 - [x] Versioned releases and changelogs (release workflow; tags `v0.1.0`/`v0.2.0` published)
 - [x] Open-source documentation (README, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY)
 
-## v1.1 (next)
+## Next up
 
 | Item | Notes |
 |---|---|
@@ -76,4 +76,4 @@ Deliberately not planned. Purl stays a self-hostable single-user tool.
 
 ## How to help
 
-Anything unchecked above is fair game. The best entry points for new contributors are the v1.1 items and the test suites, which are still thin. See [CONTRIBUTING.md](CONTRIBUTING.md) before starting.
+Anything unchecked above is fair game. The best entry points for new contributors are the near-term items and the test suites, which are still thin. See [CONTRIBUTING.md](CONTRIBUTING.md) before starting.

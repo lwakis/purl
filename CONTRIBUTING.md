@@ -89,7 +89,7 @@ If a checklist item doesn't apply, say so in the PR description rather than leav
 
 The [ROADMAP](ROADMAP.md) is the source of truth for what's planned. Good starting points:
 
-- **v1.1 items**: project search, template favorites, React export.
+- **Near-term items**: project search, template favorites, React export.
 - **Open source growth**: self-hosted LLM support (Ollama), plugin/theme system, CodeSandbox/StackBlitz export, CLI.
 - **Quality**: the test suites are still thin. Adding tests for the routers, the rate limiter, and the cache is high-value and low-risk.
 - **Docs**: the docs are new. Typos, clarifications, and examples are always welcome.
