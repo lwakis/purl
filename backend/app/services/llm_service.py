@@ -247,16 +247,22 @@ async def generate(
     - ``complete`` – final event with the full HTML code
     - ``error`` – an error occurred
     """
-    from app.services.mock_provider import _mock_generate_html, _stream_mock
+    from app.services.mock_provider import (
+        _mock_generate_html,
+        _stream_mock,
+        detect_lang,
+        status_texts,
+    )
     from app.services.prompt_service import build_generate_prompt, build_system_prompt
 
     system = build_system_prompt(theme, style, plan=plan)
     user_msg = build_generate_prompt(prompt)
 
-    yield _sse_event('analysis', 'Анализирую ваш запрос...')
+    st = status_texts(detect_lang(prompt))
+    yield _sse_event('analysis', st['analysis'])
     await asyncio.sleep(0.3)
 
-    yield _sse_event('design', 'Создаю дизайн и токен-систему...')
+    yield _sse_event('design', st['design'])
     await asyncio.sleep(0.3)
 
     provider = resolve_provider(model)
@@ -265,7 +271,7 @@ async def generate(
 
     if not provider.ready:
         full_html = _mock_generate_html(prompt, theme, style, plan=plan)
-        async for sse in _stream_mock(full_html):
+        async for sse in _stream_mock(full_html, intro=st['intro']):
             yield sse
     else:
         async for sse, cleaned in _stream_cleaned_code(
@@ -295,15 +301,21 @@ async def iterate_stream(
     *current_code* – the current HTML code.
     *user_message* – the user's iteration request.
     """
-    from app.services.mock_provider import _PLAN_COMMENT, _stream_mock
+    from app.services.mock_provider import (
+        _stream_mock,
+        detect_lang,
+        plan_comment,
+        status_texts,
+    )
     from app.services.prompt_service import build_iterate_prompt
 
     iterate_msg = build_iterate_prompt(history, current_code, user_message, selected_element)
 
-    yield _sse_event('analysis', 'Анализирую запрос на доработку...')
+    st = status_texts(detect_lang(user_message))
+    yield _sse_event('analysis', st['iter_analysis'])
     await asyncio.sleep(0.3)
 
-    yield _sse_event('design', 'Вношу изменения в дизайн...')
+    yield _sse_event('design', st['iter_design'])
     await asyncio.sleep(0.3)
 
     provider = resolve_provider(model)
@@ -320,8 +332,8 @@ async def iterate_stream(
             if full_html == current_code:
                 full_html += f'\n<!-- Iteration: {user_message} -->\n'
         if plan:
-            full_html = _PLAN_COMMENT + '\n' + full_html
-        async for sse in _stream_mock(full_html, intro='Обновляю макет...\n'):
+            full_html = plan_comment(detect_lang(user_message)) + '\n' + full_html
+        async for sse in _stream_mock(full_html, intro=st['iter_intro']):
             yield sse
     else:
         async for sse, cleaned in _stream_cleaned_code(

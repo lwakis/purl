@@ -2,6 +2,10 @@
 
 Keeps the hardcoded landing-page template and its chunked streaming
 generator out of the orchestration layer (``llm_service``).
+
+The template speaks the prompt's language: Cyrillic prompts get the
+Russian copy, everything else falls back to English — so mock mode
+looks right in demos and screenshots for any audience.
 """
 
 from __future__ import annotations
@@ -11,16 +15,162 @@ from collections.abc import AsyncGenerator
 
 from app.services.llm_service import _sse_event
 
-_PLAN_COMMENT = (
-    '<!-- PLAN:\n'
-    '- Анализ требований и структуры страницы\n'
-    '- Создание токен-системы и макета\n'
-    '- Вёрстка, стилизация и адаптивность\n'
-    '-->'
+
+def detect_lang(prompt: str) -> str:
+    """Return ``'ru'`` when the prompt is mostly Cyrillic, else ``'en'``."""
+    cyr = sum(1 for ch in prompt if '\u0400' <= ch <= '\u04ff')
+    lat = sum(1 for ch in prompt if ch.isascii() and ch.isalpha())
+    return 'ru' if cyr > lat else 'en'
+
+
+# ── Copy packs ───────────────────────────────────────────────────────────────
+
+_MOCK_TEXTS: dict[str, dict] = {
+    'en': {
+        'lang': 'en',
+        'title': 'Purl AI — Your design',
+        'default_headline': 'Your design is ready',
+        'default_sub': 'A professional design mockup based on your description.',
+        'nav': ('Home', 'Features', 'Pricing', 'Contact'),
+        'cta_primary': 'Start free →',
+        'cta_secondary': 'Learn more',
+        'intro': 'Generating mockup...\n',
+        'plan': (
+            'Analyze requirements and page structure',
+            'Build the token system and layout',
+            'Markup, styling and responsiveness',
+        ),
+        'branches': {
+            'landing': (
+                'Launch your product',
+                'A modern landing page for your SaaS product with a conversion-focused design.',
+            ),
+            'dashboard': (
+                'Real-time analytics',
+                'Track key metrics and make data-driven decisions.',
+            ),
+            'signup': ('Create your account', 'Sign up and get started in minutes.'),
+            'portfolio': ('My work', 'A portfolio with project filtering by category.'),
+            'blog': ('Latest articles', 'A blog with useful articles and insights.'),
+            'contact': ('Get in touch', 'Leave a request and we will get back to you shortly.'),
+            'pricing': ('Choose your plan', 'A fitting plan for any scale.'),
+        },
+        'features': (
+            ('🚀', 'Rapid development', 'Generate a mockup in seconds from your description.'),
+            ('🎨', 'Unique design', 'Every mockup is built from scratch for your task and style.'),
+            ('📱', 'Responsive layout', 'Looks right on every device from 320px to 1440px.'),
+            (
+                '⚡',
+                'Micro-interactions',
+                'Smooth animations and interactive elements for better UX.',
+            ),
+            ('♿', 'Accessibility', 'ARIA labels, keyboard support and prefers-reduced-motion.'),
+            ('🔧', 'Production-ready code', 'Clean HTML/CSS/JS you can drop into your project.'),
+        ),
+    },
+    'ru': {
+        'lang': 'ru',
+        'title': 'Purl AI — Ваш дизайн',
+        'default_headline': 'Ваш дизайн — уже готов',
+        'default_sub': 'Профессиональный дизайн-макет на основе вашего описания.',
+        'nav': ('Главная', 'Возможности', 'Тарифы', 'Контакты'),
+        'cta_primary': 'Начать бесплатно →',
+        'cta_secondary': 'Узнать больше',
+        'intro': 'Генерирую макет...\n',
+        'plan': (
+            'Анализ требований и структуры страницы',
+            'Создание токен-системы и макета',
+            'Вёрстка, стилизация и адаптивность',
+        ),
+        'branches': {
+            'landing': (
+                'Запустите ваш продукт',
+                'Современный лендинг для вашего SaaS-продукта с конверсионным дизайном.',
+            ),
+            'dashboard': (
+                'Аналитика в реальном времени',
+                'Отслеживайте ключевые метрики и принимайте решения на основе данных.',
+            ),
+            'signup': ('Создайте аккаунт', 'Зарегистрируйтесь и начните работать за пару минут.'),
+            'portfolio': ('Мои работы', 'Портфолио с фильтрацией проектов по категориям.'),
+            'blog': ('Последние статьи', 'Блог с полезными материалами и аналитикой.'),
+            'contact': ('Свяжитесь с нами', 'Оставьте заявку и мы ответим в ближайшее время.'),
+            'pricing': ('Выберите ваш тариф', 'Подходящий план для любого масштаба.'),
+        },
+        'features': (
+            (
+                '🚀',
+                'Быстрая разработка',
+                'Создание макета за считанные секунды на основе вашего описания.',
+            ),
+            ('🎨', 'Уникальный дизайн', 'Каждый макет создаётся с нуля под вашу задачу и стиль.'),
+            (
+                '📱',
+                'Адаптивная верстка',
+                'Корректное отображение на всех устройствах от 320px до 1440px.',
+            ),
+            (
+                '⚡',
+                'Micro-interactions',
+                'Плавные анимации и интерактивные элементы для лучшего UX.',
+            ),
+            ('♿', 'Доступность', 'ARIA-метки, поддержка клавиатуры и prefers-reduced-motion.'),
+            (
+                '🔧',
+                'Готовый код',
+                'Чистый HTML/CSS/JS код, готовый к использованию в вашем проекте.',
+            ),
+        ),
+    },
+}
+
+# Shared keyword matchers: branch key -> keywords (RU and EN mixed).
+_BRANCH_KEYWORDS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ('landing', ('лендинг', 'landing', 'продукт', 'saas', 'startup')),
+    ('dashboard', ('дашборд', 'dashboard', 'аналитик', 'метрик')),
+    ('signup', ('регистраци', 'signup', 'форма')),
+    ('portfolio', ('портфолио', 'portfolio')),
+    ('blog', ('блог', 'blog', 'статья', 'article')),
+    ('contact', ('контакт', 'contact', 'обратная связь')),
+    ('pricing', ('тариф', 'pricing', 'price', 'подписк')),
 )
 
+# Progress messages shown by the frontend while the mock stream runs.
+_STATUS: dict[str, dict[str, str]] = {
+    'en': {
+        'analysis': 'Analyzing your request...',
+        'design': 'Designing the layout and token system...',
+        'intro': 'Generating mockup...\n',
+        'iter_analysis': 'Analyzing your change request...',
+        'iter_design': 'Applying design changes...',
+        'iter_intro': 'Updating mockup...\n',
+    },
+    'ru': {
+        'analysis': 'Анализирую ваш запрос...',
+        'design': 'Создаю дизайн и токен-систему...',
+        'intro': 'Генерирую макет...\n',
+        'iter_analysis': 'Анализирую запрос на доработку...',
+        'iter_design': 'Вношу изменения в дизайн...',
+        'iter_intro': 'Обновляю макет...\n',
+    },
+}
+
+
+def status_texts(lang: str) -> dict[str, str]:
+    """Progress messages for the mock stream in the given language."""
+    return _STATUS.get(lang, _STATUS['en'])
+
+
+def plan_comment(lang: str) -> str:
+    """HTML comment listing the planned steps, in the given language."""
+    lines = _MOCK_TEXTS.get(lang, _MOCK_TEXTS['en'])['plan']
+    return '<!-- PLAN:\n' + '\n'.join(f'- {line}' for line in lines) + '\n-->'
+
+
+# ── Template ─────────────────────────────────────────────────────────────────
+
 _MOCK_TEMPLATE = """<!DOCTYPE html>
-<html lang="ru" data-theme="{theme}">
+<html lang="{lang}" data-theme="{theme}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -124,14 +274,14 @@ _MOCK_TEMPLATE = """<!DOCTYPE html>
   <div class="container">
     <header>
       <div class="logo">Purl</div>
-      <nav><a href="#">Главная</a><a href="#">Возможности</a><a href="#">Тарифы</a><a href="#">Контакты</a></nav>
+      <nav>{nav_html}</nav>
     </header>
     <section class="hero">
       <h1>{headline}</h1>
       <p>{subheadline}</p>
       <div class="cta-group">
-        <a href="#" class="btn btn-primary">Начать бесплатно →</a>
-        <a href="#" class="btn btn-secondary">Узнать больше</a>
+        <a href="#" class="btn btn-primary">{cta_primary}</a>
+        <a href="#" class="btn btn-secondary">{cta_secondary}</a>
       </div>
     </section>
     <section class="features">
@@ -147,9 +297,10 @@ _MOCK_TEMPLATE = """<!DOCTYPE html>
 
 def _mock_generate_html(prompt: str, theme: str, style: str, plan: bool = False) -> str:
     """Return a hardcoded, beautiful HTML page based on prompt keywords."""
-    title = 'Purl AI — Ваш дизайн'
-    headline = 'Ваш дизайн — уже готов'
-    subheadline = 'Профессиональный дизайн-макет на основе вашего описания.'
+    t = _MOCK_TEXTS[detect_lang(prompt)]
+    title = t['title']
+    headline = t['default_headline']
+    subheadline = t['default_sub']
 
     # Theme colours
     if theme == 'dark':
@@ -170,46 +321,13 @@ def _mock_generate_html(prompt: str, theme: str, style: str, plan: bool = False)
 
     # Extract keywords from prompt
     lower = prompt.lower()
-    if any(w in lower for w in ('лендинг', 'landing', 'продукт', 'saas', 'startup')):
-        headline = 'Запустите ваш продукт'
-        subheadline = 'Современный лендинг для вашего SaaS-продукта с конверсионным дизайном.'
-    elif any(w in lower for w in ('дашборд', 'dashboard', 'аналитик', 'метрик')):
-        headline = 'Аналитика в реальном времени'
-        subheadline = 'Отслеживайте ключевые метрики и принимайте решения на основе данных.'
-    elif any(w in lower for w in ('регистраци', 'signup', 'регистрация', 'форма')):
-        headline = 'Создайте аккаунт'
-        subheadline = 'Зарегистрируйтесь и начните работать за пару минут.'
-    elif any(w in lower for w in ('портфолио', 'portfolio', 'портфолио')):
-        headline = 'Мои работы'
-        subheadline = 'Портфолио с фильтрацией проектов по категориям.'
-    elif any(w in lower for w in ('блог', 'blog', 'статья', 'article')):
-        headline = 'Последние статьи'
-        subheadline = 'Блог с полезными материалами и аналитикой.'
-    elif any(w in lower for w in ('контакт', 'contact', 'обратная связь')):
-        headline = 'Свяжитесь с нами'
-        subheadline = 'Оставьте заявку и мы ответим в ближайшее время.'
-    elif any(w in lower for w in ('тариф', 'pricing', 'price', 'подписк')):
-        headline = 'Выберите ваш тариф'
-        subheadline = 'Подходящий план для любого масштаба.'
+    for key, keywords in _BRANCH_KEYWORDS:
+        if any(w in lower for w in keywords):
+            headline, subheadline = t['branches'][key]
+            break
 
     features_html = ''
-    feature_data = [
-        (
-            '🚀',
-            'Быстрая разработка',
-            'Создание макета за считанные секунды на основе вашего описания.',
-        ),
-        ('🎨', 'Уникальный дизайн', 'Каждый макет создаётся с нуля под вашу задачу и стиль.'),
-        (
-            '📱',
-            'Адаптивная верстка',
-            'Корректное отображение на всех устройствах от 320px до 1440px.',
-        ),
-        ('⚡', 'Micro-interactions', 'Плавные анимации и интерактивные элементы для лучшего UX.'),
-        ('♿', 'Доступность', 'ARIA-метки, поддержка клавиатуры и prefers-reduced-motion.'),
-        ('🔧', 'Готовый код', 'Чистый HTML/CSS/JS код, готовый к использованию в вашем проекте.'),
-    ]
-    for icon, feat_title, desc in feature_data:
+    for icon, feat_title, desc in t['features']:
         features_html += f"""
       <div class="feature-card" tabindex="0" role="article" aria-label="{feat_title}">
         <div class="feature-icon" aria-hidden="true">{icon}</div>
@@ -217,7 +335,10 @@ def _mock_generate_html(prompt: str, theme: str, style: str, plan: bool = False)
         <p>{desc}</p>
       </div>"""
 
+    nav_html = ''.join(f'<a href="#">{label}</a>' for label in t['nav'])
+
     html = _MOCK_TEMPLATE.format(
+        lang=t['lang'],
         theme=theme,
         title=title,
         bg=bg,
@@ -229,16 +350,19 @@ def _mock_generate_html(prompt: str, theme: str, style: str, plan: bool = False)
         accent=accent,
         headline=headline,
         subheadline=subheadline,
+        cta_primary=t['cta_primary'],
+        cta_secondary=t['cta_secondary'],
+        nav_html=nav_html,
         features_html=features_html,
     )
     if plan:
-        html = _PLAN_COMMENT + '\n' + html
+        html = plan_comment(t['lang']) + '\n' + html
     return html
 
 
-async def _stream_mock(full_html: str, intro: str = 'Генерирую макет...\n') -> AsyncGenerator[str]:
+async def _stream_mock(full_html: str, intro: str | None = None) -> AsyncGenerator[str]:
     """Yield an existing HTML string in small chunks for a realistic stream."""
-    yield _sse_event('code', intro)
+    yield _sse_event('code', intro if intro is not None else 'Generating mockup...\n')
     await asyncio.sleep(0.2)
     chunk_size = 50
     for i in range(0, len(full_html), chunk_size):
