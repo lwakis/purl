@@ -61,7 +61,7 @@ The Vite dev server runs on port 5173 and proxies `/api` to http://localhost:800
 
 ## How it works
 
-You type a prompt. The backend appends theme and style instructions to a curated system prompt, streams the request to a configured LLM provider (OpenAI-compatible endpoints or Anthropic — see presets below), and relays the response to the browser as Server-Sent Events. The frontend accumulates the streamed HTML and renders it in a sandboxed iframe (`sandbox="allow-scripts"`, no `allow-same-origin`), so generated code can never touch the host page. When you ask for changes, the chat history and current code are sent back and the cycle repeats.
+You type a prompt. The backend appends theme and style instructions to a curated system prompt, streams the request to a configured LLM provider (OpenAI-compatible endpoints or Anthropic — see presets below), and relays the response to the browser as Server-Sent Events. The frontend accumulates the streamed HTML and renders it in a sandboxed iframe (`sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"`, no `allow-same-origin`), so generated code can never touch the host page. When you ask for changes, the chat history and current code are sent back and the cycle repeats.
 
 ## Architecture
 
@@ -69,7 +69,7 @@ You type a prompt. The backend appends theme and style instructions to a curated
 ┌──────────────────────────────┐
 │        Frontend (React)      │
 │ prompt · preview iframe ·    │
-│ chat · code · templates      │
+│ chat · code · projects       │
 └──────────────┬───────────────┘
                │ HTTP + SSE (JSON)
 ┌──────────────▼────────────────┐
@@ -116,12 +116,15 @@ purl/
 │   └── pyproject.toml       # deps, ruff and pytest config
 ├── frontend/                # React SPA (Vite)
 │   ├── src/
-│   │   ├── components/      # preview, code, chat, templates, sidebar
+│   │   ├── components/      # topbar, preview, code, chat, sidebar, prompt
 │   │   ├── hooks/           # generation and project hooks
+│   │   ├── i18n/            # ru/en translations
 │   │   ├── services/        # API client and SSE reader
 │   │   ├── store/           # zustand state
 │   │   ├── styles/          # global CSS
+│   │   ├── test/            # vitest setup and helpers
 │   │   └── types/           # shared TypeScript types
+│   ├── e2e/                 # Playwright smoke tests
 │   └── package.json
 ├── .github/workflows/       # CI (lint + tests)
 ├── LICENSE                  # MIT
@@ -214,7 +217,7 @@ Bug reports, feature ideas, and pull requests are welcome. Please read [CONTRIBU
 
 ## Roadmap
 
-The MVP is shipped: generation, streaming, preview, chat, projects with autosave and versions, templates, and mock mode. Next up is export formats and additional open-source growth items. See [ROADMAP.md](ROADMAP.md) for the full plan.
+The MVP is shipped: generation, streaming, preview, chat, projects with autosave and versions, and mock mode. Next up is export formats and additional open-source growth items. See [ROADMAP.md](ROADMAP.md) for the full plan.
 
 ## Security
 

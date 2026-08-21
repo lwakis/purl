@@ -61,7 +61,7 @@ Dev-сервер Vite работает на порту 5173 и проксиру�
 
 ## Как это работает
 
-Вы вводите промпт. Бэкенд добавляет инструкции по теме и стилю к подобранному системному промпту, стримит запрос в настроенного LLM-провайдера (OpenAI-совместимые эндпоинты или Anthropic, см. пресеты ниже) и передаёт ответ в браузер через Server-Sent Events. Фронтенд накапливает стримленный HTML и рендерит его в sandboxed iframe (`sandbox="allow-scripts"`, без `allow-same-origin`), так что сгенерированный код никогда не сможет коснуться хост-страницы. Когда вы просите внести изменения, история чата и текущий код отправляются обратно, и цикл повторяется.
+Вы вводите промпт. Бэкенд добавляет инструкции по теме и стилю к подобранному системному промпту, стримит запрос в настроенного LLM-провайдера (OpenAI-совместимые эндпоинты или Anthropic, см. пресеты ниже) и передаёт ответ в браузер через Server-Sent Events. Фронтенд накапливает стримленный HTML и рендерит его в sandboxed iframe (`sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"`, без `allow-same-origin`), так что сгенерированный код никогда не сможет коснуться хост-страницы. Когда вы просите внести изменения, история чата и текущий код отправляются обратно, и цикл повторяется.
 
 ## Архитектура
 
@@ -69,7 +69,7 @@ Dev-сервер Vite работает на порту 5173 и проксиру�
 ┌──────────────────────────────┐
 │        Frontend (React)      │
 │ prompt · preview iframe ·    │
-│ chat · code · templates      │
+│ chat · code · projects       │
 └──────────────┬───────────────┘
                │ HTTP + SSE (JSON)
 ┌──────────────▼────────────────┐
@@ -116,12 +116,15 @@ purl/
 │   └── pyproject.toml       # deps, ruff and pytest config
 ├── frontend/                # React SPA (Vite)
 │   ├── src/
-│   │   ├── components/      # preview, code, chat, templates, sidebar
+│   │   ├── components/      # topbar, preview, code, chat, sidebar, prompt
 │   │   ├── hooks/           # generation and project hooks
+│   │   ├── i18n/            # переводы ru/en
 │   │   ├── services/        # API client and SSE reader
 │   │   ├── store/           # zustand state
 │   │   ├── styles/          # global CSS
+│   │   ├── test/            # vitest setup and helpers
 │   │   └── types/           # shared TypeScript types
+│   ├── e2e/                 # Playwright smoke tests
 │   └── package.json
 ├── .github/workflows/       # CI (lint + tests)
 ├── LICENSE                  # MIT
@@ -199,6 +202,9 @@ uv run ruff format .    # format
 # Frontend (from frontend/)
 npx vitest run          # run the test suite
 npm run build           # type-check (tsc -b) and build
+npm run test:e2e        # end-to-end smoke tests (Playwright), auto-starts
+                        # backend (mock mode) + Vite on :8000/:5173
+                        #   first run: npx playwright install chromium
 
 # Repo root
 pre-commit install             # once, to enable hooks
@@ -211,7 +217,7 @@ pre-commit run --all-files     # run all hooks
 
 ## Дорожная карта
 
-MVP уже выпущен: генерация, стриминг, предпросмотр, чат, проекты с автосохранением и версиями, шаблоны и mock-режим. Дальше в планах экспортные форматы и развитие open-source составляющей. Полный план смотрите в [ROADMAP.md](ROADMAP.md).
+MVP уже выпущен: генерация, стриминг, предпросмотр, чат, проекты с автосохранением и версиями и mock-режим. Дальше в планах экспортные форматы и развитие open-source составляющей. Полный план смотрите в [ROADMAP.md](ROADMAP.md).
 
 ## Безопасность
 

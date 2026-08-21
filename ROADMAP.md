@@ -30,7 +30,7 @@ What's in the repo right now:
 - [x] Version history per project (`/api/projects/{id}/versions`) with restore / download / bookmark from the chat
 - [x] Automatic project autosave (no manual Save button)
 - [x] Inline project rename
-- [x] Template gallery with 8 seeded starter prompts (`/api/templates`)
+- [x] Template catalog API with 8 seeded starter prompts (`GET /api/templates`; backend-only — the gallery UI was removed in the hero-prompt redesign)
 
 ### Platform
 
