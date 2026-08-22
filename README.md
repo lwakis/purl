@@ -15,6 +15,10 @@ Open-source AI design generator. Type a prompt, get a complete HTML/CSS/JS page,
 ![Docker](https://img.shields.io/badge/docker-compose-2496ED)
 ![Mock mode](https://img.shields.io/badge/mock%20mode-runs%20without%20API%20key-6B7280)
 
+## Contents
+
+[Screenshots](#screenshots) · [Quickstart](#quickstart) · [How it works](#how-it-works) · [Architecture](#architecture) · [Tech stack](#tech-stack) · [Project structure](#project-structure) · [Environment variables](#environment-variables) · [API overview](#api-overview) · [Testing](#testing-and-linting) · [Troubleshooting](#troubleshooting) · [FAQ](#faq) · [Contributing](#contributing) · [Roadmap](#roadmap) · [Security](#security) · [License](#license)
+
 Design at the speed of thought. Purl turns a plain-text description into a working web page: a landing page, a dashboard, a signup form, a pricing page. The backend assembles a system prompt, streams the generation to the browser over Server-Sent Events, and the frontend renders the result in a sandboxed iframe. Keep refining it in a chat — projects autosave as you work, and every iteration is stored in a version history.
 
 <p align="center">
@@ -63,7 +67,7 @@ uv sync --extra dev
 uv run uvicorn app.main:app --reload --port 8000
 ```
 
-Frontend (Node.js with npm):
+Frontend (Node.js >= 22 with npm):
 
 ```bash
 cd frontend
@@ -225,13 +229,44 @@ pre-commit install             # once, to enable hooks
 pre-commit run --all-files     # run all hooks
 ```
 
+## Troubleshooting
+
+**Opening the app from another device on your network fails.**
+By default CORS only allows `localhost` origins. Add the origin you open the app from to `CORS_ORIGINS` in `backend/.env` (for example `["http://192.168.1.10:5173"]`) and restart the backend.
+
+**Port 5173 or 8000 is already in use.**
+Free the port or pick another one: Vite — `npm run dev -- --port 5174` (then update CORS), backend — `--port 8001` (then set `VITE_API_BASE_URL=http://localhost:8001`). With Docker, remap ports in `docker-compose.yml`.
+
+**I want to reset everything and start fresh.**
+Local dev: stop the backend and delete `backend/purl.db`. Docker: `docker compose down -v` removes the `purl-data` volume along with the database.
+
+**Generation fails instantly even though the backend is up.**
+Check the backend log. A 429 response means you hit the rate limit (`RATE_LIMIT_PER_HOUR`, default 100 requests/hour per IP). With a real API key configured, provider errors surface as an error message in the chat.
+
+## FAQ
+
+**Do I need an LLM API key?**
+No. Without a key Purl runs in mock mode and still generates real pages locally — great for trying it out, demos, and CI. Add a key when you want production-quality results from a live model.
+
+**Where does my data go?**
+Only where you point it. Purl is self-hosted: projects and versions live in your local SQLite file, and prompts are sent exclusively to the LLM provider you configure. No telemetry.
+
+**Can I use it commercially?**
+Yes — Purl is MIT licensed, and the pages it generates are yours.
+
+**How is this different from Vercel v0 or Lovable?**
+Those are hosted services; Purl is the self-hosted take: run it on your own machine, bring your own provider and keys, keep your data. The trade-off is that there is no hosted convenience.
+
+**Which providers and models are supported?**
+Any OpenAI-compatible endpoint through presets (OpenAI, OpenRouter, Groq, DeepSeek, Gemini, Ollama), plus Anthropic, plus a `custom` preset for arbitrary OpenAI-compatible base URLs. See the environment variables table above.
+
 ## Contributing
 
 Bug reports, feature ideas, and pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) first: it covers setup, commit conventions, and the PR checklist. All community interactions follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Roadmap
 
-The MVP is shipped: generation, streaming, preview, chat, projects with autosave and versions, and mock mode. Next up is export formats and additional open-source growth items. See [ROADMAP.md](ROADMAP.md) for the full plan.
+The MVP is shipped: generation, streaming, preview, chat, projects with autosave and versions, and mock mode. Next up is export formats and additional open-source growth items. See [ROADMAP.md](ROADMAP.md) for the full plan. Release history lives in [CHANGELOG.md](CHANGELOG.md).
 
 ## Security
 
