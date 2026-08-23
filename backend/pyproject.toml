@@ -2,7 +2,6 @@
 name = "purl-backend"
 version = "0.3.0"
 description = "Purl AI — AI design generation service backend"
-readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi[standard]>=0.141.1",

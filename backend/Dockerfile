@@ -10,7 +10,7 @@ RUN groupadd --system purl && \
     useradd --system --gid purl --create-home purl
 
 # Copy backend sources
-COPY pyproject.toml README.md ./
+COPY pyproject.toml ./
 COPY app ./app
 
 # Install setuptools explicitly (pyproject.toml has no [build-system] section,
