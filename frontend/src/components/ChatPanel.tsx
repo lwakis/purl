@@ -48,7 +48,6 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
     attachments,
     addAttachment,
     removeAttachment,
-    clearAttachments,
   } = useAppStore();
   const { iterate } = useGeneration();
   const { t } = useT();
@@ -136,9 +135,9 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
     if (!message.trim() || isGenerating || !currentCode) return;
     iterate(message.trim());
     setMessage('');
-    // The hook captured the data synchronously at call time; safe to clear.
-    clearAttachments();
-  }, [message, isGenerating, currentCode, iterate, clearAttachments]);
+    // Attachments persist on purpose: follow-up messages keep referencing
+    // the same images until removed via the chip or a fresh generation.
+  }, [message, isGenerating, currentCode, iterate]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

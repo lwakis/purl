@@ -129,6 +129,10 @@ export function useGeneration() {
       };
 
       const { selectedModel, planOn, attachments } = useAppStore.getState();
+      // A fresh generation starts a new visual context: consume the current
+      // attachments for this request only, so stale images never leak into
+      // an unrelated page created later.
+      useAppStore.getState().clearAttachments();
       await connectGenerateSSE(
         prompt,
         'dark',
