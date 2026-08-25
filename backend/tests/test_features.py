@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 from helpers import extract_complete_html, parse_sse
 
 from app.config import settings
@@ -342,3 +343,78 @@ def test_generate_cache_key_includes_model_and_plan(client):
     assert fourth.status_code == 200
     assert [e['type'] for e in parse_sse(fourth.text)] == ['analysis', 'complete']
     assert extract_complete_html(fourth.text) == first_html
+
+
+# ── Image validation ─────────────────────────────────────────────────────────
+
+
+def test_validate_images_accepts_valid_data_urls():
+    from app.models import validate_images
+
+    urls = ['data:image/png;base64,AAAA', 'data:image/jpeg;base64,BBBB']
+    assert validate_images(urls) == urls
+
+
+def test_validate_images_rejects_more_than_max():
+    import app.models as models
+
+    urls = [f'data:image/png;base64,{i}AAA' for i in range(models.MAX_IMAGES + 1)]
+    with pytest.raises(ValueError, match='At most'):
+        models.validate_images(urls)
+
+
+def test_validate_images_rejects_non_image_data_urls():
+    from app.models import validate_images
+
+    for bad in [
+        'data:application/pdf;base64,AAAA',
+        'https://example.com/pic.png',
+        'hello',
+        '',
+        'data:image/png;base64,',
+    ]:
+        with pytest.raises(ValueError, match='data:image'):
+            validate_images([bad])
+
+
+def test_validate_images_rejects_oversized(monkeypatch):
+    import app.models as models
+
+    monkeypatch.setattr(models, 'MAX_IMAGE_BYTES', 10)
+    oversized = 'A' * 16  # 16//4*3 = 12 bytes > limit
+    with pytest.raises(ValueError, match='at most'):
+        models.validate_images([f'data:image/png;base64,{oversized}'])
+    fits = 'A' * 12  # 12//4*3 = 9 bytes <= limit
+    assert models.validate_images([f'data:image/png;base64,{fits}']) == [
+        f'data:image/png;base64,{fits}'
+    ]
+
+
+def test_generate_rejects_too_many_images(client):
+    from app.models import MAX_IMAGES
+
+    urls = [f'data:image/png;base64,{i}AAA' for i in range(MAX_IMAGES + 1)]
+    resp = client.post('/api/generate', json={'prompt': 'Лендинг', 'images': urls})
+    assert resp.status_code == 422
+
+
+def test_generate_rejects_non_image_attachment(client):
+    resp = client.post(
+        '/api/generate',
+        json={'prompt': 'Лендинг', 'images': ['data:application/pdf;base64,AAAA']},
+    )
+    assert resp.status_code == 422
+
+
+def test_iterate_rejects_oversized_image(client):
+    big = 'A' * (((5 * 1024 * 1024) // 3 + 1) * 4)
+    current_code = '<!DOCTYPE html>\n<html><body><h1>Hello</h1></body></html>'
+    resp = client.post(
+        '/api/iterate',
+        json={
+            'message': 'Сделай кнопку красной',
+            'current_code': current_code,
+            'images': [f'data:image/png;base64,{big}'],
+        },
+    )
+    assert resp.status_code == 422

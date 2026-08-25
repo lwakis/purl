@@ -5,7 +5,34 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+# ── Attachments ──────────────────────────────────────────────────────────────
+
+MAX_IMAGES = 8
+MAX_IMAGE_BYTES = 5 * 1024 * 1024
+
+
+def validate_images(value: list[str]) -> list[str]:
+    """Validate multimodal image attachments (base64 data URLs).
+
+    Mirrors the client-side limits enforced in ``ChatPanel.tsx`` so direct
+    API callers meet the same contract: at most ``MAX_IMAGES`` entries, each
+    an ``image/*`` data URL no larger than ``MAX_IMAGE_BYTES`` once decoded.
+    """
+    if len(value) > MAX_IMAGES:
+        raise ValueError(f'At most {MAX_IMAGES} images are allowed')
+    for url in value:
+        prefix, sep, raw = url.partition(',')
+        if not sep or not raw or not prefix.startswith('data:image/'):
+            raise ValueError('Each image must be a data:image/* URL')
+        # Decoded size without allocating the payload: every group of 4 base64
+        # chars encodes 3 bytes; each trailing '=' marks one byte less.
+        decoded = (len(raw) // 4) * 3 - raw[-2:].count('=')
+        if decoded > MAX_IMAGE_BYTES:
+            raise ValueError(f'Each image must be at most {MAX_IMAGE_BYTES} bytes after decoding')
+    return value
+
 
 # ── Generation ───────────────────────────────────────────────────────────────
 
@@ -21,6 +48,8 @@ class GenerateRequest(BaseModel):
         default_factory=list, description='Base64 data URLs for multimodal input'
     )
 
+    _check_images = field_validator('images')(validate_images)
+
 
 class IterateRequest(BaseModel):
     session_id: str | None = None
@@ -35,6 +64,8 @@ class IterateRequest(BaseModel):
     selected_element: str | None = Field(
         None, description='Element the user clicked for iteration context'
     )
+
+    _check_images = field_validator('images')(validate_images)
 
 
 class ChatMessage(BaseModel):
