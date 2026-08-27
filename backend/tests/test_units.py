@@ -41,14 +41,14 @@ def test_hash_prompt_differs_on_theme_and_style():
 
 def test_build_system_prompt_contains_theme_and_style_instructions():
     prompt = build_system_prompt('dark', 'techno')
-    assert 'тёмную цветовую схему' in prompt
-    assert 'неоновыми' in prompt
+    assert 'Use a dark color scheme' in prompt
+    assert 'neon accents' in prompt
 
 
 def test_build_generate_prompt_wraps_user_prompt():
-    result = build_generate_prompt('Мой запрос')
-    assert 'Мой запрос' in result
-    assert 'HTML-страницу' in result
+    result = build_generate_prompt('My request')
+    assert 'My request' in result
+    assert 'Create an HTML page from the following description' in result
 
 
 def test_build_iterate_prompt_contains_code_and_message():

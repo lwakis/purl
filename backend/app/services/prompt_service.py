@@ -6,36 +6,35 @@ from app.prompts import SYSTEM_PROMPT
 
 _THEME_INSTRUCTIONS: dict[str, str] = {
     'light': (
-        'Используй светлую цветовую схему со светлым фоном и тёмным текстом. '
-        'Отдавай предпочтение белому или светло-серому фону.'
+        'Use a light color scheme with a light background and dark text. '
+        'Prefer white or light-gray backgrounds.'
     ),
     'dark': (
-        'Используй тёмную цветовую схему с тёмным фоном и светлым текстом. '
-        'Отдавай предпочтение цветам #0f0f13, #1a1a23 как основным фонам.'
+        'Use a dark color scheme with a dark background and light text. '
+        'Prefer #0f0f13 and #1a1a23 as the primary backgrounds.'
     ),
     'auto': (
-        'Учти prefers-color-scheme и добавь media query для тёмной темы. '
-        'По умолчанию используй светлую тему.'
+        'Honor prefers-color-scheme with a media query for the dark theme. '
+        'Default to the light theme.'
     ),
 }
 
 _STYLE_INSTRUCTIONS: dict[str, str] = {
     'minimal': (
-        'Минималистичный дизайн с большим количеством пустого пространства, '
-        'тонкими линиями и сдержанными цветами. Шрифт: Inter.'
+        'Minimalist design with generous whitespace, thin lines and restrained colors. Font: Inter.'
     ),
     'corporate': (
-        'Корпоративный стиль со строгими линиями, синей или тёмно-синей '
-        'цветовой гаммой, чёткими CTA-кнопками. Шрифт: Inter или Roboto.'
+        'Corporate style with strict lines, a blue or navy color palette and '
+        'clear CTA buttons. Font: Inter or Roboto.'
     ),
     'playful': (
-        'Игривый дизайн с яркими цветами (розовый, жёлтый, фиолетовый), '
-        'скруглёнными углами, забавными микро-анимациями. Шрифт: Nunito или Poppins.'
+        'Playful design with vivid colors (pink, yellow, purple), rounded '
+        'corners and fun micro-animations. Font: Nunito or Poppins.'
     ),
     'techno': (
-        'Футуристический/технологичный стиль с тёмными фонами, неоновыми '
-        'акцентами (голубой, зелёный, фиолетовый), стеклянными эффектами '
-        '(glassmorphism). Шрифт: Space Grotesk или JetBrains Mono.'
+        'Futuristic/tech style with dark backgrounds, neon accents '
+        '(cyan, green, purple) and glassmorphism effects. Font: Space Grotesk '
+        'or JetBrains Mono.'
     ),
 }
 
@@ -44,6 +43,20 @@ _PLAN_INSTRUCTION = (
     'Before generating code, write a concise markdown plan of the implementation steps, '
     'then generate the code.'
 )
+
+# Reminds the model to write visible page copy in the user's language. The
+# SYSTEM_PROMPT carries the same rule; this keeps the wrapper self-contained.
+_LANG_INSTRUCTION = (
+    'Write the visible page copy (headings, body text, buttons, labels) in the '
+    "same language as the user's request."
+)
+
+
+def _detect_lang(text: str) -> str:
+    """Return ``'ru'`` when the text is mostly Cyrillic, else ``'en'``."""
+    from app.services.mock_provider import detect_lang
+
+    return detect_lang(text)
 
 
 def build_system_prompt(
@@ -57,10 +70,12 @@ def build_system_prompt(
 
     prompt = (
         SYSTEM_PROMPT
-        + '\n\nДОПОЛНИТЕЛЬНЫЕ ТРЕБОВАНИЯ К СТИЛЮ:\n'
+        + '\n\nADDITIONAL STYLE REQUIREMENTS:\n'
         + theme_instruction
         + '\n'
         + style_instruction
+        + '\n'
+        + _LANG_INSTRUCTION
     )
     if plan:
         prompt += '\n\n' + _PLAN_INSTRUCTION
@@ -69,9 +84,17 @@ def build_system_prompt(
 
 def build_generate_prompt(user_prompt: str) -> str:
     """Wrap the user prompt for a fresh generation."""
+    lang = _detect_lang(user_prompt)
+    instruction = (
+        'Create an HTML page from the following description (in this language):\n\n'
+        if lang == 'ru'
+        else 'Create an HTML page from the following description:\n\n'
+    )
     return (
-        f'Создай HTML-страницу по следующему описанию:\n\n{user_prompt}\n\n'
-        'Важно: верни только HTML-код без пояснений.'
+        instruction
+        + user_prompt
+        + '\n\n'
+        + 'Important: return only the HTML code, no explanations.'
     )
 
 
@@ -82,29 +105,33 @@ def build_iterate_prompt(
     selected_element: str | None = None,
 ) -> str:
     """Assemble the iteration context with history and current code."""
+    lang = _detect_lang(user_message)
+    role_label = 'Пользователь' if lang == 'ru' else 'User'
+    designer_label = 'Дизайнер' if lang == 'ru' else 'Designer'
+
     parts: list[str] = [
-        'Измени существующий HTML-код в соответствии с новыми указаниями пользователя.',
+        "Modify the existing HTML code according to the user's new instructions.",
         '',
-        'ТЕКУЩИЙ HTML-КОД:',
+        'CURRENT HTML CODE:',
         '```html',
         current_code,
         '```',
         '',
-        'ИСТОРИЯ ПРЕДЫДУЩИХ ИЗМЕНЕНИЙ:',
+        'HISTORY OF PREVIOUS CHANGES:',
     ]
 
     if history:
         for msg in history[-6:]:
-            role = 'Пользователь' if msg.get('role') == 'user' else 'Дизайнер'
+            role = role_label if msg.get('role') == 'user' else designer_label
             content = msg.get('content', '')
             parts.append(f'{role}: {content}')
     else:
-        parts.append('(нет истории)')
+        parts.append('(no history)')
 
     parts.extend(
         [
             '',
-            f'НОВЫЙ ЗАПРОС ПОЛЬЗОВАТЕЛЯ: {user_message}',
+            f'NEW USER REQUEST: {user_message}',
         ]
     )
     if selected_element:
@@ -113,7 +140,8 @@ def build_iterate_prompt(
     parts.extend(
         [
             '',
-            'Важно: верни только изменённый полный HTML-код (всегда с <!DOCTYPE html>), без пояснений.',
+            'Important: return only the modified full HTML code (always with '
+            '<!DOCTYPE html>), no explanations.',
         ]
     )
 
