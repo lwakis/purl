@@ -114,4 +114,21 @@ describe('sse client', () => {
 
     expect(onError).toHaveBeenCalledWith(new Error('boom'));
   });
+
+  it('translates a known backend error code via the active locale', async () => {
+    fetchMock.mockResolvedValue(
+      sseResponse('data: {"type":"error","content":"llm_provider_error:401"}\n\n'),
+    );
+    const onError = vi.fn();
+
+    await connectGenerateSSE('Build a page', 'dark', 'minimal', {
+      onEvent: noopEvent,
+      onError,
+      onComplete: noopComplete,
+    });
+
+    expect(onError).toHaveBeenCalledWith(
+      new Error('Ошибка LLM-провайдера (401). Проверьте ключ и настройки.'),
+    );
+  });
 });

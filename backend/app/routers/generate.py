@@ -98,7 +98,7 @@ async def api_generate(
         if cached_html is not None:
 
             async def _cached() -> AsyncGenerator[bytes]:
-                yield f'data: {json.dumps({"type": "analysis", "content": "Загрузка из кеша..."}, ensure_ascii=False)}\n\n'.encode()
+                yield f'data: {json.dumps({"type": "analysis", "content": "load_from_cache"}, ensure_ascii=False)}\n\n'.encode()
                 yield f'data: {json.dumps({"type": "complete", "content": cached_html}, ensure_ascii=False)}\n\n'.encode()
 
             return _build_sse_response(_cached())

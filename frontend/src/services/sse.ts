@@ -1,6 +1,20 @@
 import type { ChatMessage, SSEEvent } from '../types';
 import { BASE_URL } from './api';
-import { t } from '../i18n';
+import { t, type TranslationKey } from '../i18n';
+
+// Backend sends machine-readable error codes in an `error` event's content
+// (e.g. `llm_provider_error:401`) rather than a localized string, so the
+// frontend can render them in the active locale. Codes are resolved through
+// this map; anything unrecognized passes through as-is.
+const ERROR_CODES: Record<string, TranslationKey> = {
+  llm_provider_error: 'errors.llmProviderError',
+};
+
+function translateErrorContent(content: string): string {
+  const [code, param] = content.split(':', 2);
+  const key = ERROR_CODES[code];
+  return key ? t(key, param !== undefined ? { status: param } : undefined) : content;
+}
 
 interface SSEOptions {
   onEvent: (event: SSEEvent) => void;
@@ -157,7 +171,7 @@ async function connectSSE(url: string, body: unknown, options: SSEOptions): Prom
             }
             settle(() => onComplete(finalHtml));
           } else if (event.type === 'error') {
-            settle(() => onError(new Error(event.content)));
+            settle(() => onError(new Error(translateErrorContent(event.content))));
           }
         }
       }

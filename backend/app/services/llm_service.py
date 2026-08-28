@@ -220,8 +220,10 @@ async def _stream_llm(
             async for sse in _stream_provider(provider, system_prompt, user_message, images):
                 yield sse
     except httpx.HTTPError as exc:
+        # A machine-readable code, not a localized string: the frontend maps it
+        # to the active locale's dictionary (see `ERROR_CODE_TO_KEY` in sse.ts).
         status = exc.response.status_code if exc.response is not None else ''
-        yield _sse_event('error', f'Ошибка LLM-провайдера ({status}). Проверьте ключ и настройки.')
+        yield _sse_event('error', f'llm_provider_error:{status}')
 
 
 # ── Public API ───────────────────────────────────────────────────────────────

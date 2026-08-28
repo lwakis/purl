@@ -148,6 +148,7 @@ export const en: RuDictionary = {
     network: 'Failed to connect to the server',
     rateLimit: 'Rate limit exceeded, please try again later',
     serverError: 'Server error ({status})',
+    llmProviderError: 'LLM provider error ({status}). Check your API key and settings.',
     timeout: 'Server response timed out',
     bodyUnreadable: 'Response body is not readable',
     connectionLost: 'Connection to the server was interrupted',
