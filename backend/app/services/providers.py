@@ -12,6 +12,7 @@ from collections.abc import AsyncGenerator, Sequence
 
 from app.config import settings
 from app.services.llm_service import ProviderConfig, _get_client, _sse_event
+from app.services.token_usage import UsageAccumulator
 
 
 def _parse_data_url(data_url: str) -> tuple[str, str]:
@@ -60,11 +61,14 @@ async def _stream_provider(
     system_prompt: str,
     user_message: str,
     images: Sequence[str] = (),
+    usage: UsageAccumulator | None = None,
 ) -> AsyncGenerator[str]:
     """Stream HTML tokens from the resolved provider, yielding SSE strings.
 
     OpenAI-compatible ``/chat/completions`` wire protocol. Individual
-    non-fatally malformed frames are skipped.
+    non-fatally malformed frames are skipped. When *usage* is provided, the
+    provider is asked to include a usage frame (``stream_options.include_usage``)
+    and its token counts are accumulated into *usage* as they arrive.
     """
     endpoint = f'{provider.base_url.rstrip("/")}/chat/completions'
 
@@ -74,7 +78,7 @@ async def _stream_provider(
     if provider.api_key:
         headers['authorization'] = f'Bearer {provider.api_key}'
 
-    body = {
+    body: dict[str, object] = {
         'model': provider.model,
         'max_tokens': settings.llm_max_tokens,
         'temperature': settings.llm_temperature,
@@ -84,6 +88,9 @@ async def _stream_provider(
         ],
         'stream': True,
     }
+    if usage is not None:
+        # Ask the provider to append a final usage frame so we can count tokens.
+        body['stream_options'] = {'include_usage': True}
 
     client = await _get_client()
     async with client.stream('POST', endpoint, headers=headers, json=body) as response:
@@ -98,6 +105,14 @@ async def _stream_provider(
                 event = json.loads(payload)
             except json.JSONDecodeError:
                 continue
+            if usage is not None:
+                usage_frame = event.get('usage')
+                if isinstance(usage_frame, dict):
+                    prompt = usage_frame.get('prompt_tokens') or 0
+                    completion = usage_frame.get('completion_tokens') or 0
+                    if prompt or completion:
+                        usage.add_prompt(prompt)
+                        usage.add_completion(completion)
             choices = event.get('choices', [])
             if not choices:
                 continue
@@ -111,6 +126,7 @@ async def _stream_anthropic(
     system_prompt: str,
     user_message: str,
     images: Sequence[str] = (),
+    usage: UsageAccumulator | None = None,
 ) -> AsyncGenerator[str]:
     """Stream HTML text from the Anthropic Messages API, yielding SSE."""
     endpoint = f'{provider.base_url.rstrip("/")}/messages'
@@ -143,9 +159,28 @@ async def _stream_anthropic(
                 event = json.loads(payload)
             except json.JSONDecodeError:
                 continue
+            if usage is not None:
+                _accumulate_anthropic_usage(event, usage)
             if event.get('type') != 'content_block_delta':
                 continue
             delta = event.get('delta') or {}
             text = delta.get('text') if delta.get('type') == 'text_delta' else ''
             if text:
                 yield _sse_event('code', text)
+
+
+def _accumulate_anthropic_usage(event: dict, usage: UsageAccumulator) -> None:
+    """Record token counts from Anthropic ``message_start`` / ``message_delta`` events."""
+    event_type = event.get('type')
+    if event_type == 'message_start':
+        msg = event.get('message') or {}
+        prompt_tokens = (msg.get('usage') or {}).get('input_tokens') or 0
+        output_tokens = (msg.get('usage') or {}).get('output_tokens') or 0
+        if prompt_tokens or output_tokens:
+            usage.add_prompt(prompt_tokens)
+            usage.add_completion(output_tokens)
+    elif event_type == 'message_delta':
+        # Only the cumulative output_tokens arrive here.
+        output_tokens = (event.get('usage') or {}).get('output_tokens') or 0
+        if output_tokens:
+            usage.add_completion(output_tokens)

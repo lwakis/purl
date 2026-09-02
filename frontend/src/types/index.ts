@@ -1,5 +1,6 @@
 export interface GenerateRequest {
   prompt: string;
+  session_id?: string | null;
   theme?: 'light' | 'dark' | 'auto';
   style?: 'minimal' | 'corporate' | 'playful' | 'techno';
   model?: string | null;
@@ -85,4 +86,10 @@ export interface SelectedElement {
   classes: string[];
   text: string;
   selector: string;
+}
+
+export interface TokenUsage {
+  input: number;
+  output: number;
+  total: number;
 }

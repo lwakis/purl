@@ -7,6 +7,7 @@ import {
   deleteProject,
   getProjectVersions,
   getModels,
+  getUsage,
 } from './api';
 
 interface MockResponse {
@@ -188,6 +189,24 @@ describe('api client', () => {
     expect(fetchMock).toHaveBeenCalledWith('/api/models', {
       headers: { 'Content-Type': 'application/json' },
     });
+  });
+
+  it('getUsage GETs /api/usage with the session id and returns usage', async () => {
+    fetchMock.mockResolvedValue(mockResponse({ input: 10, output: 5, total: 15 }));
+
+    const result = await getUsage('ses-1');
+
+    expect(result).toEqual({ input: 10, output: 5, total: 15 });
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/usage?session_id=ses-1',
+      { headers: { 'Content-Type': 'application/json' } },
+    );
+  });
+
+  it('getUsage returns null when the backend has no recorded usage', async () => {
+    fetchMock.mockResolvedValue(mockResponse({}));
+
+    await expect(getUsage('ses-unknown')).resolves.toBeNull();
   });
 
   it('throws a human-friendly error containing the status when the response is not ok', async () => {

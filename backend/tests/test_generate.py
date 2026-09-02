@@ -5,6 +5,22 @@ from helpers import extract_complete_html, parse_sse
 from app.config import settings
 
 
+def test_usage_returns_empty_for_unknown_session(client):
+    resp = client.get('/api/usage', params={'session_id': 'ses-nonexistent'})
+    assert resp.status_code == 200
+    assert resp.json() == {}
+
+
+def test_usage_returns_zero_in_mock_mode(client):
+    """Mock provider records no usage, so the endpoint reports zeros."""
+    payload = {'prompt': 'Создай лендинг', 'session_id': 'ses-usage-mock'}
+    assert client.post('/api/generate', json=payload).status_code == 200
+
+    resp = client.get('/api/usage', params={'session_id': 'ses-usage-mock'})
+    assert resp.status_code == 200
+    assert resp.json() == {'input': 0, 'output': 0, 'total': 0}
+
+
 def test_generate_streams_all_events(client):
     resp = client.post('/api/generate', json={'prompt': 'Создай лендинг для SaaS-продукта'})
     assert resp.status_code == 200

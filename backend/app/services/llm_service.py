@@ -17,6 +17,7 @@ from collections.abc import AsyncGenerator, Sequence
 import httpx
 
 from app.config import LLM_PRESETS, settings
+from app.services.token_usage import UsageAccumulator
 
 
 @dataclasses.dataclass(frozen=True)
@@ -208,16 +209,21 @@ async def _stream_llm(
     system_prompt: str,
     user_message: str,
     images: Sequence[str] = (),
+    usage: UsageAccumulator | None = None,
 ) -> AsyncGenerator[str]:
     """Dispatch to the provider's wire protocol, translating failures to SSE error events."""
     from app.services.providers import _stream_anthropic, _stream_provider
 
     try:
         if provider.api == 'anthropic':
-            async for sse in _stream_anthropic(provider, system_prompt, user_message, images):
+            async for sse in _stream_anthropic(
+                provider, system_prompt, user_message, images, usage=usage
+            ):
                 yield sse
         else:
-            async for sse in _stream_provider(provider, system_prompt, user_message, images):
+            async for sse in _stream_provider(
+                provider, system_prompt, user_message, images, usage=usage
+            ):
                 yield sse
     except httpx.HTTPError as exc:
         # A machine-readable code, not a localized string: the frontend maps it
@@ -237,6 +243,7 @@ async def generate(
     model: str | None = None,
     plan: bool = False,
     images: Sequence[str] = (),
+    session_id: str | None = None,
 ) -> AsyncGenerator[str]:
     """Generate a design as an SSE event stream.
 
@@ -248,6 +255,9 @@ async def generate(
     - ``code`` – streaming HTML tokens
     - ``complete`` – final event with the full HTML code
     - ``error`` – an error occurred
+
+    Token usage for *session_id* is recorded into the shared usage store when a
+    ready provider is used (mock mode records nothing).
     """
     from app.services.mock_provider import (
         _mock_generate_html,
@@ -256,6 +266,7 @@ async def generate(
         status_texts,
     )
     from app.services.prompt_service import build_generate_prompt, build_system_prompt
+    from app.services.token_usage import usage_store
 
     system = build_system_prompt(theme, style, plan=plan)
     user_msg = build_generate_prompt(prompt)
@@ -270,6 +281,7 @@ async def generate(
     provider = resolve_provider(model)
 
     full_html = ''
+    usage = UsageAccumulator()
 
     if not provider.ready:
         full_html = _mock_generate_html(prompt, theme, style, plan=plan)
@@ -277,10 +289,12 @@ async def generate(
             yield sse
     else:
         async for sse, cleaned in _stream_cleaned_code(
-            _stream_llm(provider, system, user_msg, images)
+            _stream_llm(provider, system, user_msg, images, usage=usage)
         ):
             full_html += cleaned
             yield sse
+
+    usage_store.add(session_id, usage.snapshot())
 
     yield _sse_event('complete', _strip_code_fences(full_html))
 
@@ -295,6 +309,7 @@ async def iterate_stream(
     plan: bool = False,
     images: Sequence[str] = (),
     selected_element: str | None = None,
+    session_id: str | None = None,
 ) -> AsyncGenerator[str]:
     """Iterate on existing design, yielding SSE events.
 
@@ -310,6 +325,7 @@ async def iterate_stream(
         status_texts,
     )
     from app.services.prompt_service import build_iterate_prompt
+    from app.services.token_usage import usage_store
 
     iterate_msg = build_iterate_prompt(history, current_code, user_message, selected_element)
 
@@ -323,6 +339,7 @@ async def iterate_stream(
     provider = resolve_provider(model)
 
     full_html = ''
+    usage = UsageAccumulator()
 
     if not provider.ready:
         full_html = current_code
@@ -339,9 +356,11 @@ async def iterate_stream(
             yield sse
     else:
         async for sse, cleaned in _stream_cleaned_code(
-            _stream_llm(provider, system_prompt, iterate_msg, images)
+            _stream_llm(provider, system_prompt, iterate_msg, images, usage=usage)
         ):
             full_html += cleaned
             yield sse
+
+    usage_store.add(session_id, usage.snapshot())
 
     yield _sse_event('complete', _strip_code_fences(full_html))

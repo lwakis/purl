@@ -1,4 +1,4 @@
-import type { Project, ProjectVersion, ProviderInfo } from '../types';
+import type { Project, ProjectVersion, ProviderInfo, TokenUsage } from '../types';
 import { t } from '../i18n';
 
 // API base URL. Empty (default) = same origin as the frontend
@@ -90,4 +90,17 @@ export async function saveProjectVersion(
     method: 'POST',
     body: JSON.stringify({ code, message }),
   });
+}
+
+export async function getUsage(sessionId: string): Promise<TokenUsage | null> {
+  const path = `/api/usage?session_id=${encodeURIComponent(sessionId)}`;
+  const data = await request<Partial<TokenUsage>>(path);
+  if (data.input === undefined && data.output === undefined) {
+    return null;
+  }
+  return {
+    input: data.input ?? 0,
+    output: data.output ?? 0,
+    total: data.total ?? (data.input ?? 0) + (data.output ?? 0),
+  };
 }

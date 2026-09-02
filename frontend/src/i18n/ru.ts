@@ -21,6 +21,10 @@ export const ru = {
     chat: 'Чат',
     switchLanguage: 'Переключить язык',
   },
+  usage: {
+    tokens: (n: number) => `${n.toLocaleString('ru-RU')} ${pluralRu(n, 'токен', 'токена', 'токенов')}`,
+    title: 'Потрачено токенов за сессию',
+  },
   autosave: {
     saving: 'Сохранение…',
     saved: 'Сохранено',

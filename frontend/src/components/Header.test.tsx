@@ -4,7 +4,6 @@ import userEvent from '@testing-library/user-event';
 import Header from './Header';
 import { useAppStore } from '../store/appStore';
 import type { Project } from '../types';
-
 const project: Project = {
   id: 1,
   name: 'Мой лендинг',
@@ -100,5 +99,17 @@ describe('Header', () => {
     expect(useAppStore.getState().sidebarOpen).toBe(true);
     await user.click(screen.getByRole('button', { name: 'Переключить боковую панель' }));
     expect(useAppStore.getState().sidebarOpen).toBe(false);
+  });
+
+  it('renders the token usage badge when usage has been recorded', () => {
+    useAppStore.setState({ tokenUsage: { input: 100, output: 25, total: 125 } });
+    renderHeader();
+    expect(screen.getByText('125 токенов')).toBeInTheDocument();
+  });
+
+  it('does not render the token usage badge when no usage has been recorded', () => {
+    useAppStore.setState({ tokenUsage: null });
+    renderHeader();
+    expect(screen.queryByText(/токен/)).not.toBeInTheDocument();
   });
 });

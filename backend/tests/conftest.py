@@ -22,6 +22,7 @@ from app.config import settings  # noqa: E402
 from app.main import app  # noqa: E402
 from app.services.cache_service import cache  # noqa: E402
 from app.services.rate_limiter import rate_limiter  # noqa: E402
+from app.services.token_usage import usage_store  # noqa: E402
 
 # ── Sanity checks ────────────────────────────────────────────────────────────
 assert _TMPDIR in settings.database_url, (
@@ -35,6 +36,7 @@ def _clear_singletons():
     """Reset shared in-memory singletons before each test."""
     rate_limiter._buckets.clear()
     cache._data.clear()
+    usage_store._by_session.clear()
     yield
 
 

@@ -13,6 +13,7 @@ from app.services.prompt_service import (
     build_iterate_prompt,
     build_system_prompt,
 )
+from app.services.token_usage import TokenUsage, UsageAccumulator, usage_store
 from app.utils import hash_prompt, validate_html
 
 
@@ -228,3 +229,55 @@ async def test_stream_cleaned_code_flushes_trailing_tail():
 
     collected = [pair async for pair in _stream_cleaned_code(source())]
     assert collected[-1][1] == '<body>hi</body>'
+
+
+# ── Token usage tracking ─────────────────────────────────────────────────────
+
+
+def test_token_usage_total_sums_prompt_and_completion():
+    usage = TokenUsage(prompt_tokens=100, completion_tokens=25)
+    assert usage.total == 125
+
+
+def test_token_usage_defaults_to_zero():
+    assert TokenUsage().total == 0
+
+
+def test_usage_accumulator_snapshot_reflects_added_tokens():
+    acc = UsageAccumulator()
+    acc.add_prompt(50)
+    acc.add_completion(30)
+    acc.add_completion(10)
+    snapshot = acc.snapshot()
+    assert snapshot.prompt_tokens == 50
+    assert snapshot.completion_tokens == 40
+    assert snapshot.total == 90
+
+
+def test_usage_store_returns_none_for_unknown_session():
+    assert usage_store.get('ses-nonexistent') is None
+
+
+def test_usage_store_get_ignores_missing_session():
+    assert usage_store.get(None) is None
+
+
+def test_usage_store_add_accumulates_across_calls():
+    usage_store.add('ses-1', TokenUsage(prompt_tokens=10, completion_tokens=5))
+    usage_store.add('ses-1', TokenUsage(prompt_tokens=6, completion_tokens=2))
+    usage = usage_store.get('ses-1')
+    assert usage is not None
+    assert usage.prompt_tokens == 16
+    assert usage.completion_tokens == 7
+
+
+def test_usage_store_keeps_sessions_isolated():
+    usage_store.add('ses-a', TokenUsage(prompt_tokens=100, completion_tokens=100))
+    usage_store.add('ses-b', TokenUsage(prompt_tokens=1, completion_tokens=2))
+    assert usage_store.get('ses-a').total == 200
+    assert usage_store.get('ses-b').total == 3
+
+
+def test_usage_store_add_ignores_empty_session():
+    usage_store.add(None, TokenUsage(prompt_tokens=5, completion_tokens=5))
+    assert usage_store.get(None) is None

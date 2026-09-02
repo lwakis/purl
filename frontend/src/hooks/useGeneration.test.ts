@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useGeneration } from './useGeneration';
 import { connectGenerateSSE, connectIterateSSE } from '../services/sse';
-import { saveProjectVersion } from '../services/api';
+import { saveProjectVersion, getUsage } from '../services/api';
 import { createSessionId } from '../services/session';
 import { useAppStore } from '../store/appStore';
 import type { Attachment, SelectedElement, Project } from '../types';
@@ -14,6 +14,7 @@ vi.mock('../services/sse', () => ({
 
 vi.mock('../services/api', () => ({
   saveProjectVersion: vi.fn(),
+  getUsage: vi.fn(),
 }));
 
 vi.mock('../services/session', () => ({
@@ -40,6 +41,7 @@ beforeEach(() => {
   vi.mocked(connectGenerateSSE).mockReset();
   vi.mocked(connectIterateSSE).mockReset();
   vi.mocked(saveProjectVersion).mockReset();
+  vi.mocked(getUsage).mockReset();
   vi.mocked(connectGenerateSSE).mockResolvedValue(undefined);
   vi.mocked(connectIterateSSE).mockResolvedValue(undefined);
   vi.mocked(saveProjectVersion).mockResolvedValue({
@@ -50,12 +52,14 @@ beforeEach(() => {
     message: 'Make it bigger',
     created_at: '2026-08-20T00:00:00Z',
   });
+  vi.mocked(getUsage).mockResolvedValue(null);
   vi.mocked(createSessionId).mockClear();
   useAppStore.setState({
     selectedModel: 'openai:gpt-4o',
     planOn: true,
     attachments: [attachment],
     selectedElement: element,
+    tokenUsage: null,
   });
 });
 
@@ -77,6 +81,7 @@ describe('useGeneration', () => {
       'minimal',
       expect.any(Object),
       {
+        session_id: 'sess-test',
         model: 'openai:gpt-4o',
         plan: true,
         images: ['data:image/png;base64,AAA'],
@@ -97,7 +102,7 @@ describe('useGeneration', () => {
       'dark',
       'minimal',
       expect.any(Object),
-      { model: null, plan: false, images: [] },
+      { session_id: 'sess-test', model: null, plan: false, images: [] },
     );
   });
 
@@ -210,6 +215,23 @@ describe('useGeneration', () => {
     expect(useAppStore.getState().currentCode).toBe('<html>final</html>');
     expect(useAppStore.getState().isGenerating).toBe(false);
     expect(useAppStore.getState().generationStatus).toBe('status.done');
+    expect(getUsage).toHaveBeenCalledWith('sess-test');
+  });
+
+  it('generate stores token usage returned by the backend on completion', async () => {
+    vi.mocked(getUsage).mockResolvedValue({ input: 10, output: 5, total: 15 });
+    const { result } = renderHook(() => useGeneration());
+
+    await act(async () => {
+      await result.current.generate('Build a page');
+    });
+
+    const options = vi.mocked(connectGenerateSSE).mock.calls[0][3];
+    await act(async () => {
+      options.onComplete('<html>final</html>');
+    });
+
+    expect(useAppStore.getState().tokenUsage).toEqual({ input: 10, output: 5, total: 15 });
   });
 
   it('generate reports errors through the store', async () => {

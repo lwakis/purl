@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { connectGenerateSSE, connectIterateSSE } from '../services/sse';
-import { saveProjectVersion } from '../services/api';
+import { getUsage, saveProjectVersion } from '../services/api';
 import { createSessionId, saveSession } from '../services/session';
 import { useAppStore } from '../store/appStore';
 import { useT } from '../i18n';
@@ -84,6 +84,8 @@ export function useGeneration() {
 
   const generate = useCallback(
     async (prompt: string) => {
+      const sid = ensureSession();
+
       abortRequested = false;
       activeController = new AbortController();
       setGenerationError(null);
@@ -120,12 +122,25 @@ export function useGeneration() {
         setGenerationStatus('');
       };
 
+      const refreshUsage = async () => {
+        const { tokenUsage } = useAppStore.getState();
+        try {
+          const usage = await getUsage(sid);
+          // Best-effort: refresh the badge when the backend has recorded usage;
+          // ignore failures so a transient network hiccup never breaks generation.
+          if (usage) useAppStore.getState().setTokenUsage(usage);
+        } catch {
+          if (tokenUsage !== null) return;
+        }
+      };
+
       const handleComplete = (finalHtml: string) => {
         if (abortRequested) return;
         activePublisher = null;
         publisher.finalize(finalHtml);
         setGenerating(false);
         setGenerationStatus('status.done');
+        void refreshUsage();
       };
 
       const { selectedModel, planOn, attachments } = useAppStore.getState();
@@ -143,13 +158,14 @@ export function useGeneration() {
           onComplete: handleComplete,
         },
         {
+          session_id: sid,
           model: selectedModel,
           plan: planOn,
           images: attachments.map((a) => a.dataUrl),
         },
       );
     },
-    [setGenerating, setGenerationStatus, setGenerationError, setCurrentCode],
+    [ensureSession, setGenerating, setGenerationStatus, setGenerationError, setCurrentCode],
   );
 
   const iterate = useCallback(
@@ -222,6 +238,18 @@ export function useGeneration() {
         const project = useAppStore.getState().currentProject;
         if (project) {
           saveProjectVersion(project.id, finalHtml, message).catch(() => {});
+        }
+
+        void refreshUsage();
+      };
+
+      const refreshUsage = async () => {
+        try {
+          const usage = await getUsage(sid);
+          if (usage) useAppStore.getState().setTokenUsage(usage);
+        } catch {
+          // Best-effort: ignore usage refresh failures so a transient network
+          // hiccup never surfaces an error in an otherwise-successful flow.
         }
       };
 

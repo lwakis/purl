@@ -16,6 +16,7 @@ from app.services.cache_service import cache
 from app.services.llm_service import generate, iterate_stream
 from app.services.provider_catalog import list_providers
 from app.services.rate_limiter import rate_limiter
+from app.services.token_usage import usage_store
 
 router = APIRouter(prefix='/api', tags=['generate'])
 
@@ -24,6 +25,19 @@ router = APIRouter(prefix='/api', tags=['generate'])
 async def api_models():
     """List available LLM providers and their models."""
     return {'providers': list_providers()}
+
+
+@router.get('/usage')
+async def api_usage(session_id: str):
+    """Return cumulative token usage for a session."""
+    usage = usage_store.get(session_id)
+    if usage is None:
+        return {}
+    return {
+        'input': usage.prompt_tokens,
+        'output': usage.completion_tokens,
+        'total': usage.total,
+    }
 
 
 def _get_rate_limit_key(request: Request) -> tuple[str, int]:
@@ -113,6 +127,7 @@ async def api_generate(
                 model=req.model,
                 plan=req.plan,
                 images=req.images,
+                session_id=req.session_id,
             ),
             request,
         ):
@@ -168,6 +183,7 @@ async def api_iterate(
                 plan=req.plan,
                 images=req.images,
                 selected_element=req.selected_element,
+                session_id=req.session_id,
             ),
             request,
         ):

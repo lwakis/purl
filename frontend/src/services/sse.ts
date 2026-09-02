@@ -25,6 +25,7 @@ interface SSEOptions {
 // Optional extra fields forwarded into the request body. Kept separate from
 // the positional args so existing callers stay source-compatible.
 export interface GenerateSSEExtras {
+  session_id?: string | null;
   model?: string | null;
   plan?: boolean;
   images?: string[];

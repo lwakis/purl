@@ -25,7 +25,7 @@ export default function Header({
   hasDesign,
   saveStatus = 'idle',
 }: HeaderProps) {
-  const { sidebarOpen, setSidebarOpen, currentProject } = useAppStore();
+  const { sidebarOpen, setSidebarOpen, currentProject, tokenUsage } = useAppStore();
   const { t, locale, setLocale } = useT();
 
   const toggleLocale = () => setLocale(locale === 'ru' ? 'en' : 'ru');
@@ -65,6 +65,14 @@ export default function Header({
         </div>
 
         <div className="flex items-center gap-1.5">
+          {tokenUsage !== null && tokenUsage.total > 0 && (
+            <span
+              title={t('usage.title')}
+              className="exposure-label whitespace-nowrap text-surface-500"
+            >
+              {t('usage.tokens', { n: tokenUsage.total })}
+            </span>
+          )}
           {hasDesign && (
             <>
               {saveStatus !== 'idle' && (

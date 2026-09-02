@@ -40,6 +40,7 @@ What's in the repo right now:
 - [x] Docker Compose setup, CI workflow, test suites, pre-commit hooks
 - [x] Versioned releases and changelogs (release workflow; tags `v0.1.0`/`v0.2.0` published)
 - [x] Open-source documentation (README, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY)
+- [x] Token usage display (`GET /api/usage` keyed by session; in-memory per-session token counts shown in the header — purely informational for self-hosted users who pay for their own LLM API; mock mode reports zero)
 
 ## Next up
 
@@ -48,7 +49,6 @@ What's in the repo right now:
 | [ ] Project search and pagination | The sidebar lists all projects; no search or limits yet |
 | [ ] Template favorites / saved prompts | `PromptTemplate` has no per-session relation yet |
 | [ ] React export | The UI has a placeholder button ("export in React coming soon"); backend has no JSX output |
-| [ ] Token usage display | Track tokens spent per session/project — useful for self-hosted users who pay for their own LLM API; purely informational, for a single user |
 
 ## Possible (not committed)
 

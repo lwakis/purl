@@ -18,6 +18,10 @@ export const en: RuDictionary = {
     chat: 'Chat',
     switchLanguage: 'Switch language',
   },
+  usage: {
+    tokens: (n: number) => `${n.toLocaleString('en-US')} ${pluralEn(n, 'token', 'tokens')}`,
+    title: 'Tokens used in this session',
+  },
   autosave: {
     saving: 'Saving…',
     saved: 'Saved',

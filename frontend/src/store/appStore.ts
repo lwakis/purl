@@ -10,6 +10,7 @@ import type {
   Locale,
   Attachment,
   SelectedElement,
+  TokenUsage,
 } from '../types';
 
 interface AppState {
@@ -33,6 +34,7 @@ interface AppState {
   selectMode: boolean;
   selectedElement: SelectedElement | null;
   attachments: Attachment[];
+  tokenUsage: TokenUsage | null;
 
   setPrompt: (prompt: string) => void;
   setCurrentCode: (code: string) => void;
@@ -59,6 +61,7 @@ interface AppState {
   addAttachment: (attachment: Attachment) => void;
   removeAttachment: (id: string) => void;
   clearAttachments: () => void;
+  setTokenUsage: (usage: TokenUsage | null) => void;
   reset: () => void;
 }
 
@@ -88,6 +91,7 @@ const initialState = {
   selectMode: false,
   selectedElement: null,
   attachments: [] as Attachment[],
+  tokenUsage: null,
 };
 
 // Resolve localStorage lazily on every call. In the test environment the
@@ -157,6 +161,7 @@ export const useAppStore = create<AppState>()(
       removeAttachment: (id) =>
         set((state) => ({ attachments: state.attachments.filter((a) => a.id !== id) })),
       clearAttachments: () => set({ attachments: [] }),
+      setTokenUsage: (tokenUsage) => set({ tokenUsage }),
       reset: () => set(initialState),
     }),
     {
