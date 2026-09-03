@@ -71,7 +71,7 @@ describe('api client', () => {
     });
   });
 
-  it('getProjects GETs /api/projects and returns the list', async () => {
+  it('getProjects GETs /api/projects and returns the paginated envelope', async () => {
     const projects = [
       {
         id: 1,
@@ -85,14 +85,37 @@ describe('api client', () => {
         updated_at: '2024-01-01T00:00:00Z',
       },
     ];
-    fetchMock.mockResolvedValue(mockResponse(projects));
+    const envelope = { items: projects, total: 1, page: 1, page_size: 50 };
+    fetchMock.mockResolvedValue(mockResponse(envelope));
 
     const result = await getProjects();
 
-    expect(result).toEqual(projects);
+    expect(result).toEqual(envelope);
     expect(fetchMock).toHaveBeenCalledWith('/api/projects', {
       headers: { 'Content-Type': 'application/json' },
     });
+  });
+
+  it('getProjects sends session, search, page and page_size query params', async () => {
+    fetchMock.mockResolvedValue(mockResponse({ items: [], total: 0, page: 2, page_size: 20 }));
+
+    await getProjects('sess-9', { search: 'landing', page: 2, pageSize: 20 });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/projects?session_id=sess-9&q=landing&page=2&page_size=20',
+      { headers: { 'Content-Type': 'application/json' } },
+    );
+  });
+
+  it('getProjects omits the page param when on page one', async () => {
+    fetchMock.mockResolvedValue(mockResponse({ items: [], total: 0, page: 1, page_size: 50 }));
+
+    await getProjects('sess-9', { search: '', page: 1 });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/projects?session_id=sess-9',
+      { headers: { 'Content-Type': 'application/json' } },
+    );
   });
 
   it('getProject GETs /api/projects/:id', async () => {

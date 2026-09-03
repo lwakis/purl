@@ -93,3 +93,10 @@ export interface TokenUsage {
   output: number;
   total: number;
 }
+
+export interface PaginatedProjects {
+  items: Project[];
+  total: number;
+  page: number;
+  page_size: number;
+}

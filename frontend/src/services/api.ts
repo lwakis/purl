@@ -1,4 +1,10 @@
-import type { Project, ProjectVersion, ProviderInfo, TokenUsage } from '../types';
+import type {
+  Project,
+  ProjectVersion,
+  ProviderInfo,
+  TokenUsage,
+  PaginatedProjects,
+} from '../types';
 import { t } from '../i18n';
 
 // API base URL. Empty (default) = same origin as the frontend
@@ -50,9 +56,17 @@ export async function createProject(data: {
   });
 }
 
-export async function getProjects(sessionId?: string): Promise<Project[]> {
-  const query = sessionId ? `?session_id=${encodeURIComponent(sessionId)}` : '';
-  return request<Project[]>(`/api/projects${query}`);
+export async function getProjects(
+  sessionId?: string,
+  params?: { search?: string; page?: number; pageSize?: number },
+): Promise<PaginatedProjects> {
+  const query = new URLSearchParams();
+  if (sessionId) query.set('session_id', sessionId);
+  if (params?.search) query.set('q', params.search);
+  if (params?.page && params.page > 1) query.set('page', String(params.page));
+  if (params?.pageSize) query.set('page_size', String(params.pageSize));
+  const qs = query.toString();
+  return request<PaginatedProjects>(`/api/projects${qs ? `?${qs}` : ''}`);
 }
 
 export async function getModels(): Promise<ProviderInfo[]> {
