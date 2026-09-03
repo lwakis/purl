@@ -27,6 +27,7 @@ What's in the repo right now:
 ### Projects
 
 - [x] Project CRUD (`/api/projects`)
+- [x] Project search and pagination (server-side `q` search over name/prompt; `page`/`page_size` with a total count and paging controls in the sidebar)
 - [x] Version history per project (`/api/projects/{id}/versions`) with restore / download / bookmark from the chat
 - [x] Automatic project autosave (no manual Save button)
 - [x] Inline project rename
@@ -46,7 +47,6 @@ What's in the repo right now:
 
 | Item | Notes |
 |---|---|
-| [ ] Project search and pagination | The sidebar lists all projects; no search or limits yet |
 | [ ] Template favorites / saved prompts | `PromptTemplate` has no per-session relation yet |
 | [ ] React export | The UI has a placeholder button ("export in React coming soon"); backend has no JSX output |
 
