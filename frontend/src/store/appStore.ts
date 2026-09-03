@@ -35,6 +35,9 @@ interface AppState {
   selectedElement: SelectedElement | null;
   attachments: Attachment[];
   tokenUsage: TokenUsage | null;
+  projectSearch: string;
+  projectPage: number;
+  projectTotal: number;
 
   setPrompt: (prompt: string) => void;
   setCurrentCode: (code: string) => void;
@@ -62,6 +65,9 @@ interface AppState {
   removeAttachment: (id: string) => void;
   clearAttachments: () => void;
   setTokenUsage: (usage: TokenUsage | null) => void;
+  setProjectSearch: (search: string) => void;
+  setProjectPage: (page: number) => void;
+  setProjectTotal: (total: number) => void;
   reset: () => void;
 }
 
@@ -92,6 +98,9 @@ const initialState = {
   selectedElement: null,
   attachments: [] as Attachment[],
   tokenUsage: null,
+  projectSearch: '',
+  projectPage: 1,
+  projectTotal: 0,
 };
 
 // Resolve localStorage lazily on every call. In the test environment the
@@ -162,6 +171,9 @@ export const useAppStore = create<AppState>()(
         set((state) => ({ attachments: state.attachments.filter((a) => a.id !== id) })),
       clearAttachments: () => set({ attachments: [] }),
       setTokenUsage: (tokenUsage) => set({ tokenUsage }),
+      setProjectSearch: (projectSearch) => set({ projectSearch }),
+      setProjectPage: (projectPage) => set({ projectPage }),
+      setProjectTotal: (projectTotal) => set({ projectTotal }),
       reset: () => set(initialState),
     }),
     {

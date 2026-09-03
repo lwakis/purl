@@ -29,6 +29,9 @@ const initialState = {
   selectMode: false,
   selectedElement: null as SelectedElement | null,
   attachments: [] as Attachment[],
+  projectSearch: '',
+  projectPage: 1,
+  projectTotal: 0,
 };
 
 const projectA: Project = {
@@ -81,6 +84,9 @@ describe('appStore', () => {
     expect(state.selectMode).toBe(false);
     expect(state.selectedElement).toBeNull();
     expect(state.attachments).toEqual([]);
+    expect(state.projectSearch).toBe('');
+    expect(state.projectPage).toBe(1);
+    expect(state.projectTotal).toBe(0);
   });
 
   it('setPrompt updates the prompt', () => {
@@ -253,6 +259,21 @@ describe('appStore', () => {
     expect(useAppStore.getState().attachments).toEqual([]);
   });
 
+  it('setProjectSearch updates the project search query', () => {
+    useAppStore.getState().setProjectSearch('landing');
+    expect(useAppStore.getState().projectSearch).toBe('landing');
+  });
+
+  it('setProjectPage updates the project page', () => {
+    useAppStore.getState().setProjectPage(3);
+    expect(useAppStore.getState().projectPage).toBe(3);
+  });
+
+  it('setProjectTotal updates the project total', () => {
+    useAppStore.getState().setProjectTotal(120);
+    expect(useAppStore.getState().projectTotal).toBe(120);
+  });
+
   it('addProject prepends and does not mutate state in place', () => {
     useAppStore.getState().setProjects([projectA]);
     const before = useAppStore.getState().projects;
@@ -329,5 +350,8 @@ describe('appStore', () => {
     expect(state.selectMode).toBe(false);
     expect(state.selectedElement).toBeNull();
     expect(state.attachments).toEqual([]);
+    expect(state.projectSearch).toBe('');
+    expect(state.projectPage).toBe(1);
+    expect(state.projectTotal).toBe(0);
   });
 });

@@ -48,6 +48,9 @@ afterEach(() => {
     selectMode: false,
     selectedElement: null,
     attachments: [],
+    projectSearch: '',
+    projectPage: 1,
+    projectTotal: 0,
   });
   window.localStorage.clear();
 });
