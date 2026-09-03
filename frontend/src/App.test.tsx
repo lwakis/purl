@@ -46,7 +46,7 @@ beforeEach(() => {
   vi.mocked(loadSession).mockReset();
   vi.mocked(saveSession).mockReset();
   vi.mocked(getProjects).mockReset();
-  vi.mocked(getProjects).mockResolvedValue([]);
+  vi.mocked(getProjects).mockResolvedValue({ items: [], total: 0, page: 1, page_size: 50 });
   // jsdom does not implement matchMedia; PromptInput's example rotation
   // guards on it.
   window.matchMedia = vi.fn().mockReturnValue({ matches: false });

@@ -3,7 +3,7 @@ import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Topbar from './Topbar';
 import { useAppStore } from '../store/appStore';
-import type { Project, ProjectVersion } from '../types';
+import type { Project, ProjectVersion, PaginatedProjects } from '../types';
 
 vi.mock('../services/api', () => ({
   getProjects: vi.fn(),
@@ -75,7 +75,12 @@ beforeEach(() => {
   vi.mocked(updateProject).mockReset();
   vi.mocked(deleteProject).mockReset();
   vi.mocked(createProject).mockReset();
-  vi.mocked(getProjects).mockResolvedValue([projectA, projectB]);
+  vi.mocked(getProjects).mockResolvedValue({
+    items: [projectA, projectB],
+    total: 2,
+    page: 1,
+    page_size: 50,
+  });
   vi.mocked(getProjectVersions).mockResolvedValue(versions);
   vi.mocked(updateProject).mockResolvedValue(projectA);
   vi.mocked(deleteProject).mockResolvedValue(undefined);
@@ -362,7 +367,7 @@ describe('Topbar projects popover', () => {
 
   it('shows the empty state when there are no projects', async () => {
     const user = userEvent.setup();
-    vi.mocked(getProjects).mockResolvedValue([]);
+    vi.mocked(getProjects).mockResolvedValue({ items: [], total: 0, page: 1, page_size: 50 });
     render(<Topbar />);
     await user.click(screen.getByRole('button', { name: 'Проекты' }));
     expect(await screen.findByText('Проектов пока нет')).toBeInTheDocument();
@@ -370,9 +375,9 @@ describe('Topbar projects popover', () => {
 
   it('shows skeletons while projects are loading', async () => {
     const user = userEvent.setup();
-    let resolveProjects!: (v: Project[]) => void;
+    let resolveProjects!: (v: PaginatedProjects) => void;
     vi.mocked(getProjects).mockReturnValue(
-      new Promise<Project[]>((resolve) => {
+      new Promise<PaginatedProjects>((resolve) => {
         resolveProjects = resolve;
       }),
     );
@@ -380,7 +385,7 @@ describe('Topbar projects popover', () => {
     await user.click(screen.getByRole('button', { name: 'Проекты' }));
     expect(container.querySelectorAll('.skeleton').length).toBeGreaterThan(0);
     await act(async () => {
-      resolveProjects([]);
+      resolveProjects({ items: [], total: 0, page: 1, page_size: 50 });
     });
     expect(await screen.findByText('Проектов пока нет')).toBeInTheDocument();
   });
@@ -434,7 +439,12 @@ describe('Topbar projects popover', () => {
       created_at: '2024-01-03T00:00:00Z',
       updated_at: '2024-01-03T00:00:00Z',
     };
-    vi.mocked(getProjects).mockResolvedValue([nullProject]);
+    vi.mocked(getProjects).mockResolvedValue({
+      items: [nullProject],
+      total: 1,
+      page: 1,
+      page_size: 50,
+    });
     render(<Topbar />);
     await user.click(screen.getByRole('button', { name: 'Проекты' }));
     await user.click(await screen.findByText('Пустой проект'));

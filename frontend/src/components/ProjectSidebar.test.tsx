@@ -64,7 +64,12 @@ beforeEach(() => {
   vi.mocked(getProjects).mockReset();
   vi.mocked(getProjectVersions).mockReset();
   vi.mocked(deleteProject).mockReset();
-  vi.mocked(getProjects).mockResolvedValue([projectA, projectB]);
+  vi.mocked(getProjects).mockResolvedValue({
+    items: [projectA, projectB],
+    total: 2,
+    page: 1,
+    page_size: 50,
+  });
   vi.mocked(getProjectVersions).mockResolvedValue(versions);
   vi.mocked(deleteProject).mockResolvedValue(undefined);
   useAppStore.setState({
@@ -90,7 +95,7 @@ describe('ProjectSidebar', () => {
   });
 
   it('shows the empty state when there are no projects', async () => {
-    vi.mocked(getProjects).mockResolvedValue([]);
+    vi.mocked(getProjects).mockResolvedValue({ items: [], total: 0, page: 1, page_size: 50 });
     render(<ProjectSidebar />);
     expect(await screen.findByText('Проектов пока нет')).toBeInTheDocument();
   });
@@ -146,7 +151,12 @@ describe('ProjectSidebar', () => {
       created_at: '2024-01-03T00:00:00Z',
       updated_at: '2024-01-03T00:00:00Z',
     };
-    vi.mocked(getProjects).mockResolvedValue([projectA, nullProject]);
+    vi.mocked(getProjects).mockResolvedValue({
+      items: [projectA, nullProject],
+      total: 2,
+      page: 1,
+      page_size: 50,
+    });
     useAppStore.setState({ projects: [projectA, nullProject] });
 
     const user = userEvent.setup();
@@ -215,5 +225,92 @@ describe('ProjectSidebar', () => {
     render(<ProjectSidebar />);
     await user.click(screen.getByRole('button', { name: 'Закрыть панель проектов' }));
     expect(useAppStore.getState().sidebarOpen).toBe(false);
+  });
+
+  it('filters projects by the search query', async () => {
+    const user = userEvent.setup();
+    render(<ProjectSidebar />);
+    await screen.findByText('Лендинг A');
+
+    await user.type(screen.getByRole('textbox', { name: 'Поиск проектов' }), 'дашбор');
+
+    await waitFor(() => {
+      expect(getProjects).toHaveBeenLastCalledWith('s1', {
+        search: 'дашбор',
+        page: 1,
+        pageSize: 50,
+      });
+    });
+  });
+
+  it('clears the search query and resets it', async () => {
+    const user = userEvent.setup();
+    useAppStore.setState({ projectSearch: 'дашбор' });
+
+    render(<ProjectSidebar />);
+
+    const input = screen.getByRole('textbox', { name: 'Поиск проектов' });
+    expect(input).toHaveValue('дашбор');
+
+    await user.click(screen.getByRole('button', { name: 'Очистить поиск' }));
+
+    await waitFor(() => {
+      expect(useAppStore.getState().projectSearch).toBe('');
+    });
+    expect(getProjects).toHaveBeenLastCalledWith('s1', {
+      search: undefined,
+      page: 1,
+      pageSize: 50,
+    });
+  });
+
+  it('shows the no-results state when a search matches nothing', async () => {
+    vi.mocked(getProjects).mockResolvedValue({ items: [], total: 0, page: 1, page_size: 50 });
+    useAppStore.setState({ projectSearch: 'zqx' });
+
+    render(<ProjectSidebar />);
+
+    expect(await screen.findByText('Ничего не найдено')).toBeInTheDocument();
+  });
+
+  it('renders pagination controls and advances to the next page', async () => {
+    const user = userEvent.setup();
+    vi.mocked(getProjects).mockResolvedValue({
+      items: [projectA],
+      total: 60,
+      page: 1,
+      page_size: 50,
+    });
+
+    render(<ProjectSidebar />);
+    await screen.findByText('Лендинг A');
+
+    expect(screen.getByText('Стр. 1 из 2')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Следующая страница' }));
+
+    await waitFor(() => {
+      expect(getProjects).toHaveBeenLastCalledWith('s1', {
+        search: undefined,
+        page: 2,
+        pageSize: 50,
+      });
+    });
+    expect(useAppStore.getState().projectPage).toBe(2);
+  });
+
+  it('disables the previous-page button on the first page', async () => {
+    vi.mocked(getProjects).mockResolvedValue({
+      items: [projectA],
+      total: 60,
+      page: 1,
+      page_size: 50,
+    });
+
+    render(<ProjectSidebar />);
+    await screen.findByText('Лендинг A');
+
+    const prev = screen.getByRole('button', { name: 'Предыдущая страница' });
+    expect(prev).toBeDisabled();
   });
 });
