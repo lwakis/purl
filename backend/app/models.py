@@ -107,6 +107,19 @@ class ProjectVersionResponse(BaseModel):
     model_config = {'from_attributes': True}
 
 
+class PaginatedProjects(BaseModel):
+    """Paginated project listing envelope returned by ``GET /api/projects``.
+
+    Carries the page slice plus the total number of matching projects so the
+    client can render paging without a separate count request.
+    """
+
+    items: list[ProjectResponse]
+    total: int
+    page: int
+    page_size: int
+
+
 class ProjectCreate(BaseModel):
     name: str = 'Untitled'
     prompt: str | None = None

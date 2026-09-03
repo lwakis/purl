@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import Project, ProjectVersion, get_db
 from app.models import (
+    PaginatedProjects,
     ProjectCreate,
     ProjectResponse,
     ProjectUpdate,
@@ -58,19 +59,43 @@ def _version_to_response(v: ProjectVersion) -> ProjectVersionResponse:
 # ── Projects ─────────────────────────────────────────────────────────────────
 
 
-@router.get('', response_model=list[ProjectResponse])
-@router.get('/', response_model=list[ProjectResponse])
+DEFAULT_PAGE_SIZE = 50
+MAX_PAGE_SIZE = 100
+
+
+@router.get('', response_model=PaginatedProjects)
+@router.get('/', response_model=PaginatedProjects)
 async def list_projects(
     session_id: str | None = Query(None),
+    q: str | None = Query(None, description='Case-insensitive name/prompt search'),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE),
     db: AsyncSession = Depends(get_db),  # noqa: B008
 ):
-    """List projects, optionally filtered by session_id."""
-    stmt = select(Project).order_by(Project.updated_at.desc())
+    """List projects, optionally filtered by session_id and search query, paginated."""
+    # Build a single filtered query shared by the count and the page slice.
+    base = select(Project)
     if session_id is not None:
-        stmt = stmt.where(Project.session_id == session_id)
+        base = base.where(Project.session_id == session_id)
+    if q:
+        pattern = f'%{q.strip()}%'
+        base = base.where(
+            func.lower(Project.name).like(pattern)
+            | func.lower(Project.prompt).like(pattern)
+        )
+
+    total = await db.scalar(select(func.count()).select_from(base.subquery()))
+
+    stmt = base.order_by(Project.updated_at.desc()).offset((page - 1) * page_size).limit(page_size)
     result = await db.execute(stmt)
     projects = result.scalars().all()
-    return [_project_to_response(p) for p in projects]
+
+    return PaginatedProjects(
+        items=[_project_to_response(p) for p in projects],
+        total=total or 0,
+        page=page,
+        page_size=page_size,
+    )
 
 
 @router.post('', response_model=ProjectResponse, status_code=201)
