@@ -52,13 +52,17 @@ beforeEach(() => {
 describe('useProjects', () => {
   it('loads projects scoped to the session on mount', async () => {
     const projects = [project];
-    vi.mocked(getProjects).mockResolvedValue(projects);
+    vi.mocked(getProjects).mockResolvedValue({ items: projects, total: 1, page: 1, page_size: 50 });
     useAppStore.setState({ sessionId: 'sess-1' });
 
     const { result } = renderHook(() => useProjects());
 
     await waitFor(() => {
-      expect(getProjects).toHaveBeenCalledWith('sess-1');
+      expect(getProjects).toHaveBeenCalledWith('sess-1', {
+        search: undefined,
+        page: 1,
+        pageSize: 50,
+      });
       expect(useAppStore.getState().projects).toEqual(projects);
     });
     expect(result.current.loading).toBe(false);
@@ -101,19 +105,72 @@ describe('useProjects', () => {
   });
 
   it('refetches projects when fetchProjects is called again', async () => {
-    vi.mocked(getProjects).mockResolvedValue([]);
+    vi.mocked(getProjects).mockResolvedValue({ items: [], total: 0, page: 1, page_size: 50 });
     useAppStore.setState({ sessionId: 'sess-1' });
 
     const { result } = renderHook(() => useProjects());
     await waitFor(() => expect(getProjects).toHaveBeenCalledTimes(1));
 
-    vi.mocked(getProjects).mockResolvedValue([project]);
+    vi.mocked(getProjects).mockResolvedValue({ items: [project], total: 1, page: 1, page_size: 50 });
     await act(async () => {
       await result.current.fetchProjects();
     });
 
     expect(getProjects).toHaveBeenCalledTimes(2);
     expect(useAppStore.getState().projects).toEqual([project]);
+  });
+
+  it('filters by search term when setSearch is called', async () => {
+    vi.mocked(getProjects).mockResolvedValue({
+      items: [project],
+      total: 1,
+      page: 1,
+      page_size: 50,
+    });
+    useAppStore.setState({ sessionId: 'sess-1' });
+
+    const { result } = renderHook(() => useProjects());
+    await waitFor(() => expect(getProjects).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      result.current.setSearch('landing');
+    });
+
+    await waitFor(() => {
+      expect(getProjects).toHaveBeenLastCalledWith('sess-1', {
+        search: 'landing',
+        page: 1,
+        pageSize: 50,
+      });
+    });
+    expect(useAppStore.getState().projectSearch).toBe('landing');
+  });
+
+  it('moves to the next page via setPage', async () => {
+    vi.mocked(getProjects).mockResolvedValue({
+      items: [project],
+      total: 60,
+      page: 1,
+      page_size: 50,
+    });
+    useAppStore.setState({ sessionId: 'sess-1' });
+
+    const { result } = renderHook(() => useProjects());
+    await waitFor(() => expect(getProjects).toHaveBeenCalledTimes(1));
+    expect(result.current.totalPages).toBe(2);
+
+    await act(async () => {
+      result.current.setPage(2);
+    });
+
+    await waitFor(() => {
+      expect(getProjects).toHaveBeenLastCalledWith('sess-1', {
+        search: undefined,
+        page: 2,
+        pageSize: 50,
+      });
+    });
+    expect(useAppStore.getState().projectPage).toBe(2);
   });
 
   it('creates a project and adds it to the store', async () => {
@@ -164,7 +221,7 @@ describe('useProjects', () => {
 
   it('updates a project in the store', async () => {
     const updated = { ...project, name: 'Renamed' };
-    vi.mocked(getProjects).mockResolvedValue([project]);
+    vi.mocked(getProjects).mockResolvedValue({ items: [project], total: 1, page: 1, page_size: 50 });
     vi.mocked(updateProject).mockResolvedValue(updated);
     useAppStore.setState({ sessionId: 'sess-1' });
 
@@ -182,7 +239,7 @@ describe('useProjects', () => {
   });
 
   it('returns null and toasts the error when update fails', async () => {
-    vi.mocked(getProjects).mockResolvedValue([project]);
+    vi.mocked(getProjects).mockResolvedValue({ items: [project], total: 1, page: 1, page_size: 50 });
     vi.mocked(updateProject).mockRejectedValue(new Error('boom'));
     useAppStore.setState({ sessionId: 'sess-1' });
 
@@ -200,7 +257,12 @@ describe('useProjects', () => {
 
   it('deletes a project and removes it from the store', async () => {
     const other = { ...project, id: 8, name: 'Other' };
-    vi.mocked(getProjects).mockResolvedValue([project, other]);
+    vi.mocked(getProjects).mockResolvedValue({
+      items: [project, other],
+      total: 2,
+      page: 1,
+      page_size: 50,
+    });
     vi.mocked(deleteProject).mockResolvedValue(undefined);
     useAppStore.setState({ sessionId: 'sess-1' });
 
@@ -217,7 +279,7 @@ describe('useProjects', () => {
   });
 
   it('toasts the error when delete fails', async () => {
-    vi.mocked(getProjects).mockResolvedValue([project]);
+    vi.mocked(getProjects).mockResolvedValue({ items: [project], total: 1, page: 1, page_size: 50 });
     vi.mocked(deleteProject).mockRejectedValue(new Error('boom'));
     useAppStore.setState({ sessionId: 'sess-1' });
 
