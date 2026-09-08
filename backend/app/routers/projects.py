@@ -80,8 +80,7 @@ async def list_projects(
     if q:
         pattern = f'%{q.strip()}%'
         base = base.where(
-            func.lower(Project.name).like(pattern)
-            | func.lower(Project.prompt).like(pattern)
+            func.lower(Project.name).like(pattern) | func.lower(Project.prompt).like(pattern)
         )
 
     total = await db.scalar(select(func.count()).select_from(base.subquery()))

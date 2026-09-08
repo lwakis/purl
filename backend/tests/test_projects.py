@@ -103,9 +103,7 @@ def test_projects_pagination_slices_and_reports_total(client, create_project):
     for i in range(5):
         create_project(name=f'Project {i}', session_id='ses-page')
 
-    resp = client.get(
-        '/api/projects', params={'session_id': 'ses-page', 'page': 1, 'page_size': 2}
-    )
+    resp = client.get('/api/projects', params={'session_id': 'ses-page', 'page': 1, 'page_size': 2})
     body = resp.json()
     assert body['total'] == 5
     assert body['page'] == 1
