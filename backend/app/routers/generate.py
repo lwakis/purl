@@ -5,12 +5,10 @@ from __future__ import annotations
 import json
 from collections.abc import AsyncGenerator
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.database import get_db
 from app.models import GenerateRequest, IterateRequest
 from app.services.cache_service import cache
 from app.services.llm_service import generate, iterate_stream
@@ -95,7 +93,6 @@ def _rate_limit_error(retry_after: int) -> StreamingResponse:
 async def api_generate(
     req: GenerateRequest,
     request: Request,
-    db: AsyncSession = Depends(get_db),  # noqa: B008
 ):
     """Generate a new design from a text prompt.
 
@@ -152,7 +149,6 @@ async def api_generate(
 async def api_iterate(
     req: IterateRequest,
     request: Request,
-    db: AsyncSession = Depends(get_db),  # noqa: B008
 ):
     """Iterate on an existing design.
 
