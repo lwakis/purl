@@ -3,7 +3,6 @@ import { useAppStore } from './appStore';
 import type {
   ChatMessage,
   Project,
-  ActivePanel,
   PreviewSize,
   Locale,
   Attachment,
@@ -21,7 +20,6 @@ const initialState = {
   generationError: null,
   prompt: '',
   sidebarOpen: false,
-  activePanel: 'code' as ActivePanel,
   previewSize: 'desktop' as PreviewSize,
   locale: 'ru' as Locale,
   selectedModel: null as string | null,
@@ -68,7 +66,6 @@ describe('appStore', () => {
 
     expect(state.sessionId).toBe('');
     expect(state.currentCode).toBe('');
-    expect(state.activePanel).toBe('code');
     expect(state.projects).toEqual([]);
     expect(state.currentProject).toBeNull();
     expect(state.chatHistory).toEqual([]);
@@ -136,11 +133,6 @@ describe('appStore', () => {
   it('setSidebarOpen updates the sidebar flag', () => {
     useAppStore.getState().setSidebarOpen(true);
     expect(useAppStore.getState().sidebarOpen).toBe(true);
-  });
-
-  it('setActivePanel updates the active panel', () => {
-    useAppStore.getState().setActivePanel('chat');
-    expect(useAppStore.getState().activePanel).toBe('chat');
   });
 
   it('setPreviewSize updates the preview size', () => {
@@ -309,7 +301,6 @@ describe('appStore', () => {
     useAppStore.getState().setCurrentProject(projectA);
     useAppStore.getState().addProject(projectA);
     useAppStore.getState().setSidebarOpen(true);
-    useAppStore.getState().setActivePanel('chat');
     useAppStore.getState().setPreviewSize('mobile');
     useAppStore.getState().setLocale('en');
     useAppStore.getState().setSelectedModel('openai:gpt-4o');
@@ -342,7 +333,6 @@ describe('appStore', () => {
     expect(state.currentProject).toBeNull();
     expect(state.projects).toEqual([]);
     expect(state.sidebarOpen).toBe(false);
-    expect(state.activePanel).toBe('code');
     expect(state.previewSize).toBe('desktop');
     expect(state.locale).toBe('ru');
     expect(state.selectedModel).toBeNull();

@@ -4,7 +4,6 @@ import type { StateStorage } from 'zustand/middleware';
 import type {
   ChatMessage,
   Project,
-  ActivePanel,
   PreviewSize,
   WorkspaceView,
   Locale,
@@ -24,7 +23,6 @@ interface AppState {
   generationError: string | null;
   prompt: string;
   sidebarOpen: boolean;
-  activePanel: ActivePanel;
   previewSize: PreviewSize;
   workspaceView: WorkspaceView;
   previewRefreshKey: number;
@@ -51,7 +49,6 @@ interface AppState {
   addProject: (project: Project) => void;
   setProjects: (projects: Project[]) => void;
   setSidebarOpen: (open: boolean) => void;
-  setActivePanel: (panel: ActivePanel) => void;
   setPreviewSize: (size: PreviewSize) => void;
   setWorkspaceView: (view: WorkspaceView) => void;
   bumpPreviewRefresh: () => void;
@@ -87,7 +84,6 @@ const initialState = {
   generationError: null,
   prompt: '',
   sidebarOpen: false,
-  activePanel: 'code' as ActivePanel,
   previewSize: 'desktop' as PreviewSize,
   workspaceView: 'preview' as WorkspaceView,
   previewRefreshKey: 0,
@@ -150,7 +146,6 @@ export const useAppStore = create<AppState>()(
       addProject: (project) => set((state) => ({ projects: [project, ...state.projects] })),
       setProjects: (projects) => set({ projects }),
       setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
-      setActivePanel: (activePanel) => set({ activePanel }),
       setPreviewSize: (previewSize) => set({ previewSize }),
       setWorkspaceView: (workspaceView) => set({ workspaceView }),
       bumpPreviewRefresh: () =>

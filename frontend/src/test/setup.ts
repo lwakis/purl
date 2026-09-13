@@ -40,7 +40,6 @@ afterEach(() => {
     generationError: null,
     prompt: '',
     sidebarOpen: false,
-    activePanel: 'code',
     previewSize: 'desktop',
     locale: 'ru',
     selectedModel: null,

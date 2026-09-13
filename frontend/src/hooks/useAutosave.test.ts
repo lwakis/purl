@@ -42,7 +42,6 @@ const storeDefaults = {
   generationError: null,
   prompt: '',
   sidebarOpen: false,
-  activePanel: 'code' as 'code' | 'chat',
   previewSize: 'desktop' as 'desktop' | 'tablet' | 'mobile',
   locale: 'ru' as 'ru' | 'en',
 };

@@ -57,7 +57,6 @@ export interface SSEEvent {
 }
 
 export type PreviewSize = 'desktop' | 'tablet' | 'mobile';
-export type ActivePanel = 'code' | 'chat';
 export type WorkspaceView = 'preview' | 'code';
 export type Locale = 'ru' | 'en';
 
