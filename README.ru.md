@@ -187,7 +187,7 @@ Env-переменные фронтенда читаются на этапе с�
 | GET | `/api/models` | Список доступных LLM-провайдеров и их моделей |
 | POST | `/api/generate` | Сгенерировать дизайн; возвращает SSE-стрим |
 | POST | `/api/iterate` | Доработать существующий код через чат; SSE-стрим |
-| GET | `/api/projects` | Список проектов (опционально по `session_id`) |
+| GET | `/api/projects` | Список проектов — поддерживает поиск по `q` (имя/промпт), пагинацию `page`/`page_size`; возвращает `{items, total, page, page_size}` |
 | POST | `/api/projects` | Создать проект |
 | GET | `/api/projects/{id}` | Получить проект |
 | PUT | `/api/projects/{id}` | Обновить проект |
