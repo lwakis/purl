@@ -105,7 +105,7 @@ async def api_generate(
 
     # Check cache — skipped entirely when images are present (data URLs are huge)
     if not req.images:
-        cached_html = cache.get_cached(req.prompt, req.theme, req.style, req.model, req.plan)
+        cached_html = await cache.aget_cached(req.prompt, req.theme, req.style, req.model, req.plan)
         if cached_html is not None:
 
             async def _cached() -> AsyncGenerator[bytes]:
@@ -140,7 +140,9 @@ async def api_generate(
                     pass
 
         if collected_html and not req.images:
-            cache.set_cache(req.prompt, req.theme, req.style, collected_html, req.model, req.plan)
+            await cache.aset_cache(
+                req.prompt, req.theme, req.style, collected_html, req.model, req.plan
+            )
 
     return _build_sse_response(_generate_sse())
 

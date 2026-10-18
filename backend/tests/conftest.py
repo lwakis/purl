@@ -17,6 +17,7 @@ os.environ['LLM_API_KEY'] = ''
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
+from sqlalchemy.engine import make_url  # noqa: E402
 
 from app.config import settings  # noqa: E402
 from app.main import app  # noqa: E402
@@ -30,13 +31,36 @@ assert _TMPDIR in settings.database_url, (
 )
 assert settings.llm_api_key == '', 'LLM_API_KEY must be empty in tests'
 
+# Absolute path of the test SQLite file (for out-of-band cleanup).
+_DB_PATH = make_url(settings.database_url).database
+
+
+def _clear_persistent_cache() -> None:
+    """Delete all persisted cache rows, tolerating a missing DB/table.
+
+    On the very first run the file/table may not exist yet (``init_db`` runs
+    inside the session-scoped ``client`` fixture), so failures are ignored.
+    """
+    import sqlite3
+
+    try:
+        conn = sqlite3.connect(_DB_PATH)
+        try:
+            conn.execute('DELETE FROM cache_entries')
+            conn.commit()
+        finally:
+            conn.close()
+    except sqlite3.Error:
+        pass
+
 
 @pytest.fixture(autouse=True)
 def _clear_singletons():
-    """Reset shared in-memory singletons before each test."""
+    """Reset shared in-memory singletons and persisted cache before each test."""
     rate_limiter._buckets.clear()
     cache._data.clear()
     usage_store._by_session.clear()
+    _clear_persistent_cache()
     yield
 
 

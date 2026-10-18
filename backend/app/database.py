@@ -4,7 +4,7 @@ import uuid
 from collections.abc import AsyncGenerator
 from datetime import UTC, datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, relationship
 
@@ -112,3 +112,24 @@ class PromptTemplate(Base):
 
     def __repr__(self) -> str:
         return f'<PromptTemplate id={self.id} title={self.title!r}>'
+
+
+# ── CacheEntry ───────────────────────────────────────────────────────────────
+
+
+class CacheEntry(Base):
+    """Persistent generated-HTML cache row.
+
+    ``expires_at`` / ``created_at`` are epoch seconds (floats) so TTL math stays
+    simple and free of timezone pitfalls across SQLite and Python.
+    """
+
+    __tablename__ = 'cache_entries'
+
+    key = Column(String(128), primary_key=True)
+    value = Column(Text, nullable=False)
+    expires_at = Column(Float, nullable=False, index=True)
+    created_at = Column(Float, nullable=False)
+
+    def __repr__(self) -> str:
+        return f'<CacheEntry key={self.key!r} expires_at={self.expires_at}>'
