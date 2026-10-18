@@ -9,11 +9,33 @@ vi.mock('../services/sse', () => ({
   connectIterateSSE: vi.fn(),
 }));
 
+vi.mock('../services/api', () => ({
+  enhancePrompt: vi.fn(),
+  getUsage: vi.fn(),
+  saveProjectVersion: vi.fn(),
+}));
+
+vi.mock('react-hot-toast', () => ({
+  default: { success: vi.fn(), error: vi.fn() },
+}));
+
 import { connectGenerateSSE } from '../services/sse';
+import { enhancePrompt } from '../services/api';
+import toast from 'react-hot-toast';
 
 beforeEach(() => {
   vi.mocked(connectGenerateSSE).mockReset();
   vi.mocked(connectGenerateSSE).mockResolvedValue(undefined);
+  vi.mocked(enhancePrompt).mockReset();
+  vi.mocked(toast.error).mockReset();
+  vi.mocked(toast.success).mockReset();
+  // Each test starts from a clean prompt/generation slice.
+  useAppStore.setState({
+    prompt: '',
+    isGenerating: false,
+    generationError: null,
+    selectedModel: null,
+  });
   // jsdom does not implement matchMedia; the rotation effect guards on it.
   window.matchMedia = vi.fn().mockReturnValue({ matches: false });
 });
@@ -124,5 +146,84 @@ describe('PromptInput', () => {
     await user.click(screen.getByRole('button', { name: 'Закрыть сообщение об ошибке' }));
     expect(useAppStore.getState().generationError).toBeNull();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('disables the Improve button when the prompt is empty', () => {
+    render(<PromptInput />);
+    expect(screen.getByRole('button', { name: 'Улучшить промпт' })).toBeDisabled();
+  });
+
+  it('disables the Improve button while generating', () => {
+    useAppStore.setState({ prompt: 'Лендинг', isGenerating: true });
+    render(<PromptInput />);
+    expect(screen.getByRole('button', { name: 'Улучшить промпт' })).toBeDisabled();
+  });
+
+  it('calls enhancePrompt with the trimmed prompt and the selected model', async () => {
+    const user = userEvent.setup();
+    vi.mocked(enhancePrompt).mockResolvedValue('обогащённый промпт');
+    useAppStore.setState({ prompt: '  лендинг для HR  ', selectedModel: 'openai:gpt-4o' });
+    render(<PromptInput />);
+
+    await user.click(screen.getByRole('button', { name: 'Улучшить промпт' }));
+
+    await waitFor(() => {
+      expect(enhancePrompt).toHaveBeenCalledWith('лендинг для HR', 'openai:gpt-4o');
+    });
+  });
+
+  it('replaces the prompt with the result, keeps focus and does not generate', async () => {
+    const user = userEvent.setup();
+    vi.mocked(enhancePrompt).mockResolvedValue('Богатый промпт');
+    useAppStore.setState({ prompt: 'лендинг' });
+    render(<PromptInput />);
+
+    await user.click(screen.getByRole('button', { name: 'Улучшить промпт' }));
+
+    await waitFor(() => expect(useAppStore.getState().prompt).toBe('Богатый промпт'));
+    const textarea = screen.getByRole('textbox', { name: 'Описание дизайна' });
+    expect(textarea).toHaveValue('Богатый промпт');
+    expect(textarea).toHaveFocus();
+    expect(useAppStore.getState().isGenerating).toBe(false);
+    expect(connectGenerateSSE).not.toHaveBeenCalled();
+  });
+
+  it('shows the localized error toast on failure and keeps the original prompt', async () => {
+    const user = userEvent.setup();
+    vi.mocked(enhancePrompt).mockRejectedValue(new Error('llm_provider_error'));
+    useAppStore.setState({ prompt: 'исходный промпт' });
+    render(<PromptInput />);
+
+    await user.click(screen.getByRole('button', { name: 'Улучшить промпт' }));
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Не удалось улучшить промпт'));
+    expect(useAppStore.getState().prompt).toBe('исходный промпт');
+  });
+
+  it('shows the improving state and ignores a second click while pending', async () => {
+    const user = userEvent.setup();
+    let resolveEnhance: (value: string) => void = () => {};
+    vi.mocked(enhancePrompt).mockReturnValue(
+      new Promise<string>((resolve) => {
+        resolveEnhance = resolve;
+      }),
+    );
+    useAppStore.setState({ prompt: 'лендинг' });
+    render(<PromptInput />);
+
+    const button = screen.getByTestId('improve-button');
+    await user.click(button);
+    await user.click(button);
+
+    expect(enhancePrompt).toHaveBeenCalledTimes(1);
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByText('Улучшаю…')).toBeInTheDocument();
+
+    await act(async () => {
+      resolveEnhance('готово');
+    });
+    await waitFor(() => expect(useAppStore.getState().prompt).toBe('готово'));
+    expect(screen.getByTestId('improve-button')).toHaveAttribute('aria-busy', 'false');
   });
 });

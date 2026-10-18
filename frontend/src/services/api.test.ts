@@ -8,6 +8,7 @@ import {
   getProjectVersions,
   getModels,
   getUsage,
+  enhancePrompt,
 } from './api';
 
 interface MockResponse {
@@ -230,6 +231,38 @@ describe('api client', () => {
     fetchMock.mockResolvedValue(mockResponse({}));
 
     await expect(getUsage('ses-unknown')).resolves.toBeNull();
+  });
+
+  it('enhancePrompt POSTs /api/enhance-prompt with prompt and model and returns the prompt', async () => {
+    fetchMock.mockResolvedValue(mockResponse({ prompt: 'Rich, detailed prompt' }));
+
+    const result = await enhancePrompt('make a landing page', 'openai:gpt-4o');
+
+    expect(result).toBe('Rich, detailed prompt');
+    expect(fetchMock).toHaveBeenCalledWith('/api/enhance-prompt', {
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+      body: JSON.stringify({ prompt: 'make a landing page', model: 'openai:gpt-4o' }),
+    });
+  });
+
+  it('enhancePrompt omits the model field when none is selected', async () => {
+    fetchMock.mockResolvedValue(mockResponse({ prompt: 'Rich prompt' }));
+
+    const result = await enhancePrompt('maybe a dashboard', null);
+
+    expect(result).toBe('Rich prompt');
+    expect(fetchMock).toHaveBeenCalledWith('/api/enhance-prompt', {
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+      body: JSON.stringify({ prompt: 'maybe a dashboard' }),
+    });
+  });
+
+  it('enhancePrompt maps a provider failure (502) to the backend detail', async () => {
+    fetchMock.mockResolvedValue(mockResponse({ detail: 'llm_provider_error' }, false, 502));
+
+    await expect(enhancePrompt('anything')).rejects.toThrow('llm_provider_error');
   });
 
   it('throws a human-friendly error containing the status when the response is not ok', async () => {

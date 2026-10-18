@@ -106,6 +106,14 @@ export async function saveProjectVersion(
   });
 }
 
+export async function enhancePrompt(prompt: string, model?: string | null): Promise<string> {
+  const data = await request<{ prompt: string }>('/api/enhance-prompt', {
+    method: 'POST',
+    body: JSON.stringify(model ? { prompt, model } : { prompt }),
+  });
+  return data.prompt;
+}
+
 export async function getUsage(sessionId: string): Promise<TokenUsage | null> {
   const path = `/api/usage?session_id=${encodeURIComponent(sessionId)}`;
   const data = await request<Partial<TokenUsage>>(path);

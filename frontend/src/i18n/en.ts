@@ -123,6 +123,8 @@ export const en: RuDictionary = {
     example2: 'Analytics dashboard',
     example3: 'Registration form',
     example4: 'Filterable portfolio',
+    improve: 'Improve prompt',
+    improving: 'Improving…',
   },
   code: {
     copyTitle: 'Copy code',
@@ -193,6 +195,7 @@ export const en: RuDictionary = {
     createProject: 'Failed to create project',
     updateProject: 'Failed to update project',
     deleteProject: 'Failed to delete project',
+    enhancePrompt: 'Failed to improve prompt',
   },
   toasts: {
     projectSaved: 'Project saved',

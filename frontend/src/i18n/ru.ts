@@ -127,6 +127,8 @@ export const ru = {
     example2: 'Дашборд аналитики',
     example3: 'Форма регистрации',
     example4: 'Портфолио с фильтрами',
+    improve: 'Улучшить промпт',
+    improving: 'Улучшаю…',
   },
   code: {
     copyTitle: 'Копировать код',
@@ -197,6 +199,7 @@ export const ru = {
     createProject: 'Не удалось создать проект',
     updateProject: 'Не удалось обновить проект',
     deleteProject: 'Не удалось удалить проект',
+    enhancePrompt: 'Не удалось улучшить промпт',
   },
   toasts: {
     projectSaved: 'Проект сохранён',
