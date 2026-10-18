@@ -15,8 +15,14 @@ vi.mock('../services/api', () => ({
   getProjectVersions: vi.fn(),
 }));
 
+vi.mock('react-hot-toast', () => {
+  const toast = Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() });
+  return { default: toast };
+});
+
 import { connectIterateSSE } from '../services/sse';
 import { getProjectVersions } from '../services/api';
+import toast from 'react-hot-toast';
 
 const project: Project = {
   id: 1,
@@ -54,6 +60,9 @@ beforeEach(() => {
   vi.mocked(connectIterateSSE).mockResolvedValue(undefined);
   vi.mocked(getProjectVersions).mockReset();
   vi.mocked(getProjectVersions).mockResolvedValue([]);
+  vi.mocked(toast).mockReset();
+  vi.mocked(toast.success).mockReset();
+  vi.mocked(toast.error).mockReset();
   useAppStore.setState({
     currentCode: '<html>design</html>',
     sessionId: 's1',
@@ -153,5 +162,31 @@ describe('ChatPanel', () => {
       expect(screen.queryByText('Снимки')).not.toBeInTheDocument();
     });
     expect(screen.queryByRole('button', { name: 'Сравнить' })).not.toBeInTheDocument();
+  });
+
+  it('shows diff stats against the next-older snapshot', async () => {
+    useAppStore.setState({ currentProject: project, currentCode: '<html>\ncurrent\n</html>' });
+    vi.mocked(getProjectVersions).mockResolvedValue(versions);
+    render(<ChatPanel />);
+
+    // v2 (newest) differs from v1 by one replaced line.
+    expect(await screen.findByText('+1 / −1')).toBeInTheDocument();
+  });
+
+  it('restores a snapshot from the compare modal and closes it', async () => {
+    useAppStore.setState({ currentProject: project, currentCode: '<html>\ncurrent\n</html>' });
+    vi.mocked(getProjectVersions).mockResolvedValue(versions);
+    const user = userEvent.setup();
+    render(<ChatPanel />);
+
+    const compareButtons = await screen.findAllByRole('button', { name: 'Сравнить' });
+    await user.click(compareButtons[0]);
+    await user.click(await screen.findByRole('button', { name: 'Восстановить' }));
+
+    expect(useAppStore.getState().currentCode).toBe(versions[0].code);
+    expect(toast.success).toHaveBeenCalledWith('Снимок загружен');
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Сравнение версий' })).not.toBeInTheDocument();
+    });
   });
 });

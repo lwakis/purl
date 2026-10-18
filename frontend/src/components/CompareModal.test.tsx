@@ -137,3 +137,41 @@ describe('CompareModal', () => {
     expect(screen.queryByLabelText('Версия B')).toBeNull();
   });
 });
+
+describe('CompareModal snapshot actions', () => {
+  it('offers restore only for the snapshot side, not the current code', () => {
+    renderModal({ onRestore: vi.fn() });
+    // A is a snapshot (v2), B is the working copy.
+    expect(screen.getAllByRole('button', { name: 'Восстановить' })).toHaveLength(1);
+  });
+
+  it('adds the action for a second snapshot side too', async () => {
+    const user = userEvent.setup();
+    renderModal({ onRestore: vi.fn() });
+    await user.selectOptions(screen.getByLabelText('Версия B'), '11');
+    expect(screen.getAllByRole('button', { name: 'Восстановить' })).toHaveLength(2);
+  });
+
+  it('restores the snapshot shown on a side', async () => {
+    const user = userEvent.setup();
+    const onRestore = vi.fn();
+    renderModal({ onRestore });
+    await user.click(screen.getByRole('button', { name: 'Восстановить' }));
+    expect(onRestore).toHaveBeenCalledWith(versions[1]);
+  });
+
+  it('keeps the action available in the code view', async () => {
+    const user = userEvent.setup();
+    renderModal({ onRestore: vi.fn() });
+    await user.click(screen.getByRole('button', { name: /Код/ }));
+    expect(screen.getByRole('button', { name: 'Восстановить' })).toBeInTheDocument();
+  });
+
+  it('renders without the callback (action is inert, not crashing)', async () => {
+    const user = userEvent.setup();
+    renderModal();
+    await user.click(screen.getByRole('button', { name: 'Восстановить' }));
+    // Still open — closing is the caller's decision.
+    expect(screen.getByRole('dialog', { name: 'Сравнение версий' })).toBeInTheDocument();
+  });
+});

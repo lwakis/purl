@@ -269,6 +269,42 @@ export default function CodePanel() {
     setSearchOpen((open) => !open);
   }, []);
 
+  // Open the find bar (or re-focus it). Shared by the toolbar toggle, the
+  // Ctrl/Cmd+F shortcut and the command palette's `purl:open-find` event.
+  const openFind = useCallback(() => {
+    if (!currentCode) return;
+    setSearchOpen(true);
+    // When the bar is already mounted, focus and select so typing replaces the
+    // previous query; on a fresh open the mount effect below focuses the input.
+    inputRef.current?.focus();
+    inputRef.current?.select();
+  }, [currentCode]);
+
+  // Ctrl/Cmd+F opens find from anywhere on the page; the command palette
+  // dispatches a `purl:open-find` window event for the same action.
+  useEffect(() => {
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (
+        (event.ctrlKey || event.metaKey) &&
+        !event.altKey &&
+        !event.shiftKey &&
+        event.key.toLowerCase() === 'f'
+      ) {
+        // No code means no find bar — leave the browser's own find alone.
+        if (!currentCode) return;
+        event.preventDefault();
+        openFind();
+      }
+    };
+    const handleOpenFind = () => openFind();
+    document.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('purl:open-find', handleOpenFind);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('purl:open-find', handleOpenFind);
+    };
+  }, [currentCode, openFind]);
+
   const goToNext = useCallback(() => {
     setActiveIndex((index) => nextMatchIndex(clampMatchIndex(index, total), total));
   }, [total]);

@@ -158,6 +158,7 @@ export const ru = {
     code: 'Код',
     notEnough: 'Нужно минимум две версии',
     diffStats: '+{added} / −{removed}',
+    restore: 'Восстановить',
   },
   sidebar: {
     title: 'Проекты',

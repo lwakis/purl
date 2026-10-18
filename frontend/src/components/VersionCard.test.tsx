@@ -95,4 +95,26 @@ describe('VersionCard', () => {
     const bookmark = screen.getByRole('button', { name: 'В закладки' });
     expect(bookmark).toHaveAttribute('aria-pressed', 'false');
   });
+
+  it('renders the diff stats when provided', () => {
+    renderCard({ diffStats: { added: 3, removed: 1 } });
+    expect(screen.getByTestId('version-diff-stats')).toHaveTextContent('+3 / −1');
+  });
+
+  it('omits the diff stats when the prop is missing', () => {
+    renderCard();
+    expect(screen.queryByTestId('version-diff-stats')).toBeNull();
+  });
+
+  it('omits the diff stats when nothing changed', () => {
+    renderCard({ diffStats: { added: 0, removed: 0 } });
+    expect(screen.queryByTestId('version-diff-stats')).toBeNull();
+  });
+
+  it('still restores the version when the stats area is clicked', async () => {
+    const user = userEvent.setup();
+    const props = renderCard({ diffStats: { added: 1, removed: 2 } });
+    await user.click(screen.getByTestId('version-diff-stats'));
+    expect(props.onRestore).toHaveBeenCalledTimes(1);
+  });
 });

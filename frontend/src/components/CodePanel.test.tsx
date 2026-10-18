@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CodePanel from './CodePanel';
 import { useAppStore } from '../store/appStore';
@@ -305,5 +305,66 @@ describe('CodePanel find in code', () => {
       (globalThis as { CSS?: unknown }).CSS = previousCSS;
       vi.unstubAllGlobals();
     }
+  });
+
+  it('opens the find bar on Ctrl+F and focuses the input', async () => {
+    useAppStore.setState({ currentCode: SEARCH_CODE });
+    render(<CodePanel />);
+    expect(screen.queryByLabelText(SEARCH_PLACEHOLDER)).not.toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: 'f', ctrlKey: true });
+
+    const input = screen.getByLabelText(SEARCH_PLACEHOLDER);
+    expect(input).toBeInTheDocument();
+    expect(input).toHaveFocus();
+  });
+
+  it('opens the find bar on Cmd+F', () => {
+    useAppStore.setState({ currentCode: SEARCH_CODE });
+    render(<CodePanel />);
+    fireEvent.keyDown(document, { key: 'f', metaKey: true });
+    expect(screen.getByLabelText(SEARCH_PLACEHOLDER)).toBeInTheDocument();
+  });
+
+  it('opens and focuses the find bar on the purl:open-find window event', () => {
+    useAppStore.setState({ currentCode: SEARCH_CODE });
+    render(<CodePanel />);
+    act(() => {
+      window.dispatchEvent(new Event('purl:open-find'));
+    });
+    expect(screen.getByLabelText(SEARCH_PLACEHOLDER)).toHaveFocus();
+  });
+
+  it('does not open the find bar on Ctrl+F without code', () => {
+    render(<CodePanel />);
+    fireEvent.keyDown(document, { key: 'f', ctrlKey: true });
+    expect(screen.queryByLabelText(SEARCH_PLACEHOLDER)).not.toBeInTheDocument();
+  });
+
+  it('re-focuses the input on a repeated shortcut when the bar is already open', async () => {
+    const user = userEvent.setup();
+    useAppStore.setState({ currentCode: SEARCH_CODE });
+    render(<CodePanel />);
+    await user.click(screen.getByRole('button', { name: SEARCH_TITLE }));
+    await user.type(screen.getByLabelText(SEARCH_PLACEHOLDER), 'ma');
+
+    // Move focus elsewhere, then trigger the shortcut again.
+    screen.getByRole('button', { name: SEARCH_TITLE }).focus();
+    fireEvent.keyDown(document, { key: 'f', ctrlKey: true });
+
+    expect(screen.getByLabelText(SEARCH_PLACEHOLDER)).toHaveFocus();
+  });
+
+  it('removes the shortcut listeners on unmount', () => {
+    useAppStore.setState({ currentCode: SEARCH_CODE });
+    const { unmount } = render(<CodePanel />);
+    unmount();
+
+    // Neither should reach the (now unmounted) component.
+    fireEvent.keyDown(document, { key: 'f', ctrlKey: true });
+    act(() => {
+      window.dispatchEvent(new Event('purl:open-find'));
+    });
+    expect(screen.queryByLabelText(SEARCH_PLACEHOLDER)).not.toBeInTheDocument();
   });
 });

@@ -154,6 +154,7 @@ export const en: RuDictionary = {
     code: 'Code',
     notEnough: 'At least two versions are needed',
     diffStats: '+{added} / −{removed}',
+    restore: 'Restore',
   },
   sidebar: {
     title: 'Projects',

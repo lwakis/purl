@@ -18,6 +18,7 @@ import { useAppStore } from '../store/appStore';
 import { useGeneration } from '../hooks/useGeneration';
 import { getModels, getProjectVersions } from '../services/api';
 import { useT } from '../i18n';
+import { diffLines } from '../utils/lineDiff';
 import type { ProjectVersion, ProviderInfo } from '../types';
 import MarkdownMessage from './MarkdownMessage';
 import VersionCard from './VersionCard';
@@ -134,6 +135,21 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
     return raw.length > 40 ? `${raw.slice(0, 40)}…` : raw;
   }, [selectedElement]);
 
+  // Per-snapshot line delta against the next-older version in the list. The
+  // backend returns versions newest-first, so `versions[i + 1]` is older than
+  // `versions[i]`; pairs without code (or without changes) are left off.
+  const diffStatsById = useMemo(() => {
+    const stats = new Map<number, { added: number; removed: number }>();
+    for (let i = 0; i < versions.length - 1; i += 1) {
+      const newer = versions[i];
+      const older = versions[i + 1];
+      if (!newer.code || !older.code) continue;
+      const { added, removed } = diffLines(older.code, newer.code);
+      if (added + removed > 0) stats.set(newer.id, { added, removed });
+    }
+    return stats;
+  }, [versions]);
+
   const handleSend = useCallback(() => {
     if (!message.trim() || isGenerating || !currentCode) return;
     iterate(message.trim());
@@ -241,6 +257,16 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
   const handleCompareVersion = useCallback((version: ProjectVersion) => {
     setCompareVersion(version);
   }, []);
+
+  // Restoring from the compare modal mutates the stage, which makes the
+  // modal's "current code" side stale — so close it.
+  const handleCompareRestore = useCallback(
+    (version: ProjectVersion) => {
+      handleRestoreVersion(version);
+      setCompareVersion(null);
+    },
+    [handleRestoreVersion],
+  );
 
   const handleDownloadVersion = useCallback(
     (version: ProjectVersion) => {
@@ -378,6 +404,7 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
                   key={version.id}
                   version={version}
                   bookmarked={bookmarks.has(version.id)}
+                  diffStats={diffStatsById.get(version.id)}
                   onRestore={() => handleRestoreVersion(version)}
                   onCompare={() => handleCompareVersion(version)}
                   onDownload={() => handleDownloadVersion(version)}
@@ -600,6 +627,7 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
           currentCode={currentCode}
           initialVersionId={compareVersion.id}
           onClose={() => setCompareVersion(null)}
+          onRestore={handleCompareRestore}
         />
       )}
     </div>

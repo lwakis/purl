@@ -16,6 +16,8 @@ interface CompareModalProps {
   /** Version clicked in the chat, preselected on side A. */
   initialVersionId: number | null;
   onClose: () => void;
+  /** Load a snapshot back onto the stage. Offered on every snapshot side. */
+  onRestore?: (version: ProjectVersion) => void;
 }
 
 // Same sandbox as the stage preview: generated markup never gets same-origin
@@ -48,6 +50,7 @@ export default function CompareModal({
   currentCode,
   initialVersionId,
   onClose,
+  onRestore,
 }: CompareModalProps) {
   const { t } = useT();
   const headingId = useId();
@@ -108,9 +111,26 @@ export default function CompareModal({
     dialogRef.current?.focus();
   }, []);
 
+  // Restore actions, only for sides that point at a stored snapshot. The
+  // working copy on the stage ("current") has nothing to restore from.
+  const snapshotActions = (source: CompareSource | null) => {
+    if (typeof source !== 'number') return null;
+    const version = byId.get(source);
+    if (!version) return null;
+    const actionClass =
+      'inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border border-line text-surface-300 hover:text-surface-100 hover:border-line-strong hover:bg-surface-800 transition-colors focus-ring active:scale-[0.98]';
+    return (
+      <div className="flex items-center gap-1.5">
+        <button type="button" onClick={() => onRestore?.(version)} className={actionClass}>
+          {t('compare.restore')}
+        </button>
+      </div>
+    );
+  };
+
   const panels = [
-    { key: 'a', label: labelFor(sourceA), code: codeA },
-    { key: 'b', label: labelFor(sourceB), code: codeB },
+    { key: 'a', source: sourceA, label: labelFor(sourceA), code: codeA },
+    { key: 'b', source: sourceB, label: labelFor(sourceB), code: codeB },
   ];
 
   return createPortal(
@@ -222,8 +242,11 @@ export default function CompareModal({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 flex-1 min-h-0">
                   {panels.map((panel) => (
                     <figure key={panel.key} className="flex flex-col gap-2 min-h-0 min-w-0">
-                      <figcaption className="exposure-label text-surface-500 truncate">
-                        {panel.label}
+                      <figcaption className="flex items-center justify-between gap-2 min-w-0">
+                        <span className="exposure-label text-surface-500 truncate">
+                          {panel.label}
+                        </span>
+                        {snapshotActions(panel.source)}
                       </figcaption>
                       {/* Frames mount only in preview mode: the code view never
                           spins up sandboxed documents. */}
@@ -242,18 +265,22 @@ export default function CompareModal({
                 </div>
               ) : (
                 <div className="flex flex-col flex-1 min-h-0 gap-2">
-                  <div className="flex items-center justify-between gap-3 px-1">
+                  <div className="flex flex-wrap items-center justify-between gap-2 px-1">
                     <span className="exposure-label text-surface-500 truncate">
                       {panels[0].label} · {panels[1].label}
                     </span>
-                    {diff && (
-                      <span
-                        data-testid="diff-stats"
-                        className="exposure-label text-surface-400 flex-shrink-0"
-                      >
-                        {t('compare.diffStats', { added: diff.added, removed: diff.removed })}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {snapshotActions(panels[0].source)}
+                      {snapshotActions(panels[1].source)}
+                      {diff && (
+                        <span
+                          data-testid="diff-stats"
+                          className="exposure-label text-surface-400 flex-shrink-0"
+                        >
+                          {t('compare.diffStats', { added: diff.added, removed: diff.removed })}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div
                     data-testid="diff-view"

@@ -5,6 +5,8 @@ import type { ProjectVersion } from '../types';
 interface VersionCardProps {
   version: ProjectVersion;
   bookmarked: boolean;
+  /** Line delta against the next-older snapshot; omitted when unknown/unchanged. */
+  diffStats?: { added: number; removed: number };
   onRestore: () => void;
   onCompare: () => void;
   onDownload: () => void;
@@ -14,6 +16,7 @@ interface VersionCardProps {
 export default function VersionCard({
   version,
   bookmarked,
+  diffStats,
   onRestore,
   onCompare,
   onDownload,
@@ -47,6 +50,14 @@ export default function VersionCard({
           {t('chat.version', { num: version.version_num })} ·{' '}
           {new Date(version.created_at).toLocaleString()}
         </div>
+        {diffStats && diffStats.added + diffStats.removed > 0 && (
+          <div
+            data-testid="version-diff-stats"
+            className="mt-1 font-mono text-[11px] leading-none text-surface-500"
+          >
+            {t('compare.diffStats', { added: diffStats.added, removed: diffStats.removed })}
+          </div>
+        )}
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
         <button
