@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-10-18
+
+### Added
+
+- Persistent result cache: generated pages are cached in memory and SQLite, so results survive backend restarts; database failures degrade to memory-only.
+- Prompt enhancement: `POST /api/enhance-prompt` rewrites a short brief into a richer, concrete spec before generating (deterministic in mock mode); the hero input gains an "Improve prompt" action.
+- Find in code: a search bar in the code panel with a match counter, Enter/Shift+Enter navigation, Escape to close, and CSS Custom Highlight API highlighting with a graceful fallback.
+- Version comparison: compare any two snapshots — or a snapshot against the current code — from the snapshots list, with side-by-side sandboxed previews and a line diff with added/removed stats.
+- Preview error reporting: uncaught runtime errors in the sandboxed preview surface a banner with a one-click fix that starts a normal chat iteration.
+
 ## [0.3.0] - 2026-08-20
 
 ### Added
