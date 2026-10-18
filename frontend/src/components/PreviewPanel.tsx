@@ -1,11 +1,23 @@
-import { useState, useEffect, useRef } from 'react';
-import { ComputerDesktopIcon } from '@heroicons/react/24/outline';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  ComputerDesktopIcon,
+  ExclamationTriangleIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { useAppStore } from '../store/appStore';
 import type { PreviewSize, SelectedElement } from '../types';
+import { useGeneration } from '../hooks/useGeneration';
 import GenerationProgress from './GenerationProgress';
 import ErrorAlert from './ErrorAlert';
 import { useT } from '../i18n';
+import {
+  PREVIEW_ERROR_GUARD,
+  PREVIEW_ERROR_MAX_VISIBLE,
+  appendPreviewError,
+  parsePreviewError,
+  type PreviewError,
+} from '../utils/previewErrorGuard';
 
 const PREVIEW_SIZES: { value: PreviewSize; width: string }[] = [
   { value: 'desktop', width: '100%' },
@@ -156,11 +168,15 @@ export default function PreviewPanel() {
     setSelectedElement,
   } = useAppStore();
   const { t } = useT();
+  const { iterate } = useGeneration();
   // The frame the preview actually renders. Streamed code commits here only
   // when the stream settles: swapping srcDoc mid-stream reloads the iframe
   // every few hundred milliseconds (violent flicker) and partial HTML renders
   // broken. The code panel streams live; the print develops once, at the end.
   const [displayCode, setDisplayCode] = useState(currentCode);
+  // Runtime errors reported by the error guard inside the preview. Distinct
+  // messages only, bounded: this is a caption for the failure, not a log.
+  const [previewErrors, setPreviewErrors] = useState<PreviewError[]>([]);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
@@ -168,6 +184,12 @@ export default function PreviewPanel() {
       setDisplayCode(currentCode);
     }
   }, [currentCode, isGenerating, displayCode]);
+
+  // A fresh frame is a clean slate: errors travelling with the previous
+  // document must not linger over the one that just developed.
+  useEffect(() => {
+    setPreviewErrors([]);
+  }, [displayCode, previewRefreshKey]);
 
   // Reports from the navigation guard inside the preview iframe.
   useEffect(() => {
@@ -183,6 +205,18 @@ export default function PreviewPanel() {
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
   }, [t]);
+
+  // Runtime-error reports from the error guard inside the preview iframe.
+  // Shaped like every other guard report; malformed payloads are dropped.
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      const error = parsePreviewError(e.data);
+      if (!error) return;
+      setPreviewErrors((prev) => appendPreviewError(prev, error));
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, []);
 
   // Arm/disarm the select guard inside the preview iframe. The sandbox has no
   // allow-same-origin, so the guard is driven purely by postMessage; re-send
@@ -219,6 +253,20 @@ export default function PreviewPanel() {
 
   const selectedSize = PREVIEW_SIZES.find((s) => s.value === previewSize) || PREVIEW_SIZES[0];
 
+  const visibleErrors = previewErrors.slice(0, PREVIEW_ERROR_MAX_VISIBLE);
+  const overflowCount = previewErrors.length - visibleErrors.length;
+
+  // The fix is just another iteration: describe the failure in the same voice
+  // the chat uses and let the normal stream produce a new frame. Clear the
+  // banner at once — the banner must not sit over the print it just asked for,
+  // and the settled frame resets the collected errors anyway.
+  const handleFixError = useCallback(() => {
+    if (!previewErrors.length || isGenerating) return;
+    const message = visibleErrors.map((error) => error.message).join('\n');
+    iterate(t('preview.errorFixMessage', { message }));
+    setPreviewErrors([]);
+  }, [previewErrors, visibleErrors, isGenerating, iterate, t]);
+
   return (
     <div className="flex flex-col h-full animate-fade-in">
       {generationError && (
@@ -240,7 +288,7 @@ export default function PreviewPanel() {
                 <iframe
                   ref={iframeRef}
                   key={previewRefreshKey}
-                  srcDoc={displayCode + NAVIGATION_GUARD + SELECT_GUARD}
+                  srcDoc={displayCode + NAVIGATION_GUARD + SELECT_GUARD + PREVIEW_ERROR_GUARD}
                   sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
                   title={t('preview.iframeTitle')}
                   data-testid="preview-iframe"
@@ -272,6 +320,64 @@ export default function PreviewPanel() {
               <span className="loading-dot" />
               <span className="loading-dot" />
               <span className="loading-dot" />
+            </div>
+          </div>
+        )}
+
+        {/* Failure report from inside the frame: a caption pinned to the
+            bottom of the stage, never covering the print. It stays above the
+            generating overlay so a known fault remains visible (and readable)
+            while its fix develops. */}
+        {previewErrors.length > 0 && (
+          <div className="absolute bottom-3 left-3 right-3 z-20 flex justify-center pointer-events-none">
+            <div
+              role="status"
+              aria-live="polite"
+              className="pointer-events-auto w-full max-w-md rounded-lg bg-surface-800 border border-line border-l-2 border-l-status-error/50 px-3.5 py-3 shadow-overlay animate-slide-up"
+            >
+              <div className="flex items-start gap-2.5">
+                <ExclamationTriangleIcon
+                  className="w-4 h-4 mt-0.5 flex-shrink-0 text-status-error"
+                  aria-hidden="true"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-surface-100">{t('preview.errorTitle')}</p>
+                  <ul className="mt-1 space-y-0.5">
+                    {visibleErrors.map((error) => (
+                      <li
+                        key={error.message}
+                        title={error.message}
+                        className="font-mono text-[11px] leading-snug text-surface-300 truncate"
+                      >
+                        {error.message}
+                      </li>
+                    ))}
+                  </ul>
+                  {overflowCount > 0 && (
+                    <p className="exposure-label mt-1.5 text-surface-500">
+                      {t('preview.errorMore', { count: overflowCount })}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleFixError}
+                    disabled={isGenerating}
+                    className="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-primary-600 text-white border border-transparent shadow-cta hover:bg-primary-500 active:scale-[0.98] transition-colors focus-ring disabled:bg-surface-800 disabled:text-surface-500 disabled:border-line disabled:shadow-none disabled:cursor-not-allowed"
+                  >
+                    {t('preview.errorFix')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewErrors([])}
+                    aria-label={t('preview.errorDismiss')}
+                    className="p-1.5 rounded-md bg-surface-900 border border-line text-surface-300 hover:text-surface-100 hover:border-line-strong transition-colors focus-ring"
+                  >
+                    <XMarkIcon className="w-4 h-4" aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

@@ -106,6 +106,11 @@ export const en: RuDictionary = {
     emptySubtitle: 'Enter a prompt and click Generate',
     linkOpened: 'Link opened in a new tab',
     linkBlocked: 'Internal links are unavailable in the preview',
+    errorTitle: 'Error in preview',
+    errorFix: 'Fix',
+    errorDismiss: 'Dismiss',
+    errorMore: '{count} more',
+    errorFixMessage: 'The preview threw an error: {message}. Fix it.',
   },
   prompt: {
     title: 'What do you want to build?',

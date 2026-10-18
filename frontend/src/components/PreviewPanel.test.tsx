@@ -1,18 +1,33 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import PreviewPanel from './PreviewPanel';
 import { useAppStore } from '../store/appStore';
 import toast from 'react-hot-toast';
+
+const { iterateMock } = vi.hoisted(() => ({ iterateMock: vi.fn() }));
 
 vi.mock('react-hot-toast', () => {
   const toast = Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() });
   return { default: toast };
 });
 
+vi.mock('../hooks/useGeneration', () => ({
+  useGeneration: () => ({
+    generate: vi.fn(),
+    iterate: iterateMock,
+    cancel: vi.fn(),
+    error: null,
+    isGenerating: false,
+    status: '',
+  }),
+}));
+
 beforeEach(() => {
   vi.mocked(toast).mockReset();
   vi.mocked(toast.success).mockReset();
   vi.mocked(toast.error).mockReset();
+  iterateMock.mockReset();
 });
 
 describe('PreviewPanel', () => {
@@ -236,5 +251,148 @@ describe('PreviewPanel', () => {
     rerender(<PreviewPanel />);
     const second = screen.getByTestId('preview-iframe');
     expect(second).not.toBe(first);
+  });
+
+  it('appends the preview error guard to the iframe document', () => {
+    useAppStore.setState({ currentCode: '<html></html>' });
+    render(<PreviewPanel />);
+    const iframe = screen.getByTestId('preview-iframe') as HTMLIFrameElement;
+    const srcDoc = iframe.getAttribute('srcdoc') ?? '';
+    expect(srcDoc).toContain('purl:preview-error');
+    expect(srcDoc).toContain('unhandledrejection');
+  });
+});
+
+const postPreviewError = (message: unknown, extra: Record<string, unknown> = {}) => {
+  window.postMessage({ type: 'purl:preview-error', message, ...extra }, '*');
+};
+
+describe('PreviewPanel preview errors', () => {
+  beforeEach(() => {
+    useAppStore.setState({ currentCode: '<html></html>', isGenerating: false });
+  });
+
+  it('does not show the banner until an error arrives', () => {
+    render(<PreviewPanel />);
+    expect(screen.queryByText('Ошибка в предпросмотре')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Исправить' })).not.toBeInTheDocument();
+  });
+
+  it('shows the banner with the reported message', async () => {
+    render(<PreviewPanel />);
+    postPreviewError('Cannot read properties of null', { line: 12, col: 4 });
+
+    expect(await screen.findByText('Ошибка в предпросмотре')).toBeInTheDocument();
+    expect(screen.getByText('Cannot read properties of null')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toBeInTheDocument();
+  });
+
+  it('deduplicates identical errors', async () => {
+    render(<PreviewPanel />);
+    postPreviewError('boom');
+    postPreviewError('boom');
+
+    await screen.findByText('boom');
+    expect(screen.getAllByText('boom')).toHaveLength(1);
+  });
+
+  it('collapses extra distinct errors into the overflow line', async () => {
+    render(<PreviewPanel />);
+    postPreviewError('one');
+    postPreviewError('two');
+    postPreviewError('three');
+    postPreviewError('four');
+
+    expect(await screen.findByText('one')).toBeInTheDocument();
+    expect(screen.getByText('three')).toBeInTheDocument();
+    expect(screen.queryByText('four')).not.toBeInTheDocument();
+    expect(screen.getByText('Ещё: 1')).toBeInTheDocument();
+  });
+
+  it('dismisses the banner without sending an iteration', async () => {
+    const user = userEvent.setup();
+    render(<PreviewPanel />);
+    postPreviewError('boom');
+    await screen.findByText('boom');
+
+    await user.click(screen.getByRole('button', { name: 'Скрыть' }));
+
+    expect(screen.queryByText('boom')).not.toBeInTheDocument();
+    expect(screen.queryByText('Ошибка в предпросмотре')).not.toBeInTheDocument();
+    expect(iterateMock).not.toHaveBeenCalled();
+  });
+
+  it('sends the localized fix message through iterate and clears the banner', async () => {
+    const user = userEvent.setup();
+    render(<PreviewPanel />);
+    postPreviewError('boom');
+    postPreviewError('bang');
+
+    await user.click(await screen.findByRole('button', { name: 'Исправить' }));
+
+    expect(iterateMock).toHaveBeenCalledWith(
+      'В предпросмотре ошибка: boom\nbang. Исправь её.',
+    );
+    expect(screen.queryByText('boom')).not.toBeInTheDocument();
+  });
+
+  it('only includes the visible errors in the fix message', async () => {
+    const user = userEvent.setup();
+    render(<PreviewPanel />);
+    postPreviewError('one');
+    postPreviewError('two');
+    postPreviewError('three');
+    postPreviewError('four');
+
+    await user.click(await screen.findByRole('button', { name: 'Исправить' }));
+
+    expect(iterateMock).toHaveBeenCalledWith(
+      'В предпросмотре ошибка: one\ntwo\nthree. Исправь её.',
+    );
+  });
+
+  it('disables the fix button while generating', async () => {
+    useAppStore.setState({ isGenerating: true });
+    render(<PreviewPanel />);
+    postPreviewError('boom');
+
+    expect(await screen.findByRole('button', { name: 'Исправить' })).toBeDisabled();
+  });
+
+  it('ignores malformed preview-error reports', () => {
+    render(<PreviewPanel />);
+    window.postMessage({ type: 'purl:preview-error' }, '*');
+    window.postMessage({ type: 'purl:preview-error', message: 42 }, '*');
+    window.postMessage({ type: 'purl:preview-error', message: '   ' }, '*');
+    window.postMessage({ type: 'unrelated', message: 'boom' }, '*');
+    window.postMessage(null, '*');
+
+    expect(screen.queryByText('Ошибка в предпросмотре')).not.toBeInTheDocument();
+  });
+
+  it('clears collected errors when the preview code changes', async () => {
+    const { rerender } = render(<PreviewPanel />);
+    postPreviewError('boom');
+    await screen.findByText('boom');
+
+    useAppStore.setState({ currentCode: '<html>new</html>' });
+    rerender(<PreviewPanel />);
+
+    await waitFor(() => {
+      expect(screen.queryByText('boom')).not.toBeInTheDocument();
+    });
+  });
+
+  it('clears collected errors when the preview refresh key bumps', async () => {
+    const { rerender } = render(<PreviewPanel />);
+    postPreviewError('boom');
+    await screen.findByText('boom');
+
+    useAppStore.getState().bumpPreviewRefresh();
+    rerender(<PreviewPanel />);
+
+    await waitFor(() => {
+      expect(screen.queryByText('boom')).not.toBeInTheDocument();
+    });
   });
 });

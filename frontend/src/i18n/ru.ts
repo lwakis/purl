@@ -110,6 +110,11 @@ export const ru = {
     emptySubtitle: 'Введите промпт и нажмите «Сгенерировать»',
     linkOpened: 'Ссылка открыта в новой вкладке',
     linkBlocked: 'Внутренние ссылки в предпросмотре недоступны',
+    errorTitle: 'Ошибка в предпросмотре',
+    errorFix: 'Исправить',
+    errorDismiss: 'Скрыть',
+    errorMore: 'Ещё: {count}',
+    errorFixMessage: 'В предпросмотре ошибка: {message}. Исправь её.',
   },
   prompt: {
     title: 'Что вы хотите создать?',
