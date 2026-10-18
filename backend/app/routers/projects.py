@@ -8,6 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import Project, ProjectVersion, get_db
 from app.models import (
+    BranchFromVersionRequest,
+    DuplicateProjectRequest,
     PaginatedProjects,
     ProjectCreate,
     ProjectResponse,
@@ -126,6 +128,47 @@ async def get_project(
     return _project_to_response(project)
 
 
+@router.post('/{project_id}/duplicate', response_model=ProjectResponse, status_code=201)
+async def duplicate_project(
+    project_id: int,
+    req: DuplicateProjectRequest | None = None,
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+):
+    """Duplicate a project, copying all of its versions."""
+    source = await _get_project_or_404(db, project_id)
+
+    project = Project(
+        name=(req.name if req and req.name else None) or f'{source.name} (copy)',
+        prompt=source.prompt,
+        current_code=source.current_code,
+        theme=source.theme,
+        style=source.style,
+        session_id=source.session_id,
+    )
+    db.add(project)
+    await db.flush()
+
+    stmt = (
+        select(ProjectVersion)
+        .where(ProjectVersion.project_id == project_id)
+        .order_by(ProjectVersion.version_num.asc())
+    )
+    result = await db.execute(stmt)
+    for version in result.scalars().all():
+        db.add(
+            ProjectVersion(
+                project_id=project.id,
+                version_num=version.version_num,
+                code=version.code,
+                message=version.message,
+            )
+        )
+
+    await db.flush()
+    await db.refresh(project)
+    return _project_to_response(project)
+
+
 @router.put('/{project_id}', response_model=ProjectResponse)
 async def update_project(
     project_id: int,
@@ -226,3 +269,40 @@ async def get_version(
     if version is None:
         raise HTTPException(status_code=404, detail='Version not found')
     return _version_to_response(version)
+
+
+@router.post(
+    '/{project_id}/versions/{version_id}/branch',
+    response_model=ProjectResponse,
+    status_code=201,
+)
+async def branch_from_version(
+    project_id: int,
+    version_id: int,
+    req: BranchFromVersionRequest | None = None,
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+):
+    """Create a new project branched from a specific version."""
+    source = await _get_project_or_404(db, project_id)
+
+    stmt = select(ProjectVersion).where(
+        ProjectVersion.id == version_id,
+        ProjectVersion.project_id == project_id,
+    )
+    result = await db.execute(stmt)
+    version = result.scalar_one_or_none()
+    if version is None:
+        raise HTTPException(status_code=404, detail='Version not found')
+
+    project = Project(
+        name=(req.name if req and req.name else None) or f'{source.name} — v{version.version_num}',
+        prompt=version.message or source.prompt,
+        current_code=version.code,
+        theme=source.theme,
+        style=source.style,
+        session_id=source.session_id,
+    )
+    db.add(project)
+    await db.flush()
+    await db.refresh(project)
+    return _project_to_response(project)

@@ -146,6 +146,14 @@ class ProjectVersionCreate(BaseModel):
     message: str | None = None
 
 
+class DuplicateProjectRequest(BaseModel):
+    name: str | None = None
+
+
+class BranchFromVersionRequest(BaseModel):
+    name: str | None = None
+
+
 class TemplateResponse(BaseModel):
     id: int
     title: str
