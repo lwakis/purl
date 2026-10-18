@@ -2,21 +2,54 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
+import logging
 from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
 from app.config import settings
 from app.models import GenerateRequest, IterateRequest
 from app.services.cache_service import cache
-from app.services.llm_service import generate, iterate_stream
+from app.services.llm_service import (
+    _stream_llm,
+    generate,
+    iterate_stream,
+    resolve_provider,
+)
 from app.services.provider_catalog import list_providers
 from app.services.rate_limiter import rate_limiter
 from app.services.token_usage import usage_store
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix='/api', tags=['generate'])
+
+
+# ── Provider connection test ─────────────────────────────────────────────────
+
+
+class ModelTestRequest(BaseModel):
+    """Request body for the provider connection test."""
+
+    model: str | None = None
+
+
+class ModelTestResponse(BaseModel):
+    """Result of a provider connection test."""
+
+    ok: bool
+    reason: str
+    provider: str | None = None
+    model: str | None = None
+
+
+_TEST_SYSTEM_PROMPT = 'You are a connection test. Reply with the single word: OK.'
+_TEST_USER_MESSAGE = 'ping'
+_TEST_TIMEOUT_SECONDS = 20
 
 
 @router.get('/models')
@@ -87,6 +120,55 @@ def _rate_limit_error(retry_after: int) -> StreamingResponse:
         media_type='application/json',
         headers={'Retry-After': str(retry_after)},
     )
+
+
+async def _probe_provider(provider) -> None:
+    """Send one minimal completion through the streaming LLM path.
+
+    Returns as soon as the first content chunk arrives (that is all a
+    connection test needs). Raises on a provider error event or any transport
+    failure so the caller can report ``ok=False``.
+    """
+    async for sse in _stream_llm(provider, _TEST_SYSTEM_PROMPT, _TEST_USER_MESSAGE):
+        if not sse.startswith('data: '):
+            continue
+        try:
+            payload = json.loads(sse[6:])
+        except (json.JSONDecodeError, IndexError):
+            continue
+        event_type = payload.get('type')
+        if event_type == 'error':
+            raise RuntimeError(payload.get('content', 'llm_provider_error'))
+        if event_type == 'code' and payload.get('content'):
+            return
+
+
+@router.post('/models/test')
+async def api_models_test(req: ModelTestRequest, request: Request):
+    """Test connectivity to the configured (or requested) LLM provider.
+
+    Never fails the request: any provider error or timeout is reported as
+    ``{ok: false, reason: "error"}`` with HTTP 200.
+    """
+    rate_key, limit = _get_rate_limit_key(request)
+    result = rate_limiter.check(rate_key, limit)
+    if not result.allowed:
+        return _rate_limit_error(int(result.reset_time))
+
+    provider = resolve_provider(req.model)
+
+    if not provider.ready:
+        return ModelTestResponse(ok=True, reason='mock', provider=None, model=None)
+
+    try:
+        await asyncio.wait_for(_probe_provider(provider), timeout=_TEST_TIMEOUT_SECONDS)
+    except Exception as exc:  # noqa: BLE001 — any failure maps to ok=False
+        logger.warning('Provider connection test failed for %s: %s', provider.name, exc)
+        return ModelTestResponse(
+            ok=False, reason='error', provider=provider.name, model=provider.model
+        )
+
+    return ModelTestResponse(ok=True, reason='ok', provider=provider.name, model=provider.model)
 
 
 @router.post('/generate')
