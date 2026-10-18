@@ -187,6 +187,7 @@ Interactive docs are served at `/docs` when the backend is running (FastAPI Swag
 | GET | `/api/models` | List available LLM providers and their models |
 | POST | `/api/generate` | Generate a design; returns an SSE stream |
 | POST | `/api/iterate` | Iterate on existing code via chat; SSE stream |
+| POST | `/api/enhance-prompt` | Rewrite a short brief into a richer, concrete spec; returns `{prompt}` |
 | GET | `/api/projects` | List projects for a session — supports `q` (name/prompt search), `page`, `page_size`; returns `{items, total, page, page_size}` |
 | POST | `/api/projects` | Create a project |
 | GET | `/api/projects/{id}` | Get a project |

@@ -17,6 +17,9 @@ What's in the repo right now:
 - [x] Element selection — click a preview element to iterate on it directly
 - [x] Reference image attachments — multimodal input (OpenAI and Anthropic wire formats; cache is skipped when images are present)
 - [x] Local-first: projects and versions stored in SQLite via the backend (no accounts, no signup)
+- [x] Prompt enhancement (`POST /api/enhance-prompt`; deterministic in mock mode)
+- [x] Preview runtime-error reporting with a one-click fix through chat
+- [x] Find-in-code in the code panel (match counter/navigation, CSS Custom Highlight API)
 
 ### Models and providers
 
@@ -32,11 +35,13 @@ What's in the repo right now:
 - [x] Automatic project autosave (no manual Save button)
 - [x] Inline project rename
 - [x] Template catalog API with 8 seeded starter prompts (`GET /api/templates`; backend-only — the gallery UI was removed in the hero-prompt redesign)
+- [x] Version comparison from the snapshots list (side-by-side preview + line diff)
 
 ### Platform
 
 - [x] In-memory rate limiting (100 req/h per client IP)
 - [x] In-memory TTL result cache (prompt hash, 24 h default)
+- [x] Persistent result cache (memory + SQLite, survives restarts)
 - [x] Mock mode: full end-to-end flow without an LLM API key
 - [x] Docker Compose setup, CI workflow, test suites, pre-commit hooks
 - [x] Versioned releases and changelogs (release workflow; tags `v0.1.0`/`v0.2.0` published)
@@ -59,7 +64,6 @@ Ideas that may or may not be worth building. Nothing here is a promise.
 | [ ] Figma-compatible export | Would need design-token mapping from generated HTML; large effort, unclear payoff for the core use case |
 | [ ] Custom system prompts | User-defined generation instructions; useful for power users who run their own models |
 | [ ] Plugin / theme system | Community themes and generation presets — only if there is a community to serve them |
-| [ ] Persistent prompt cache | The cache is in-memory today; a persistent store would survive restarts (SQLite is already a dependency, so this is small) |
 | [ ] Export to CodeSandbox / StackBlitz | One-click "open in sandbox" — mostly a wrapper around existing download/export, low effort |
 | [ ] CLI | Headless generation for scripting and CI |
 
