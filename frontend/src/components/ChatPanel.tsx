@@ -21,6 +21,7 @@ import { useT } from '../i18n';
 import type { ProjectVersion, ProviderInfo } from '../types';
 import MarkdownMessage from './MarkdownMessage';
 import VersionCard from './VersionCard';
+import CompareModal from './CompareModal';
 
 interface ChatPanelProps {
   hideInput?: boolean;
@@ -57,6 +58,8 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
   const [disliked, setDisliked] = useState<Set<number>>(new Set());
   const [versions, setVersions] = useState<ProjectVersion[]>([]);
   const [bookmarks, setBookmarks] = useState<Set<number>>(new Set());
+  // Which snapshot the comparison overlay was opened from; null = closed.
+  const [compareVersion, setCompareVersion] = useState<ProjectVersion | null>(null);
   const [modelPopoverOpen, setModelPopoverOpen] = useState(false);
   const [providers, setProviders] = useState<ProviderInfo[] | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -235,6 +238,10 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
     [setCurrentCode, t],
   );
 
+  const handleCompareVersion = useCallback((version: ProjectVersion) => {
+    setCompareVersion(version);
+  }, []);
+
   const handleDownloadVersion = useCallback(
     (version: ProjectVersion) => {
       if (!version.code) return;
@@ -372,6 +379,7 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
                   version={version}
                   bookmarked={bookmarks.has(version.id)}
                   onRestore={() => handleRestoreVersion(version)}
+                  onCompare={() => handleCompareVersion(version)}
                   onDownload={() => handleDownloadVersion(version)}
                   onBookmark={() => toggleBookmark(version.id)}
                 />
@@ -583,6 +591,16 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
             </div>
           </div>
         </div>
+      )}
+
+      {compareVersion && (
+        <CompareModal
+          key={compareVersion.id}
+          versions={versions}
+          currentCode={currentCode}
+          initialVersionId={compareVersion.id}
+          onClose={() => setCompareVersion(null)}
+        />
       )}
     </div>
   );

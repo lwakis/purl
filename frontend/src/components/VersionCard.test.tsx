@@ -18,6 +18,7 @@ function renderCard(overrides: Partial<Parameters<typeof VersionCard>[0]> = {}) 
     version,
     bookmarked: false,
     onRestore: vi.fn(),
+    onCompare: vi.fn(),
     onDownload: vi.fn(),
     onBookmark: vi.fn(),
     ...overrides,
@@ -57,6 +58,14 @@ describe('VersionCard', () => {
     expect(props.onRestore).toHaveBeenCalledTimes(1);
     fireEvent.keyDown(card, { key: ' ' });
     expect(props.onRestore).toHaveBeenCalledTimes(2);
+  });
+
+  it('opens the comparison without restoring', async () => {
+    const user = userEvent.setup();
+    const props = renderCard();
+    await user.click(screen.getByRole('button', { name: 'Сравнить' }));
+    expect(props.onCompare).toHaveBeenCalledTimes(1);
+    expect(props.onRestore).not.toHaveBeenCalled();
   });
 
   it('downloads the version without restoring', async () => {

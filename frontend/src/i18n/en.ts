@@ -136,6 +136,18 @@ export const en: RuDictionary = {
     searchCount: '{current} of {total}',
     searchNoResults: 'No matches',
   },
+  compare: {
+    title: 'Compare versions',
+    open: 'Compare',
+    close: 'Close comparison',
+    versionA: 'Version A',
+    versionB: 'Version B',
+    currentCode: 'Current code',
+    preview: 'Preview',
+    code: 'Code',
+    notEnough: 'At least two versions are needed',
+    diffStats: '+{added} / −{removed}',
+  },
   sidebar: {
     title: 'Projects',
     newProject: 'New project',

@@ -1,20 +1,59 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ChatPanel from './ChatPanel';
 import { useAppStore } from '../store/appStore';
-import type { ChatMessage } from '../types';
+import type { ChatMessage, Project, ProjectVersion } from '../types';
 
 vi.mock('../services/sse', () => ({
   connectGenerateSSE: vi.fn(),
   connectIterateSSE: vi.fn(),
 }));
 
+vi.mock('../services/api', () => ({
+  getModels: vi.fn(),
+  getProjectVersions: vi.fn(),
+}));
+
 import { connectIterateSSE } from '../services/sse';
+import { getProjectVersions } from '../services/api';
+
+const project: Project = {
+  id: 1,
+  name: 'Лендинг',
+  prompt: 'Лендинг для стартапа',
+  current_code: '<html>current</html>',
+  theme: 'dark',
+  style: 'minimal',
+  session_id: 's1',
+  created_at: '2024-01-01T00:00:00Z',
+  updated_at: '2024-01-01T00:00:00Z',
+};
+
+const versions: ProjectVersion[] = [
+  {
+    id: 11,
+    project_id: 1,
+    version_num: 1,
+    code: '<html>\n<p>v1</p>\n</html>',
+    message: 'first',
+    created_at: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 12,
+    project_id: 1,
+    version_num: 2,
+    code: '<html>\n<p>v2</p>\n</html>',
+    message: 'second',
+    created_at: '2024-01-02T00:00:00Z',
+  },
+];
 
 beforeEach(() => {
   vi.mocked(connectIterateSSE).mockReset();
   vi.mocked(connectIterateSSE).mockResolvedValue(undefined);
+  vi.mocked(getProjectVersions).mockReset();
+  vi.mocked(getProjectVersions).mockResolvedValue([]);
   useAppStore.setState({
     currentCode: '<html>design</html>',
     sessionId: 's1',
@@ -72,5 +111,47 @@ describe('ChatPanel', () => {
   it('hides the input when hideInput is set', () => {
     render(<ChatPanel hideInput />);
     expect(screen.queryByRole('textbox', { name: 'Сообщение в чат' })).not.toBeInTheDocument();
+  });
+
+  it('opens the compare modal with the clicked version preselected', async () => {
+    useAppStore.setState({ currentProject: project, currentCode: '<html>\ncurrent\n</html>' });
+    vi.mocked(getProjectVersions).mockResolvedValue(versions);
+    const user = userEvent.setup();
+    render(<ChatPanel />);
+
+    const compareButtons = await screen.findAllByRole('button', { name: 'Сравнить' });
+    await user.click(compareButtons[0]);
+
+    expect(await screen.findByRole('dialog', { name: 'Сравнение версий' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Версия A')).toHaveValue('11');
+    expect(screen.getByLabelText('Версия B')).toHaveValue('current');
+  });
+
+  it('closes the compare modal with Escape', async () => {
+    useAppStore.setState({ currentProject: project, currentCode: '<html>\ncurrent\n</html>' });
+    vi.mocked(getProjectVersions).mockResolvedValue(versions);
+    const user = userEvent.setup();
+    render(<ChatPanel />);
+
+    const compareButtons = await screen.findAllByRole('button', { name: 'Сравнить' });
+    await user.click(compareButtons[0]);
+    expect(await screen.findByRole('dialog', { name: 'Сравнение версий' })).toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Сравнение версий' })).not.toBeInTheDocument();
+    });
+  });
+
+  it('hides the compare entry when there are no usable versions', async () => {
+    useAppStore.setState({ currentProject: project });
+    vi.mocked(getProjectVersions).mockResolvedValue([{ ...versions[0], code: null }]);
+    render(<ChatPanel />);
+
+    await waitFor(() => expect(getProjectVersions).toHaveBeenCalledWith(1));
+    await waitFor(() => {
+      expect(screen.queryByText('Снимки')).not.toBeInTheDocument();
+    });
+    expect(screen.queryByRole('button', { name: 'Сравнить' })).not.toBeInTheDocument();
   });
 });

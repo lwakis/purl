@@ -1,4 +1,4 @@
-import { ArrowDownTrayIcon, BookmarkIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, ArrowsRightLeftIcon, BookmarkIcon } from '@heroicons/react/24/outline';
 import { useT } from '../i18n';
 import type { ProjectVersion } from '../types';
 
@@ -6,6 +6,7 @@ interface VersionCardProps {
   version: ProjectVersion;
   bookmarked: boolean;
   onRestore: () => void;
+  onCompare: () => void;
   onDownload: () => void;
   onBookmark: () => void;
 }
@@ -14,6 +15,7 @@ export default function VersionCard({
   version,
   bookmarked,
   onRestore,
+  onCompare,
   onDownload,
   onBookmark,
 }: VersionCardProps) {
@@ -47,6 +49,17 @@ export default function VersionCard({
         </div>
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onCompare();
+          }}
+          title={t('compare.open')}
+          aria-label={t('compare.open')}
+          className="w-7 h-7 rounded-full border border-line flex items-center justify-center text-surface-400 hover:text-surface-100 hover:border-line-strong transition-colors focus-ring active:scale-95"
+        >
+          <ArrowsRightLeftIcon className="w-3.5 h-3.5" />
+        </button>
         <button
           onClick={(e) => {
             e.stopPropagation();

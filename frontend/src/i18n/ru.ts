@@ -140,6 +140,18 @@ export const ru = {
     searchCount: '{current} из {total}',
     searchNoResults: 'Нет совпадений',
   },
+  compare: {
+    title: 'Сравнение версий',
+    open: 'Сравнить',
+    close: 'Закрыть сравнение',
+    versionA: 'Версия A',
+    versionB: 'Версия B',
+    currentCode: 'Текущий код',
+    preview: 'Предпросмотр',
+    code: 'Код',
+    notEnough: 'Нужно минимум две версии',
+    diffStats: '+{added} / −{removed}',
+  },
   sidebar: {
     title: 'Проекты',
     newProject: 'Новый проект',
