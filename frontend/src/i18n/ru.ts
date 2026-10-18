@@ -22,7 +22,8 @@ export const ru = {
     switchLanguage: 'Переключить язык',
   },
   usage: {
-    tokens: (n: number) => `${n.toLocaleString('ru-RU')} ${pluralRu(n, 'токен', 'токена', 'токенов')}`,
+    tokens: (n: number) =>
+      `${n.toLocaleString('ru-RU')} ${pluralRu(n, 'токен', 'токена', 'токенов')}`,
     title: 'Потрачено токенов за сессию',
   },
   autosave: {
@@ -131,6 +132,13 @@ export const ru = {
     downloadStarted: 'Скачивание начато',
     reactSoon: 'Экспорт в React скоро появится',
     empty: 'Сгенерированный код появится здесь',
+    searchTitle: 'Найти в коде',
+    searchPlaceholder: 'Найти в коде…',
+    searchPrev: 'Предыдущее совпадение',
+    searchNext: 'Следующее совпадение',
+    searchClose: 'Закрыть поиск',
+    searchCount: '{current} из {total}',
+    searchNoResults: 'Нет совпадений',
   },
   sidebar: {
     title: 'Проекты',

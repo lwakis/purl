@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CodePanel from './CodePanel';
 import { useAppStore } from '../store/appStore';
@@ -28,6 +28,9 @@ vi.mock('react-syntax-highlighter/dist/esm/styles/prism/one-dark', () => ({
 import toast from 'react-hot-toast';
 
 const CODE = '<html><body>Hello</body></html>';
+const SEARCH_CODE = '<p>match</p><p>match</p><p>match</p>';
+const SEARCH_TITLE = 'Найти в коде';
+const SEARCH_PLACEHOLDER = 'Найти в коде…';
 
 beforeEach(() => {
   vi.mocked(toast.success).mockReset();
@@ -111,5 +114,196 @@ describe('CodePanel', () => {
     useAppStore.setState({ currentCode: CODE });
     render(<CodePanel />);
     expect(screen.getByText(CODE)).toBeInTheDocument();
+  });
+});
+
+describe('CodePanel find in code', () => {
+  it('keeps the search toggle disabled with no code and enabled with code', () => {
+    const { rerender } = render(<CodePanel />);
+    expect(screen.getByRole('button', { name: SEARCH_TITLE })).toBeDisabled();
+    expect(screen.queryByLabelText(SEARCH_PLACEHOLDER)).not.toBeInTheDocument();
+
+    useAppStore.setState({ currentCode: CODE });
+    rerender(<CodePanel />);
+    expect(screen.getByRole('button', { name: SEARCH_TITLE })).toBeEnabled();
+  });
+
+  it('opens the find bar and focuses the input from the toolbar button', async () => {
+    const user = userEvent.setup();
+    useAppStore.setState({ currentCode: SEARCH_CODE });
+    render(<CodePanel />);
+
+    await user.click(screen.getByRole('button', { name: SEARCH_TITLE }));
+
+    const input = screen.getByLabelText(SEARCH_PLACEHOLDER);
+    expect(input).toBeInTheDocument();
+    expect(input).toHaveFocus();
+    expect(screen.getByRole('button', { name: SEARCH_TITLE })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+
+  it('counts all matches for the query', async () => {
+    const user = userEvent.setup();
+    useAppStore.setState({ currentCode: SEARCH_CODE });
+    render(<CodePanel />);
+    await user.click(screen.getByRole('button', { name: SEARCH_TITLE }));
+    await user.type(screen.getByLabelText(SEARCH_PLACEHOLDER), 'match');
+
+    expect(screen.getByText('1 из 3')).toBeInTheDocument();
+  });
+
+  it('navigates next and previous, wrapping at both ends', async () => {
+    const user = userEvent.setup();
+    useAppStore.setState({ currentCode: SEARCH_CODE });
+    render(<CodePanel />);
+    await user.click(screen.getByRole('button', { name: SEARCH_TITLE }));
+    await user.type(screen.getByLabelText(SEARCH_PLACEHOLDER), 'match');
+
+    await user.click(screen.getByRole('button', { name: 'Следующее совпадение' }));
+    expect(screen.getByText('2 из 3')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Следующее совпадение' }));
+    expect(screen.getByText('3 из 3')).toBeInTheDocument();
+
+    // wraps forward to the first
+    await user.click(screen.getByRole('button', { name: 'Следующее совпадение' }));
+    expect(screen.getByText('1 из 3')).toBeInTheDocument();
+
+    // wraps backward to the last
+    await user.click(screen.getByRole('button', { name: 'Предыдущее совпадение' }));
+    expect(screen.getByText('3 из 3')).toBeInTheDocument();
+  });
+
+  it('steps with Enter and Shift+Enter', async () => {
+    const user = userEvent.setup();
+    useAppStore.setState({ currentCode: SEARCH_CODE });
+    render(<CodePanel />);
+    await user.click(screen.getByRole('button', { name: SEARCH_TITLE }));
+    await user.type(screen.getByLabelText(SEARCH_PLACEHOLDER), 'match');
+
+    await user.keyboard('{Enter}');
+    expect(screen.getByText('2 из 3')).toBeInTheDocument();
+
+    await user.keyboard('{Shift>}{Enter}{/Shift}');
+    expect(screen.getByText('1 из 3')).toBeInTheDocument();
+  });
+
+  it('shows the no-results state for a query with no matches', async () => {
+    const user = userEvent.setup();
+    useAppStore.setState({ currentCode: SEARCH_CODE });
+    render(<CodePanel />);
+    await user.click(screen.getByRole('button', { name: SEARCH_TITLE }));
+    await user.type(screen.getByLabelText(SEARCH_PLACEHOLDER), 'zzz');
+
+    expect(screen.getByText('Нет совпадений')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Следующее совпадение' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Предыдущее совпадение' })).toBeDisabled();
+  });
+
+  it('closes on Escape and returns focus to the toggle button', async () => {
+    const user = userEvent.setup();
+    useAppStore.setState({ currentCode: SEARCH_CODE });
+    render(<CodePanel />);
+    const toggle = screen.getByRole('button', { name: SEARCH_TITLE });
+    await user.click(toggle);
+    expect(screen.getByLabelText(SEARCH_PLACEHOLDER)).toHaveFocus();
+
+    await user.keyboard('{Escape}');
+
+    expect(screen.queryByLabelText(SEARCH_PLACEHOLDER)).not.toBeInTheDocument();
+    expect(toggle).toHaveFocus();
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('closes on the close button and returns focus to the toggle button', async () => {
+    const user = userEvent.setup();
+    useAppStore.setState({ currentCode: SEARCH_CODE });
+    render(<CodePanel />);
+    const toggle = screen.getByRole('button', { name: SEARCH_TITLE });
+    await user.click(toggle);
+    await user.click(screen.getByRole('button', { name: 'Закрыть поиск' }));
+
+    expect(screen.queryByLabelText(SEARCH_PLACEHOLDER)).not.toBeInTheDocument();
+    expect(toggle).toHaveFocus();
+  });
+
+  it('recalculates matches and clamps the active index when the code shrinks', async () => {
+    const user = userEvent.setup();
+    useAppStore.setState({ currentCode: SEARCH_CODE });
+    render(<CodePanel />);
+    await user.click(screen.getByRole('button', { name: SEARCH_TITLE }));
+    await user.type(screen.getByLabelText(SEARCH_PLACEHOLDER), 'match');
+
+    await user.click(screen.getByRole('button', { name: 'Следующее совпадение' }));
+    await user.click(screen.getByRole('button', { name: 'Следующее совпадение' }));
+    expect(screen.getByText('3 из 3')).toBeInTheDocument();
+
+    act(() => {
+      useAppStore.setState({ currentCode: '<p>match</p>' });
+    });
+
+    expect(screen.getByText('1 из 1')).toBeInTheDocument();
+  });
+
+  it('closes the bar when the code disappears', async () => {
+    const user = userEvent.setup();
+    useAppStore.setState({ currentCode: SEARCH_CODE });
+    render(<CodePanel />);
+    await user.click(screen.getByRole('button', { name: SEARCH_TITLE }));
+    expect(screen.getByLabelText(SEARCH_PLACEHOLDER)).toBeInTheDocument();
+
+    act(() => {
+      useAppStore.setState({ currentCode: '' });
+    });
+
+    expect(screen.queryByLabelText(SEARCH_PLACEHOLDER)).not.toBeInTheDocument();
+  });
+
+  it('degrades gracefully without the CSS Custom Highlight API', async () => {
+    // jsdom ships neither CSS.highlights nor Highlight — the fallback path
+    // must still count and navigate without throwing.
+    expect(
+      (globalThis as { CSS?: { highlights?: unknown } }).CSS?.highlights,
+    ).toBeUndefined();
+
+    const user = userEvent.setup();
+    useAppStore.setState({ currentCode: SEARCH_CODE });
+    render(<CodePanel />);
+    await user.click(screen.getByRole('button', { name: SEARCH_TITLE }));
+    await user.type(screen.getByLabelText(SEARCH_PLACEHOLDER), 'match');
+    await user.click(screen.getByRole('button', { name: 'Следующее совпадение' }));
+
+    expect(screen.getByText('2 из 3')).toBeInTheDocument();
+  });
+
+  it('registers ranges through the Custom Highlight API when available', async () => {
+    const registry = new Map<string, unknown>();
+    class HighlightStub {
+      ranges: Range[];
+      constructor(...ranges: Range[]) {
+        this.ranges = ranges;
+      }
+    }
+    const previousCSS = (globalThis as { CSS?: unknown }).CSS;
+    vi.stubGlobal('Highlight', HighlightStub);
+    (globalThis as { CSS?: unknown }).CSS = { highlights: registry };
+
+    try {
+      const user = userEvent.setup();
+      useAppStore.setState({ currentCode: SEARCH_CODE });
+      render(<CodePanel />);
+      await user.click(screen.getByRole('button', { name: SEARCH_TITLE }));
+      await user.type(screen.getByLabelText(SEARCH_PLACEHOLDER), 'match');
+
+      expect(registry.has('purl-code-search')).toBe(true);
+      expect(registry.has('purl-code-search-active')).toBe(true);
+      const all = registry.get('purl-code-search') as HighlightStub;
+      expect(all.ranges).toHaveLength(3);
+    } finally {
+      (globalThis as { CSS?: unknown }).CSS = previousCSS;
+      vi.unstubAllGlobals();
+    }
   });
 });

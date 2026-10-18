@@ -128,6 +128,13 @@ export const en: RuDictionary = {
     downloadStarted: 'Download started',
     reactSoon: 'React export coming soon',
     empty: 'Generated code will appear here',
+    searchTitle: 'Find in code',
+    searchPlaceholder: 'Find in code…',
+    searchPrev: 'Previous match',
+    searchNext: 'Next match',
+    searchClose: 'Close search',
+    searchCount: '{current} of {total}',
+    searchNoResults: 'No matches',
   },
   sidebar: {
     title: 'Projects',
