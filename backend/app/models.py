@@ -51,6 +51,12 @@ class GenerateRequest(BaseModel):
     _check_images = field_validator('images')(validate_images)
 
 
+class EnhancePromptRequest(BaseModel):
+    prompt: str = Field(..., min_length=1, max_length=2000)
+    model: str | None = None
+    session_id: str | None = None
+
+
 class IterateRequest(BaseModel):
     session_id: str | None = None
     message: str = Field(..., max_length=2000)
