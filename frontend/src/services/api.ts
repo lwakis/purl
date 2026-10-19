@@ -138,6 +138,13 @@ export async function enhancePrompt(prompt: string, model?: string | null): Prom
   return data.prompt;
 }
 
+export async function exportReact(code: string, model?: string | null): Promise<{ code: string }> {
+  return request<{ code: string }>('/api/export-react', {
+    method: 'POST',
+    body: JSON.stringify({ code, model: model ?? null }),
+  });
+}
+
 export async function getUsage(sessionId: string): Promise<TokenUsage | null> {
   const path = `/api/usage?session_id=${encodeURIComponent(sessionId)}`;
   const data = await request<Partial<TokenUsage>>(path);

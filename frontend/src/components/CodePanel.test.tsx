@@ -1,8 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, act, fireEvent } from '@testing-library/react';
+import { render, screen, act, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CodePanel from './CodePanel';
 import { useAppStore } from '../store/appStore';
+import type { Project } from '../types';
+
+vi.mock('../services/api', () => ({
+  exportReact: vi.fn(),
+}));
 
 vi.mock('react-hot-toast', () => {
   const toast = Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() });
@@ -26,16 +31,28 @@ vi.mock('react-syntax-highlighter/dist/esm/styles/prism/one-dark', () => ({
 }));
 
 import toast from 'react-hot-toast';
+import { exportReact } from '../services/api';
 
 const CODE = '<html><body>Hello</body></html>';
 const SEARCH_CODE = '<p>match</p><p>match</p><p>match</p>';
 const SEARCH_TITLE = 'Найти в коде';
 const SEARCH_PLACEHOLDER = 'Найти в коде…';
 
+const PROJECT: Project = {
+  id: 1,
+  name: 'My Project',
+  prompt: 'a landing page',
+  current_code: CODE,
+  session_id: 's1',
+  created_at: '2024-01-01T00:00:00Z',
+  updated_at: '2024-01-01T00:00:00Z',
+};
+
 beforeEach(() => {
   vi.mocked(toast.success).mockReset();
   vi.mocked(toast.error).mockReset();
-  useAppStore.setState({ currentCode: '' });
+  vi.mocked(exportReact).mockReset();
+  useAppStore.setState({ currentCode: '', currentProject: null, selectedModel: null });
 });
 
 afterEach(() => {
@@ -102,12 +119,75 @@ describe('CodePanel', () => {
     expect(toast.success).toHaveBeenCalledWith('Скачивание начато');
   });
 
-  it('shows the React export placeholder toast', async () => {
+  it('exports the code to React and downloads it as a .jsx file', async () => {
     const user = userEvent.setup();
-    useAppStore.setState({ currentCode: CODE });
+    useAppStore.setState({
+      currentCode: CODE,
+      currentProject: PROJECT,
+      selectedModel: 'openai:gpt-4o',
+    });
+    vi.mocked(exportReact).mockResolvedValue({ code: '<App />' });
+    const createObjectURL = vi.fn(() => 'blob:mock-url');
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal('URL', { ...URL, createObjectURL, revokeObjectURL });
+    const downloads: string[] = [];
+    const clickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(function (this: HTMLAnchorElement) {
+        downloads.push(this.download);
+      });
+
     render(<CodePanel />);
     await user.click(screen.getByRole('button', { name: /React/ }));
-    expect(toast).toHaveBeenCalledWith('Экспорт в React скоро появится', { icon: '🚧' });
+
+    expect(exportReact).toHaveBeenCalledWith(CODE, 'openai:gpt-4o');
+    expect(createObjectURL).toHaveBeenCalledTimes(1);
+    expect(clickSpy).toHaveBeenCalledTimes(1);
+    expect(downloads).toEqual(['my-project.jsx']);
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
+    expect(toast.success).toHaveBeenCalledWith('React-компонент скачан');
+  });
+
+  it('shows an error toast when the React export fails', async () => {
+    const user = userEvent.setup();
+    useAppStore.setState({ currentCode: CODE });
+    vi.mocked(exportReact).mockRejectedValue(new Error('boom'));
+
+    render(<CodePanel />);
+    await user.click(screen.getByRole('button', { name: /React/ }));
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('boom'));
+    expect(toast.success).not.toHaveBeenCalled();
+  });
+
+  it('disables the React button while the export is in flight', async () => {
+    const user = userEvent.setup();
+    useAppStore.setState({ currentCode: CODE });
+    let resolveExport!: (value: { code: string }) => void;
+    vi.mocked(exportReact).mockImplementation(
+      () =>
+        new Promise<{ code: string }>((resolve) => {
+          resolveExport = resolve;
+        }),
+    );
+    vi.stubGlobal('URL', {
+      ...URL,
+      createObjectURL: vi.fn(() => 'blob:mock-url'),
+      revokeObjectURL: vi.fn(),
+    });
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+
+    render(<CodePanel />);
+    const button = screen.getByRole('button', { name: /React/ });
+    await user.click(button);
+
+    expect(button).toBeDisabled();
+
+    await act(async () => {
+      resolveExport({ code: '<App />' });
+    });
+
+    await waitFor(() => expect(button).toBeEnabled());
   });
 
   it('renders the code inside the syntax highlighter', () => {

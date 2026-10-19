@@ -20,6 +20,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { useAppStore } from '../store/appStore';
+import { exportReact } from '../services/api';
 import { useT } from '../i18n';
 import { clampMatchIndex, findMatches, nextMatchIndex, prevMatchIndex } from '../utils/findMatches';
 
@@ -155,13 +156,26 @@ function revealRange(container: HTMLElement, range: Range): void {
 const findNavClass =
   'w-6 h-6 flex items-center justify-center rounded text-surface-400 hover:text-surface-100 hover:bg-surface-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-ring active:scale-[0.98]';
 
+// Turn a project name into a filesystem-friendly slug: lowercase, every run of
+// non-alphanumerics becomes a single dash, then leading/trailing dashes are
+// trimmed. Names that slugify to nothing (e.g. all non-Latin) fall back to App.
+function slugifyProjectName(name: string): string {
+  const slug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug || 'App';
+}
+
 export default function CodePanel() {
-  const { currentCode } = useAppStore();
+  const { currentCode, currentProject, selectedModel } = useAppStore();
   const { t } = useT();
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
+  const [exporting, setExporting] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -255,9 +269,25 @@ export default function CodePanel() {
     toast.success(t('code.downloadStarted'));
   }, [currentCode, t]);
 
-  const handleReactPlaceholder = useCallback(() => {
-    toast(t('code.reactSoon'), { icon: '🚧' });
-  }, [t]);
+  const handleExportReact = useCallback(async () => {
+    if (!currentCode || exporting) return;
+    setExporting(true);
+    try {
+      const { code } = await exportReact(currentCode, selectedModel);
+      const blob = new Blob([code], { type: 'text/javascript' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${slugifyProjectName(currentProject?.name ?? '')}.jsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(t('code.reactDone'));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('code.reactError'));
+    } finally {
+      setExporting(false);
+    }
+  }, [currentCode, exporting, selectedModel, currentProject, t]);
 
   const closeSearch = useCallback(() => {
     setSearchOpen(false);
@@ -469,13 +499,20 @@ export default function CodePanel() {
             <ArrowDownTrayIcon className="w-4 h-4" />
           </button>
           <button
-            onClick={handleReactPlaceholder}
-            disabled={!currentCode}
+            onClick={handleExportReact}
+            disabled={!currentCode || exporting}
             title={t('code.reactTitle')}
             aria-label={t('code.reactTitle')}
             className="w-8 h-8 flex items-center justify-center rounded-md bg-surface-800 border border-line text-surface-400 shadow-overlay hover:text-surface-100 hover:border-line-strong transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-ring active:scale-[0.98]"
           >
-            <CodeBracketIcon className="w-4 h-4" />
+            {exporting ? (
+              <span
+                className="w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent animate-spin"
+                aria-hidden="true"
+              />
+            ) : (
+              <CodeBracketIcon className="w-4 h-4" />
+            )}
           </button>
         </div>
       </div>
