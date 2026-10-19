@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-10-19
+
+### Added
+
+- Command palette: `Ctrl`/`Cmd`+`K` opens a keyboard-driven palette — switch between preview and code, find in code, copy or download the HTML, switch the language, open the projects sidebar, or cancel a running generation.
+- Project duplication and branching: `POST /api/projects/{id}/duplicate` copies a project with its full version history; `POST /api/projects/{id}/versions/{version_id}/branch` starts a new project from any snapshot.
+- Provider connection test: `POST /api/models/test` probes the resolved provider (mock-aware); the model picker gains a "Test connection" action.
+- Extended `GET /health`: reports `version`, `database`, `mock_mode` and the resolved `provider` (still backwards compatible).
+- Compare-flow polish: restore a snapshot straight from the comparison view; version cards show `+added / −removed` stats against the previous snapshot.
+- Quick find: `Ctrl`/`Cmd`+`F` opens find-in-code from the keyboard.
+
+### Changed
+
+- Bundle splitting: vendor code ships in cacheable chunks (`vendor-react`, `vendor-ui`, `vendor-markdown`); no chunk exceeds the 500 kB warning threshold anymore (largest ≈ 211 kB).
+
 ## [0.4.0] - 2026-10-18
 
 ### Added
