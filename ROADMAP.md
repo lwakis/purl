@@ -19,13 +19,15 @@ What's in the repo right now:
 - [x] Local-first: projects and versions stored in SQLite via the backend (no accounts, no signup)
 - [x] Prompt enhancement (`POST /api/enhance-prompt`; deterministic in mock mode)
 - [x] Preview runtime-error reporting with a one-click fix through chat
-- [x] Find-in-code in the code panel (match counter/navigation, CSS Custom Highlight API)
+- [x] Find-in-code in the code panel (match counter/navigation, CSS Custom Highlight API; Ctrl/Cmd+F from the keyboard or the command palette)
+- [x] Command palette (Ctrl/Cmd+K) for navigation and quick actions
 
 ### Models and providers
 
 - [x] Multi-provider LLM layer (OpenAI, OpenRouter, Groq, DeepSeek, Gemini, Ollama, Anthropic, custom OpenAI-compatible endpoint)
 - [x] Model selector in the chat UI with a provider catalog (`GET /api/models`), per-request `provider:model` override, and a fallback to the configured default
 - [x] Self-hosted LLM support (Ollama is always ready; `custom` preset for any OpenAI-compatible local endpoint)
+- [x] Provider connection test from the model picker (`POST /api/models/test`; mock-aware)
 
 ### Projects
 
@@ -35,7 +37,9 @@ What's in the repo right now:
 - [x] Automatic project autosave (no manual Save button)
 - [x] Inline project rename
 - [x] Template catalog API with 8 seeded starter prompts (`GET /api/templates`; backend-only — the gallery UI was removed in the hero-prompt redesign)
-- [x] Version comparison from the snapshots list (side-by-side preview + line diff)
+- [x] Version comparison from the snapshots list (side-by-side preview + line diff; restore from the compare view)
+- [x] ± diff stats on version cards (against the previous snapshot)
+- [x] Project duplication and branching from a version snapshot
 
 ### Platform
 
@@ -44,6 +48,8 @@ What's in the repo right now:
 - [x] Persistent result cache (memory + SQLite, survives restarts)
 - [x] Mock mode: full end-to-end flow without an LLM API key
 - [x] Docker Compose setup, CI workflow, test suites, pre-commit hooks
+- [x] Extended health check (`/health`: version, database, mock mode, provider)
+- [x] Bundle splitting (react/ui/markdown vendor chunks; none over the 500 kB warning threshold)
 - [x] Versioned releases and changelogs (release workflow; tags `v0.1.0`/`v0.2.0` published)
 - [x] Open-source documentation (README, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY)
 - [x] Token usage display (`GET /api/usage` keyed by session; in-memory per-session token counts shown in the header — purely informational for self-hosted users who pay for their own LLM API; mock mode reports zero)

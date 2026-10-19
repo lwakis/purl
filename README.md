@@ -29,8 +29,9 @@ Flagship features:
 
 - **Prompt to page.** Describe what you want and get complete, self-contained HTML with inline CSS and JS. Live preview, syntax-highlighted source, copy and download.
 - **Iterate by chat.** "Make the buttons bigger", "switch to a dark theme". Purl rewrites the page and the preview updates.
-- **Projects with autosave.** Work is saved automatically, like chats in AI assistants — no Save button. Projects keep a version history you can roll back.
-- **Your model, your context.** Pick a provider and model from a catalog (`GET /api/models`), ask for a plan before code, attach up to 8 images (5 MB each), or click an element in the preview to iterate on it.
+- **Projects with autosave.** Work is saved automatically, like chats in AI assistants — no Save button. Projects keep a version history you can roll back, duplicate a project, or branch a new one from any snapshot.
+- **Your model, your context.** Pick a provider and model from a catalog (`GET /api/models`), test the connection right from the picker, ask for a plan before code, attach up to 8 images (5 MB each), or click an element in the preview to iterate on it.
+- **Command palette.** Press Ctrl/Cmd+K to switch views, find in code, copy or download the page, switch the language, or cancel a running generation.
 - **Mock mode.** With no LLM API key configured, Purl still works end to end. Great for local development, CI, and demos.
 
 ## Screenshots
@@ -185,6 +186,7 @@ Interactive docs are served at `/docs` when the backend is running (FastAPI Swag
 | Method | Path | Description |
 |---|---|---|
 | GET | `/api/models` | List available LLM providers and their models |
+| POST | `/api/models/test` | Test the resolved provider connection (mock-aware) |
 | POST | `/api/generate` | Generate a design; returns an SSE stream |
 | POST | `/api/iterate` | Iterate on existing code via chat; SSE stream |
 | POST | `/api/enhance-prompt` | Rewrite a short brief into a richer, concrete spec; returns `{prompt}` |
@@ -193,11 +195,13 @@ Interactive docs are served at `/docs` when the backend is running (FastAPI Swag
 | GET | `/api/projects/{id}` | Get a project |
 | PUT | `/api/projects/{id}` | Update a project |
 | DELETE | `/api/projects/{id}` | Delete a project and its versions |
+| POST | `/api/projects/{id}/duplicate` | Duplicate a project together with all of its versions |
 | GET | `/api/projects/{id}/versions` | List versions, newest first |
 | POST | `/api/projects/{id}/versions` | Save a new version |
 | GET | `/api/projects/{id}/versions/{version_id}` | Get one version |
+| POST | `/api/projects/{id}/versions/{version_id}/branch` | Create a new project branched from a version |
 | GET | `/api/templates` | List starter templates (8, auto-seeded) |
-| GET | `/health` | Health check |
+| GET | `/health` | Health check — `status`, `version`, `database`, `mock_mode`, `provider` |
 
 ### SSE event flow
 
