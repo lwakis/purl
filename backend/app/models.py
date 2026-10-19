@@ -55,6 +55,13 @@ class EnhancePromptRequest(BaseModel):
     session_id: str | None = None
 
 
+class ReactExportRequest(BaseModel):
+    code: str = Field(
+        ..., min_length=1, max_length=200_000, description='Single-file HTML page to convert'
+    )
+    model: str | None = Field(None, description='Provider override in "provider:model" format')
+
+
 class IterateRequest(BaseModel):
     session_id: str | None = None
     message: str = Field(..., max_length=2000)
@@ -84,6 +91,10 @@ class GenerateResponse(BaseModel):
     session_id: str | None = None
     event_type: str
     data: str
+
+
+class ReactExportResponse(BaseModel):
+    code: str
 
 
 class ProjectResponse(BaseModel):

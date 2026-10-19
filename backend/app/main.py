@@ -13,7 +13,7 @@ from app.config import settings
 from app.database import get_db, init_db
 
 # ── Routers ──────────────────────────────────────────────────────────────────
-from app.routers import enhance, generate, projects
+from app.routers import enhance, export_react, generate, projects
 from app.services.llm_service import close_llm_client, resolve_provider
 
 
@@ -46,6 +46,7 @@ app.add_middleware(
 # ── Register routers ─────────────────────────────────────────────────────────
 
 app.include_router(enhance.router)
+app.include_router(export_react.router)
 app.include_router(generate.router)
 app.include_router(projects.router)
 
