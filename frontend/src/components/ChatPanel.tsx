@@ -16,7 +16,7 @@ import {
 import toast from 'react-hot-toast';
 import { useAppStore } from '../store/appStore';
 import { useGeneration } from '../hooks/useGeneration';
-import { getModels, getProjectVersions } from '../services/api';
+import { getModels, getProjectVersions, testProvider } from '../services/api';
 import { useT } from '../i18n';
 import { diffLines } from '../utils/lineDiff';
 import type { ProjectVersion, ProviderInfo } from '../types';
@@ -63,6 +63,7 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
   const [compareVersion, setCompareVersion] = useState<ProjectVersion | null>(null);
   const [modelPopoverOpen, setModelPopoverOpen] = useState(false);
   const [providers, setProviders] = useState<ProviderInfo[] | null>(null);
+  const [testingProvider, setTestingProvider] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const modelButtonRef = useRef<HTMLButtonElement>(null);
   const modelPopoverRef = useRef<HTMLDivElement>(null);
@@ -244,6 +245,27 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
   const handleMore = useCallback(() => {
     toast(t('chat.more'));
   }, [t]);
+
+  // Probe the currently selected provider (null = auto) without closing the
+  // popover: the toast is the only feedback, so the user can retry in place.
+  const handleTestProvider = useCallback(async () => {
+    if (testingProvider) return;
+    setTestingProvider(true);
+    try {
+      const result = await testProvider(selectedModel);
+      if (result.ok && result.reason === 'ok') {
+        toast.success(t('chat.modelTestOk'));
+      } else if (result.reason === 'mock') {
+        toast(t('chat.modelTestMock'));
+      } else {
+        toast.error(t('chat.modelTestFail'));
+      }
+    } catch {
+      toast.error(t('chat.modelTestFail'));
+    } finally {
+      setTestingProvider(false);
+    }
+  }, [selectedModel, testingProvider, t]);
 
   const handleRestoreVersion = useCallback(
     (version: ProjectVersion) => {
@@ -509,72 +531,94 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
                   {modelPopoverOpen && (
                     <div
                       ref={modelPopoverRef}
-                      role="listbox"
-                      aria-label={t('chat.modelSelect')}
-                      className="absolute bottom-full left-0 mb-2 w-60 rounded-lg bg-surface-800 border border-line shadow-overlay z-30 overflow-y-auto max-h-64 animate-fade-in"
+                      className="absolute bottom-full left-0 mb-2 w-60 rounded-lg bg-surface-800 border border-line shadow-overlay z-30 flex flex-col overflow-hidden animate-fade-in"
                     >
-                      <button
-                        type="button"
-                        role="option"
-                        aria-selected={selectedModel === null}
-                        onClick={() => {
-                          setSelectedModel(null);
-                          setModelPopoverOpen(false);
-                        }}
-                        className="w-full text-left text-xs px-2.5 py-1.5 rounded-md hover:bg-surface-700 transition-colors focus-ring flex items-center justify-between gap-2"
+                      <div
+                        role="listbox"
+                        aria-label={t('chat.modelSelect')}
+                        className="overflow-y-auto max-h-64"
                       >
-                        <span
-                          className={
-                            selectedModel === null ? 'text-primary-400' : 'text-surface-100'
-                          }
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={selectedModel === null}
+                          onClick={() => {
+                            setSelectedModel(null);
+                            setModelPopoverOpen(false);
+                          }}
+                          className="w-full text-left text-xs px-2.5 py-1.5 rounded-md hover:bg-surface-700 transition-colors focus-ring flex items-center justify-between gap-2"
                         >
-                          {t('chat.modelAuto')}
-                        </span>
-                        {selectedModel === null && (
-                          <CheckIcon className="w-3 h-3 text-primary-400 flex-shrink-0" />
-                        )}
-                      </button>
-                      {providers?.map((provider) => (
-                        <div key={provider.id}>
-                          <div className="exposure-label text-surface-500 px-2.5 py-1">
-                            {provider.name}
-                          </div>
-                          {provider.models.map((model) => {
-                            const value = `${provider.id}:${model.id}`;
-                            const selected = selectedModel === value;
-                            const disabled = !provider.ready;
-                            return (
-                              <button
-                                key={model.id}
-                                type="button"
-                                role="option"
-                                aria-selected={selected}
-                                disabled={disabled}
-                                onClick={() => {
-                                  setSelectedModel(value);
-                                  setModelPopoverOpen(false);
-                                }}
-                                className={`w-full text-left text-xs px-2.5 py-1.5 rounded-md transition-colors focus-ring flex items-center justify-between gap-2 ${
-                                  disabled
-                                    ? 'opacity-40 cursor-not-allowed'
-                                    : 'hover:bg-surface-700'
-                                }`}
-                              >
-                                <span
-                                  className={`truncate ${
-                                    selected ? 'text-primary-400' : 'text-surface-100'
+                          <span
+                            className={
+                              selectedModel === null ? 'text-primary-400' : 'text-surface-100'
+                            }
+                          >
+                            {t('chat.modelAuto')}
+                          </span>
+                          {selectedModel === null && (
+                            <CheckIcon className="w-3 h-3 text-primary-400 flex-shrink-0" />
+                          )}
+                        </button>
+                        {providers?.map((provider) => (
+                          <div key={provider.id}>
+                            <div className="exposure-label text-surface-500 px-2.5 py-1">
+                              {provider.name}
+                            </div>
+                            {provider.models.map((model) => {
+                              const value = `${provider.id}:${model.id}`;
+                              const selected = selectedModel === value;
+                              const disabled = !provider.ready;
+                              return (
+                                <button
+                                  key={model.id}
+                                  type="button"
+                                  role="option"
+                                  aria-selected={selected}
+                                  disabled={disabled}
+                                  onClick={() => {
+                                    setSelectedModel(value);
+                                    setModelPopoverOpen(false);
+                                  }}
+                                  className={`w-full text-left text-xs px-2.5 py-1.5 rounded-md transition-colors focus-ring flex items-center justify-between gap-2 ${
+                                    disabled
+                                      ? 'opacity-40 cursor-not-allowed'
+                                      : 'hover:bg-surface-700'
                                   }`}
                                 >
-                                  {model.label}
-                                </span>
-                                <span className="flex items-center gap-1 flex-shrink-0">
-                                  {selected && <CheckIcon className="w-3 h-3 text-primary-400" />}
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      ))}
+                                  <span
+                                    className={`truncate ${
+                                      selected ? 'text-primary-400' : 'text-surface-100'
+                                    }`}
+                                  >
+                                    {model.label}
+                                  </span>
+                                  <span className="flex items-center gap-1 flex-shrink-0">
+                                    {selected && <CheckIcon className="w-3 h-3 text-primary-400" />}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="border-t border-line p-1.5">
+                        <button
+                          type="button"
+                          onClick={handleTestProvider}
+                          disabled={testingProvider}
+                          className="w-full text-xs px-2.5 py-1.5 rounded-md text-surface-300 hover:text-surface-100 hover:bg-surface-700 transition-colors focus-ring flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                          {testingProvider && (
+                            <span
+                              className="w-3 h-3 rounded-full border-2 border-current border-t-transparent animate-spin"
+                              aria-hidden="true"
+                            />
+                          )}
+                          <span>
+                            {testingProvider ? t('chat.modelTesting') : t('chat.modelTest')}
+                          </span>
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>

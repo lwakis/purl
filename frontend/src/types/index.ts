@@ -72,6 +72,13 @@ export interface ProviderInfo {
   ready: boolean;
 }
 
+export interface ProviderTestResult {
+  ok: boolean;
+  reason: 'ok' | 'mock' | 'error';
+  provider: string | null;
+  model: string | null;
+}
+
 export interface Attachment {
   id: string;
   name: string;

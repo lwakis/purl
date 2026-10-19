@@ -2,6 +2,7 @@ import type {
   Project,
   ProjectVersion,
   ProviderInfo,
+  ProviderTestResult,
   TokenUsage,
   PaginatedProjects,
 } from '../types';
@@ -72,6 +73,13 @@ export async function getProjects(
 export async function getModels(): Promise<ProviderInfo[]> {
   const data = await request<{ providers: ProviderInfo[] }>('/api/models');
   return data.providers;
+}
+
+export async function testProvider(model: string | null): Promise<ProviderTestResult> {
+  return request<ProviderTestResult>('/api/models/test', {
+    method: 'POST',
+    body: JSON.stringify({ model }),
+  });
 }
 
 export async function getProject(id: number): Promise<Project> {

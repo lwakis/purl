@@ -7,6 +7,7 @@ import {
   deleteProject,
   getProjectVersions,
   getModels,
+  testProvider,
   getUsage,
   enhancePrompt,
 } from './api';
@@ -286,5 +287,25 @@ describe('api client', () => {
     await expect(getProjects()).rejects.toThrow(
       'Не удалось связаться с сервером'
     );
+  });
+
+  it('testProvider POSTs /api/models/test with the model and returns the result', async () => {
+    const result = { ok: true, reason: 'ok', provider: 'openai', model: 'gpt-4o' };
+    fetchMock.mockResolvedValue(mockResponse(result));
+
+    const data = await testProvider('openai:gpt-4o');
+
+    expect(data).toEqual(result);
+    expect(fetchMock).toHaveBeenCalledWith('/api/models/test', {
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+      body: JSON.stringify({ model: 'openai:gpt-4o' }),
+    });
+  });
+
+  it('testProvider maps a failed test (500) to a friendly error', async () => {
+    fetchMock.mockResolvedValue(mockResponse('boom', false, 500));
+
+    await expect(testProvider(null)).rejects.toThrow('Ошибка сервера (500)');
   });
 });

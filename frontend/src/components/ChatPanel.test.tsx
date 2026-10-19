@@ -3,7 +3,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ChatPanel from './ChatPanel';
 import { useAppStore } from '../store/appStore';
-import type { ChatMessage, Project, ProjectVersion } from '../types';
+import type { ChatMessage, Project, ProjectVersion, ProviderInfo, ProviderTestResult } from '../types';
 
 vi.mock('../services/sse', () => ({
   connectGenerateSSE: vi.fn(),
@@ -13,6 +13,7 @@ vi.mock('../services/sse', () => ({
 vi.mock('../services/api', () => ({
   getModels: vi.fn(),
   getProjectVersions: vi.fn(),
+  testProvider: vi.fn(),
 }));
 
 vi.mock('react-hot-toast', () => {
@@ -21,7 +22,7 @@ vi.mock('react-hot-toast', () => {
 });
 
 import { connectIterateSSE } from '../services/sse';
-import { getProjectVersions } from '../services/api';
+import { getModels, getProjectVersions, testProvider } from '../services/api';
 import toast from 'react-hot-toast';
 
 const project: Project = {
@@ -55,11 +56,23 @@ const versions: ProjectVersion[] = [
   },
 ];
 
+const providers: ProviderInfo[] = [
+  {
+    id: 'openai',
+    name: 'OpenAI',
+    ready: true,
+    models: [{ id: 'gpt-4o', label: 'GPT-4o' }],
+  },
+];
+
 beforeEach(() => {
   vi.mocked(connectIterateSSE).mockReset();
   vi.mocked(connectIterateSSE).mockResolvedValue(undefined);
   vi.mocked(getProjectVersions).mockReset();
   vi.mocked(getProjectVersions).mockResolvedValue([]);
+  vi.mocked(getModels).mockReset();
+  vi.mocked(getModels).mockResolvedValue(providers);
+  vi.mocked(testProvider).mockReset();
   vi.mocked(toast).mockReset();
   vi.mocked(toast.success).mockReset();
   vi.mocked(toast.error).mockReset();
@@ -188,5 +201,98 @@ describe('ChatPanel', () => {
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: 'Сравнение версий' })).not.toBeInTheDocument();
     });
+  });
+
+  it('tests the auto provider (null) from the model popover', async () => {
+    vi.mocked(testProvider).mockResolvedValue({
+      ok: true,
+      reason: 'ok',
+      provider: 'openai',
+      model: 'gpt-4o',
+    });
+    const user = userEvent.setup();
+    render(<ChatPanel />);
+
+    await user.click(screen.getByRole('button', { name: 'Выбор модели' }));
+    await user.click(await screen.findByRole('button', { name: 'Проверить соединение' }));
+
+    await waitFor(() => expect(testProvider).toHaveBeenCalledWith(null));
+    expect(toast.success).toHaveBeenCalledWith('Соединение в порядке');
+    // The popover stays open so the toast is the only feedback.
+    expect(screen.getByRole('listbox', { name: 'Выбор модели' })).toBeInTheDocument();
+  });
+
+  it('tests the explicitly selected model', async () => {
+    useAppStore.setState({ selectedModel: 'openai:gpt-4o' });
+    vi.mocked(testProvider).mockResolvedValue({
+      ok: true,
+      reason: 'ok',
+      provider: 'openai',
+      model: 'gpt-4o',
+    });
+    const user = userEvent.setup();
+    render(<ChatPanel />);
+
+    await user.click(screen.getByRole('button', { name: 'Выбор модели' }));
+    await user.click(await screen.findByRole('button', { name: 'Проверить соединение' }));
+
+    await waitFor(() => expect(testProvider).toHaveBeenCalledWith('openai:gpt-4o'));
+  });
+
+  it('shows a neutral toast in mock mode', async () => {
+    vi.mocked(testProvider).mockResolvedValue({
+      ok: false,
+      reason: 'mock',
+      provider: null,
+      model: null,
+    });
+    const user = userEvent.setup();
+    render(<ChatPanel />);
+
+    await user.click(screen.getByRole('button', { name: 'Выбор модели' }));
+    await user.click(await screen.findByRole('button', { name: 'Проверить соединение' }));
+
+    await waitFor(() => {
+      expect(toast).toHaveBeenCalledWith('Mock-режим: внешний провайдер не подключён');
+    });
+    expect(toast.success).not.toHaveBeenCalled();
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it('shows an error toast when the connection test fails', async () => {
+    vi.mocked(testProvider).mockRejectedValue(new Error('nope'));
+    const user = userEvent.setup();
+    render(<ChatPanel />);
+
+    await user.click(screen.getByRole('button', { name: 'Выбор модели' }));
+    await user.click(await screen.findByRole('button', { name: 'Проверить соединение' }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Не удалось подключиться');
+    });
+  });
+
+  it('disables the test button while the check is pending', async () => {
+    let resolveTest!: (value: ProviderTestResult) => void;
+    vi.mocked(testProvider).mockImplementation(
+      () =>
+        new Promise<ProviderTestResult>((resolve) => {
+          resolveTest = resolve;
+        }),
+    );
+    const user = userEvent.setup();
+    render(<ChatPanel />);
+
+    await user.click(screen.getByRole('button', { name: 'Выбор модели' }));
+    const testButton = await screen.findByRole('button', { name: 'Проверить соединение' });
+    await user.click(testButton);
+
+    await waitFor(() => expect(testButton).toBeDisabled());
+    expect(screen.getByText('Проверяю…')).toBeInTheDocument();
+
+    resolveTest({ ok: true, reason: 'ok', provider: 'openai', model: 'gpt-4o' });
+
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Соединение в порядке'));
+    await waitFor(() => expect(testButton).toBeEnabled());
   });
 });
