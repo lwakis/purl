@@ -10,6 +10,7 @@ import PromptInput from './components/PromptInput';
 import PreviewPanel from './components/PreviewPanel';
 import ChatPanel from './components/ChatPanel';
 import ProjectSidebar from './components/ProjectSidebar';
+import CommandPalette from './components/CommandPalette';
 import { useAutosave } from './hooks/useAutosave';
 
 // react-syntax-highlighter is heavy (~300kB) — load CodePanel on demand so
@@ -183,6 +184,10 @@ export default function App() {
           )}
         </>
       )}
+
+      {/* Global command palette — reachable from the landing screen and the
+          workspace alike (Ctrl/Cmd+K). */}
+      <CommandPalette />
     </div>
   );
 }

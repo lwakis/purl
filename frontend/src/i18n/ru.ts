@@ -195,6 +195,11 @@ export const ru = {
     tabsAria: 'Панель чата и кода',
     closePanelAria: 'Закрыть панель',
   },
+  palette: {
+    title: 'Палитра команд',
+    placeholder: 'Команда или поиск…',
+    empty: 'Ничего не найдено',
+  },
   errors: {
     title: 'Ошибка',
     network: 'Не удалось связаться с сервером',

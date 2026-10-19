@@ -191,6 +191,11 @@ export const en: RuDictionary = {
     tabsAria: 'Chat and code panel',
     closePanelAria: 'Close panel',
   },
+  palette: {
+    title: 'Command palette',
+    placeholder: 'Type a command or search…',
+    empty: 'No commands found',
+  },
   errors: {
     title: 'Error',
     network: 'Failed to connect to the server',
