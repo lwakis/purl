@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-10-19
+
+### Added
+
+- React export: `POST /api/export-react` converts the current page into a single `.jsx` component — CSS embedded as a template literal, scripts as hooks — and the code-panel button downloads it as `<project>.jsx` (mock mode returns a deterministic wrapper).
+
+### Removed
+
+- The `theme`/`style` generation parameters: styling is now driven entirely by the prompt — the frontend sends neither, the backend no longer injects theme/style instructions into the system prompt, and projects no longer store them.
+- The unused `/api/templates` endpoint, the `PromptTemplate` table/model and the `TemplateResponse` schema (the frontend never called the endpoint).
+
 ## [0.5.0] - 2026-10-19
 
 ### Added

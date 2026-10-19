@@ -12,6 +12,7 @@ What's in the repo right now:
 - [x] Streaming output over SSE (`analysis` → `design` → `code` → `complete`)
 - [x] Sandboxed iframe preview (`sandbox="allow-scripts"`, no `allow-same-origin`)
 - [x] Copy and download HTML
+- [x] React export — convert the finished page into one `.jsx` component (CSS embedded, scripts as hooks)
 - [x] Iterative chat on existing designs (history + current code sent with each request)
 - [x] Plan mode — a design-planning pass before code generation
 - [x] Element selection — click a preview element to iterate on it directly
@@ -52,12 +53,6 @@ What's in the repo right now:
 - [x] Versioned releases and changelogs (release workflow; tags `v0.1.0`/`v0.2.0` published)
 - [x] Open-source documentation (README, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY)
 - [x] Token usage display (`GET /api/usage` keyed by session; in-memory per-session token counts shown in the header — purely informational for self-hosted users who pay for their own LLM API; mock mode reports zero)
-
-## Next up
-
-| Item | Notes |
-|---|---|
-| [ ] React export | The UI has a placeholder button ("export in React coming soon"); backend has no JSX output |
 
 ## Possible (not committed)
 
