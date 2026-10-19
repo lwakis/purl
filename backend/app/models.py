@@ -146,14 +146,3 @@ class DuplicateProjectRequest(BaseModel):
 
 class BranchFromVersionRequest(BaseModel):
     name: str | None = None
-
-
-class TemplateResponse(BaseModel):
-    id: int
-    title: str
-    description: str | None = None
-    prompt_text: str
-    category: str | None = None
-    icon: str | None = None
-
-    model_config = {'from_attributes': True}

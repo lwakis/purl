@@ -94,24 +94,6 @@ class ProjectVersion(Base):
         return f'<ProjectVersion id={self.id} project={self.project_id} v{self.version_num}>'
 
 
-# ── PromptTemplate ───────────────────────────────────────────────────────────
-
-
-class PromptTemplate(Base):
-    __tablename__ = 'prompt_templates'
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    title = Column(String(255), nullable=False)
-    description = Column(String(500), nullable=True)
-    prompt_text = Column(Text, nullable=False)
-    category = Column(String(100), nullable=True)
-    icon = Column(String(50), nullable=True)
-    sort_order = Column(Integer, default=0)
-
-    def __repr__(self) -> str:
-        return f'<PromptTemplate id={self.id} title={self.title!r}>'
-
-
 # ── CacheEntry ───────────────────────────────────────────────────────────────
 
 

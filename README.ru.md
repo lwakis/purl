@@ -96,7 +96,7 @@ Dev-сервер Vite работает на порту 5173 и проксиру�
 ┌──────────────▼────────────────┐
 │      Backend (FastAPI)        │
 │ /api/generate · /api/iterate  │
-│ /api/projects · /api/templates│
+│ /api/projects · /api/usage    │
 └───┬────────────────────┬──────┘
     │                    │
 ┌───▼────────┐  ┌────────▼─────────┐
@@ -130,7 +130,7 @@ purl/
 │   │   ├── database.py      # async SQLAlchemy engine + ORM models
 │   │   ├── models.py        # request/response schemas
 │   │   ├── prompts.py       # LLM system prompt
-│   │   ├── routers/         # generate, projects, templates
+│   │   ├── routers/         # generate, projects
 │   │   └── services/        # LLM client, prompt builder, cache, rate limiter
 │   ├── tests/               # pytest + pytest-asyncio
 │   ├── .env.example         # environment template
@@ -200,7 +200,6 @@ Env-переменные фронтенда читаются на этапе с�
 | POST | `/api/projects/{id}/versions` | Сохранить новую версию |
 | GET | `/api/projects/{id}/versions/{version_id}` | Получить одну версию |
 | POST | `/api/projects/{id}/versions/{version_id}/branch` | Создать новый проект — ветку от версии |
-| GET | `/api/templates` | Список стартовых шаблонов (8, автозаполняются) |
 | GET | `/health` | Health-проверка — `status`, `version`, `database`, `mock_mode`, `provider` |
 
 ### Поток SSE-событий

@@ -96,7 +96,7 @@ You type a prompt. The backend wraps the prompt in a curated system prompt, stre
 ┌──────────────▼────────────────┐
 │      Backend (FastAPI)        │
 │ /api/generate · /api/iterate  │
-│ /api/projects · /api/templates│
+│ /api/projects · /api/usage    │
 └───┬────────────────────┬──────┘
     │                    │
 ┌───▼────────┐  ┌────────▼─────────┐
@@ -130,7 +130,7 @@ purl/
 │   │   ├── database.py      # async SQLAlchemy engine + ORM models
 │   │   ├── models.py        # request/response schemas
 │   │   ├── prompts.py       # LLM system prompt
-│   │   ├── routers/         # generate, projects, templates
+│   │   ├── routers/         # generate, projects
 │   │   └── services/        # LLM client, prompt builder, cache, rate limiter
 │   ├── tests/               # pytest + pytest-asyncio
 │   ├── .env.example         # environment template
@@ -200,7 +200,6 @@ Interactive docs are served at `/docs` when the backend is running (FastAPI Swag
 | POST | `/api/projects/{id}/versions` | Save a new version |
 | GET | `/api/projects/{id}/versions/{version_id}` | Get one version |
 | POST | `/api/projects/{id}/versions/{version_id}/branch` | Create a new project branched from a version |
-| GET | `/api/templates` | List starter templates (8, auto-seeded) |
 | GET | `/health` | Health check — `status`, `version`, `database`, `mock_mode`, `provider` |
 
 ### SSE event flow

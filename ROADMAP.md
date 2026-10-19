@@ -36,7 +36,6 @@ What's in the repo right now:
 - [x] Version history per project (`/api/projects/{id}/versions`) with restore / download / bookmark from the chat
 - [x] Automatic project autosave (no manual Save button)
 - [x] Inline project rename
-- [x] Template catalog API with 8 seeded starter prompts (`GET /api/templates`; backend-only — the gallery UI was removed in the hero-prompt redesign)
 - [x] Version comparison from the snapshots list (side-by-side preview + line diff; restore from the compare view)
 - [x] ± diff stats on version cards (against the previous snapshot)
 - [x] Project duplication and branching from a version snapshot
@@ -58,7 +57,6 @@ What's in the repo right now:
 
 | Item | Notes |
 |---|---|
-| [ ] Template favorites / saved prompts | `PromptTemplate` has no per-session relation yet |
 | [ ] React export | The UI has a placeholder button ("export in React coming soon"); backend has no JSX output |
 
 ## Possible (not committed)
