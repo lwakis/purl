@@ -208,14 +208,12 @@ async function connectSSE(url: string, body: unknown, options: SSEOptions): Prom
 
 export function connectGenerateSSE(
   prompt: string,
-  theme: string,
-  style: string,
   options: SSEOptions,
   extras?: GenerateSSEExtras,
 ): Promise<void> {
   return connectSSE(
     `${BASE_URL}/api/generate`,
-    { prompt, theme, style, ...(extras ?? {}) },
+    { prompt, ...(extras ?? {}) },
     options,
   );
 }

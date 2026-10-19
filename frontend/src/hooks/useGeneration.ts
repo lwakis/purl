@@ -150,8 +150,6 @@ export function useGeneration() {
       useAppStore.getState().clearAttachments();
       await connectGenerateSSE(
         prompt,
-        'dark',
-        'minimal',
         {
           onEvent: handleEvent,
           onError: handleError,

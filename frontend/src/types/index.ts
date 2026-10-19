@@ -1,8 +1,6 @@
 export interface GenerateRequest {
   prompt: string;
   session_id?: string | null;
-  theme?: 'light' | 'dark' | 'auto';
-  style?: 'minimal' | 'corporate' | 'playful' | 'techno';
   model?: string | null;
   plan?: boolean;
   images?: string[];
@@ -33,8 +31,6 @@ export interface Project {
   name: string;
   prompt: string | null;
   current_code: string | null;
-  theme: string;
-  style: string;
   session_id: string;
   created_at: string;
   updated_at: string;

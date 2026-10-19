@@ -89,7 +89,7 @@ describe('PromptInput', () => {
     expect(screen.getByRole('button', { name: 'Сгенерировать' })).toBeDisabled();
   });
 
-  it('calls generate with the trimmed prompt and fixed dark/minimal', async () => {
+  it('calls generate with the trimmed prompt', async () => {
     const user = userEvent.setup();
     render(<PromptInput />);
     await user.type(screen.getByRole('textbox', { name: 'Описание дизайна' }), '  Лендинг для HR  ');
@@ -97,8 +97,6 @@ describe('PromptInput', () => {
     await waitFor(() => {
       expect(connectGenerateSSE).toHaveBeenCalledWith(
         'Лендинг для HR',
-        'dark',
-        'minimal',
         expect.any(Object),
         expect.any(Object),
       );
@@ -114,8 +112,6 @@ describe('PromptInput', () => {
     await waitFor(() => {
       expect(connectGenerateSSE).toHaveBeenCalledWith(
         'быстрый промпт',
-        'dark',
-        'minimal',
         expect.any(Object),
         expect.any(Object),
       );

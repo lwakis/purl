@@ -24,8 +24,6 @@ const project: Project = {
   name: 'P',
   prompt: 'old',
   current_code: 'old-code',
-  theme: 'dark',
-  style: 'minimal',
   session_id: 'sess-1',
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
@@ -76,8 +74,6 @@ describe('useAutosave', () => {
       name: 'Build a landing page',
       prompt: PROMPT,
       current_code: CODE,
-      theme: 'dark',
-      style: 'minimal',
       session_id: 'sess-1',
     });
     expect(result.current.status).toBe('saved');
@@ -132,8 +128,6 @@ describe('useAutosave', () => {
     expect(updateProject).toHaveBeenCalledWith(7, {
       current_code: CODE,
       prompt: PROMPT,
-      theme: 'dark',
-      style: 'minimal',
     });
     expect(result.current.status).toBe('saved');
     expect(useAppStore.getState().currentProject).toEqual(updated);

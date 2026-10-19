@@ -77,8 +77,6 @@ describe('useGeneration', () => {
 
     expect(connectGenerateSSE).toHaveBeenCalledWith(
       'Build a page',
-      'dark',
-      'minimal',
       expect.any(Object),
       {
         session_id: 'sess-test',
@@ -99,8 +97,6 @@ describe('useGeneration', () => {
 
     expect(connectGenerateSSE).toHaveBeenCalledWith(
       'Build a page',
-      'dark',
-      'minimal',
       expect.any(Object),
       { session_id: 'sess-test', model: null, plan: false, images: [] },
     );
@@ -175,7 +171,7 @@ describe('useGeneration', () => {
       await result.current.generate('Build a page');
     });
 
-    const options = vi.mocked(connectGenerateSSE).mock.calls[0][3];
+    const options = vi.mocked(connectGenerateSSE).mock.calls[0][1];
 
     act(() => {
       options.onEvent({ type: 'analysis', content: '' });
@@ -207,7 +203,7 @@ describe('useGeneration', () => {
       await result.current.generate('Build a page');
     });
 
-    const options = vi.mocked(connectGenerateSSE).mock.calls[0][3];
+    const options = vi.mocked(connectGenerateSSE).mock.calls[0][1];
     act(() => {
       options.onComplete('<html>final</html>');
     });
@@ -226,7 +222,7 @@ describe('useGeneration', () => {
       await result.current.generate('Build a page');
     });
 
-    const options = vi.mocked(connectGenerateSSE).mock.calls[0][3];
+    const options = vi.mocked(connectGenerateSSE).mock.calls[0][1];
     await act(async () => {
       options.onComplete('<html>final</html>');
     });
@@ -241,7 +237,7 @@ describe('useGeneration', () => {
       await result.current.generate('Build a page');
     });
 
-    const options = vi.mocked(connectGenerateSSE).mock.calls[0][3];
+    const options = vi.mocked(connectGenerateSSE).mock.calls[0][1];
     act(() => {
       options.onError(new Error('boom'));
     });
@@ -310,8 +306,6 @@ describe('useGeneration', () => {
       name: 'P',
       prompt: 'old',
       current_code: 'old-code',
-      theme: 'dark',
-      style: 'minimal',
       session_id: 'sess-1',
       created_at: '2024-01-01T00:00:00Z',
       updated_at: '2024-01-01T00:00:00Z',
@@ -365,7 +359,7 @@ describe('useGeneration', () => {
       await result.current.generate('Build a page');
     });
 
-    const options = vi.mocked(connectGenerateSSE).mock.calls[0][3];
+    const options = vi.mocked(connectGenerateSSE).mock.calls[0][1];
     act(() => {
       options.onEvent({ type: 'code', content: '<div>' });
     });
@@ -401,7 +395,7 @@ describe('useGeneration', () => {
       await result.current.generate('Build a page');
     });
 
-    const options = vi.mocked(connectGenerateSSE).mock.calls[0][3];
+    const options = vi.mocked(connectGenerateSSE).mock.calls[0][1];
     act(() => {
       result.current.cancel();
     });

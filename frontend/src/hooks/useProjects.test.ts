@@ -23,8 +23,6 @@ const project: Project = {
   name: 'P',
   prompt: 'old',
   current_code: 'old-code',
-  theme: 'dark',
-  style: 'minimal',
   session_id: 'sess-1',
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
@@ -34,8 +32,6 @@ const createPayload = {
   name: 'N',
   prompt: 'P',
   current_code: 'C',
-  theme: 'dark',
-  style: 'minimal',
   session_id: 'sess-1',
 };
 

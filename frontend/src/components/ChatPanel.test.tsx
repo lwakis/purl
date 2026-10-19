@@ -32,8 +32,6 @@ const project: Project = {
   name: 'Лендинг',
   prompt: 'Лендинг для стартапа',
   current_code: '<html>current</html>',
-  theme: 'dark',
-  style: 'minimal',
   session_id: 's1',
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',

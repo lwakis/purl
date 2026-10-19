@@ -32,8 +32,6 @@ describe('sse client', () => {
 
     await connectGenerateSSE(
       'Build a page',
-      'dark',
-      'minimal',
       { onEvent: noopEvent, onError: noopError, onComplete },
       { model: 'openai:gpt-4o', plan: true, images: ['data:image/png;base64,AAA'] },
     );
@@ -42,8 +40,6 @@ describe('sse client', () => {
     const [, init] = fetchMock.mock.calls[0];
     expect(JSON.parse(init.body as string)).toEqual({
       prompt: 'Build a page',
-      theme: 'dark',
-      style: 'minimal',
       model: 'openai:gpt-4o',
       plan: true,
       images: ['data:image/png;base64,AAA'],
@@ -88,7 +84,7 @@ describe('sse client', () => {
   it('omits the new fields when no extras are passed', async () => {
     fetchMock.mockResolvedValue(sseResponse(completeFrame));
 
-    await connectGenerateSSE('Build a page', 'dark', 'minimal', {
+    await connectGenerateSSE('Build a page', {
       onEvent: noopEvent,
       onError: noopError,
       onComplete: noopComplete,
@@ -97,8 +93,6 @@ describe('sse client', () => {
     const [, init] = fetchMock.mock.calls[0];
     expect(JSON.parse(init.body as string)).toEqual({
       prompt: 'Build a page',
-      theme: 'dark',
-      style: 'minimal',
     });
   });
 
@@ -106,7 +100,7 @@ describe('sse client', () => {
     fetchMock.mockResolvedValue(sseResponse('data: {"type":"error","content":"boom"}\n\n'));
     const onError = vi.fn();
 
-    await connectGenerateSSE('Build a page', 'dark', 'minimal', {
+    await connectGenerateSSE('Build a page', {
       onEvent: noopEvent,
       onError,
       onComplete: noopComplete,
@@ -121,7 +115,7 @@ describe('sse client', () => {
     );
     const onError = vi.fn();
 
-    await connectGenerateSSE('Build a page', 'dark', 'minimal', {
+    await connectGenerateSSE('Build a page', {
       onEvent: noopEvent,
       onError,
       onComplete: noopComplete,

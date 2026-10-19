@@ -74,8 +74,6 @@ export function useProjects() {
       name: string;
       prompt: string;
       current_code: string;
-      theme: string;
-      style: string;
       session_id: string;
     }) => {
       try {

@@ -47,8 +47,6 @@ export async function createProject(data: {
   name: string;
   prompt: string;
   current_code: string;
-  theme: string;
-  style: string;
   session_id: string;
 }): Promise<Project> {
   return request<Project>('/api/projects', {
