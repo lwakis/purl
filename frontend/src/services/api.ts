@@ -57,6 +57,13 @@ export async function createProject(data: {
   });
 }
 
+export async function duplicateProject(projectId: number, name?: string): Promise<Project> {
+  return request<Project>(`/api/projects/${projectId}/duplicate`, {
+    method: 'POST',
+    body: JSON.stringify({ name: name ?? null }),
+  });
+}
+
 export async function getProjects(
   sessionId?: string,
   params?: { search?: string; page?: number; pageSize?: number },
@@ -111,6 +118,17 @@ export async function saveProjectVersion(
   return request<ProjectVersion>(`/api/projects/${projectId}/versions`, {
     method: 'POST',
     body: JSON.stringify({ code, message }),
+  });
+}
+
+export async function branchFromVersion(
+  projectId: number,
+  versionId: number,
+  name?: string,
+): Promise<Project> {
+  return request<Project>(`/api/projects/${projectId}/versions/${versionId}/branch`, {
+    method: 'POST',
+    body: JSON.stringify({ name: name ?? null }),
   });
 }
 

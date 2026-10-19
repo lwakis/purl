@@ -9,13 +9,15 @@ vi.mock('../services/api', () => ({
   getProjects: vi.fn(),
   getProjectVersions: vi.fn(),
   deleteProject: vi.fn(),
+  duplicateProject: vi.fn(),
 }));
 
 vi.mock('react-hot-toast', () => ({
   default: { success: vi.fn(), error: vi.fn() },
 }));
 
-import { getProjects, getProjectVersions, deleteProject } from '../services/api';
+import { getProjects, getProjectVersions, deleteProject, duplicateProject } from '../services/api';
+import toast from 'react-hot-toast';
 
 const projectA: Project = {
   id: 1,
@@ -64,6 +66,9 @@ beforeEach(() => {
   vi.mocked(getProjects).mockReset();
   vi.mocked(getProjectVersions).mockReset();
   vi.mocked(deleteProject).mockReset();
+  vi.mocked(duplicateProject).mockReset();
+  vi.mocked(toast.success).mockReset();
+  vi.mocked(toast.error).mockReset();
   vi.mocked(getProjects).mockResolvedValue({
     items: [projectA, projectB],
     total: 2,
@@ -72,6 +77,7 @@ beforeEach(() => {
   });
   vi.mocked(getProjectVersions).mockResolvedValue(versions);
   vi.mocked(deleteProject).mockResolvedValue(undefined);
+  vi.mocked(duplicateProject).mockResolvedValue({ ...projectA, id: 99, name: 'Лендинг A (копия)' });
   useAppStore.setState({
     sessionId: 's1',
     sidebarOpen: true,
@@ -218,6 +224,38 @@ describe('ProjectSidebar', () => {
     await screen.findByText('Лендинг A');
     await user.click(screen.getAllByRole('button', { name: 'Удалить проект' })[0]);
     expect(deleteProject).not.toHaveBeenCalled();
+  });
+
+  it('duplicates a project, refreshes the list and keeps the current project', async () => {
+    const user = userEvent.setup();
+    render(<ProjectSidebar />);
+    await screen.findByText('Лендинг A');
+
+    const callsBefore = vi.mocked(getProjects).mock.calls.length;
+    await user.click(screen.getAllByRole('button', { name: 'Дублировать проект' })[0]);
+
+    await waitFor(() => {
+      expect(duplicateProject).toHaveBeenCalledWith(1, 'Лендинг A (копия)');
+    });
+    await waitFor(() => {
+      expect(vi.mocked(getProjects).mock.calls.length).toBeGreaterThan(callsBefore);
+    });
+    expect(toast.success).toHaveBeenCalledWith('Проект продублирован');
+    // The user stays where they were.
+    expect(useAppStore.getState().currentProject?.id).toBe(1);
+  });
+
+  it('toasts an error when duplication fails', async () => {
+    const user = userEvent.setup();
+    vi.mocked(duplicateProject).mockRejectedValue(new Error('nope'));
+    render(<ProjectSidebar />);
+    await screen.findByText('Лендинг A');
+
+    await user.click(screen.getAllByRole('button', { name: 'Дублировать проект' })[0]);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Не удалось продублировать проект');
+    });
   });
 
   it('closes the sidebar via the close button', async () => {

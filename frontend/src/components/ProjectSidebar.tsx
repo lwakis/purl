@@ -4,14 +4,16 @@ import {
   XMarkIcon,
   TrashIcon,
   DocumentTextIcon,
+  DocumentDuplicateIcon,
   ClockIcon,
   MagnifyingGlassIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
 } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
 import { useAppStore } from '../store/appStore';
 import { useProjects } from '../hooks/useProjects';
-import { getProjectVersions } from '../services/api';
+import { duplicateProject, getProjectVersions } from '../services/api';
 import { useT } from '../i18n';
 import type { Project, ProjectVersion } from '../types';
 
@@ -26,7 +28,7 @@ export default function ProjectSidebar() {
     setChatHistory,
     setSessionId,
   } = useAppStore();
-  const { projects, loading, remove, search, setSearch, page, setPage, totalPages } =
+  const { projects, loading, remove, search, setSearch, page, setPage, totalPages, fetchProjects } =
     useProjects();
   const { t } = useT();
   const [versionsOpen, setVersionsOpen] = useState<number | null>(null);
@@ -61,6 +63,22 @@ export default function ProjectSidebar() {
       remove(id);
     },
     [remove, t],
+  );
+
+  // Duplicate, then refresh the list so the copy shows up. The user stays on
+  // the project they had open — the new copy is not activated.
+  const handleDuplicate = useCallback(
+    async (e: React.MouseEvent, project: Project) => {
+      e.stopPropagation();
+      try {
+        await duplicateProject(project.id, `${project.name}${t('sidebar.copySuffix')}`);
+        await fetchProjects();
+        toast.success(t('toasts.projectDuplicated'));
+      } catch {
+        toast.error(t('errors.duplicateProject'));
+      }
+    },
+    [fetchProjects, t],
   );
 
   const toggleVersions = useCallback(
@@ -219,6 +237,14 @@ export default function ProjectSidebar() {
                         aria-expanded={versionsOpen === project.id}
                       >
                         <ClockIcon className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={(e) => handleDuplicate(e, project)}
+                        className="p-1.5 rounded-md border border-line text-surface-400 opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 hover:text-surface-100 hover:bg-surface-900/50 hover:border-line-strong transition-colors focus-ring"
+                        aria-label={t('sidebar.duplicate')}
+                        title={t('sidebar.duplicate')}
+                      >
+                        <DocumentDuplicateIcon className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={(e) => handleDelete(e, project.id)}

@@ -164,6 +164,8 @@ export const ru = {
     notEnough: 'Нужно минимум две версии',
     diffStats: '+{added} / −{removed}',
     restore: 'Восстановить',
+    branch: 'Ветка',
+    branchVersion: 'Создать ветку от этой версии',
   },
   sidebar: {
     title: 'Проекты',
@@ -184,6 +186,8 @@ export const ru = {
     noVersions: 'Версий пока нет',
     version: 'Версия {num}',
     deleteConfirm: 'Удалить проект? Это действие нельзя отменить.',
+    duplicate: 'Дублировать проект',
+    copySuffix: ' (копия)',
   },
   app: {
     sendAria: 'Отправить',
@@ -206,10 +210,14 @@ export const ru = {
     updateProject: 'Не удалось обновить проект',
     deleteProject: 'Не удалось удалить проект',
     enhancePrompt: 'Не удалось улучшить промпт',
+    duplicateProject: 'Не удалось продублировать проект',
+    branchVersion: 'Не удалось создать ветку',
   },
   toasts: {
     projectSaved: 'Проект сохранён',
     projectDeleted: 'Проект удалён',
+    projectDuplicated: 'Проект продублирован',
+    branchCreated: 'Ветка создана',
   },
 };
 

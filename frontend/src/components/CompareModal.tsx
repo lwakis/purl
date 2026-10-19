@@ -18,6 +18,8 @@ interface CompareModalProps {
   onClose: () => void;
   /** Load a snapshot back onto the stage. Offered on every snapshot side. */
   onRestore?: (version: ProjectVersion) => void;
+  /** Branch a new project off a snapshot. Offered on every snapshot side. */
+  onBranch?: (version: ProjectVersion) => void;
 }
 
 // Same sandbox as the stage preview: generated markup never gets same-origin
@@ -51,6 +53,7 @@ export default function CompareModal({
   initialVersionId,
   onClose,
   onRestore,
+  onBranch,
 }: CompareModalProps) {
   const { t } = useT();
   const headingId = useId();
@@ -111,8 +114,8 @@ export default function CompareModal({
     dialogRef.current?.focus();
   }, []);
 
-  // Restore actions, only for sides that point at a stored snapshot. The
-  // working copy on the stage ("current") has nothing to restore from.
+  // Restore / branch actions, only for sides that point at a stored snapshot.
+  // The working copy on the stage ("current") has nothing to restore from.
   const snapshotActions = (source: CompareSource | null) => {
     if (typeof source !== 'number') return null;
     const version = byId.get(source);
@@ -123,6 +126,15 @@ export default function CompareModal({
       <div className="flex items-center gap-1.5">
         <button type="button" onClick={() => onRestore?.(version)} className={actionClass}>
           {t('compare.restore')}
+        </button>
+        <button
+          type="button"
+          onClick={() => onBranch?.(version)}
+          title={t('compare.branchVersion')}
+          aria-label={t('compare.branchVersion')}
+          className={actionClass}
+        >
+          {t('compare.branch')}
         </button>
       </div>
     );

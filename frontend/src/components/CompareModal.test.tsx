@@ -139,15 +139,18 @@ describe('CompareModal', () => {
 });
 
 describe('CompareModal snapshot actions', () => {
-  it('offers restore only for the snapshot side, not the current code', () => {
-    renderModal({ onRestore: vi.fn() });
+  it('offers restore and branch only for the snapshot side, not the current code', () => {
+    renderModal({ onRestore: vi.fn(), onBranch: vi.fn() });
     // A is a snapshot (v2), B is the working copy.
     expect(screen.getAllByRole('button', { name: 'Восстановить' })).toHaveLength(1);
+    expect(
+      screen.getAllByRole('button', { name: 'Создать ветку от этой версии' }),
+    ).toHaveLength(1);
   });
 
-  it('adds the action for a second snapshot side too', async () => {
+  it('adds the actions for a second snapshot side too', async () => {
     const user = userEvent.setup();
-    renderModal({ onRestore: vi.fn() });
+    renderModal({ onRestore: vi.fn(), onBranch: vi.fn() });
     await user.selectOptions(screen.getByLabelText('Версия B'), '11');
     expect(screen.getAllByRole('button', { name: 'Восстановить' })).toHaveLength(2);
   });
@@ -160,17 +163,29 @@ describe('CompareModal snapshot actions', () => {
     expect(onRestore).toHaveBeenCalledWith(versions[1]);
   });
 
-  it('keeps the action available in the code view', async () => {
+  it('branches the snapshot shown on a side', async () => {
     const user = userEvent.setup();
-    renderModal({ onRestore: vi.fn() });
-    await user.click(screen.getByRole('button', { name: /Код/ }));
-    expect(screen.getByRole('button', { name: 'Восстановить' })).toBeInTheDocument();
+    const onBranch = vi.fn();
+    renderModal({ onBranch });
+    await user.click(screen.getByRole('button', { name: 'Создать ветку от этой версии' }));
+    expect(onBranch).toHaveBeenCalledWith(versions[1]);
   });
 
-  it('renders without the callback (action is inert, not crashing)', async () => {
+  it('keeps the actions available in the code view', async () => {
+    const user = userEvent.setup();
+    renderModal({ onRestore: vi.fn(), onBranch: vi.fn() });
+    await user.click(screen.getByRole('button', { name: /Код/ }));
+    expect(screen.getByRole('button', { name: 'Восстановить' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Создать ветку от этой версии' }),
+    ).toBeInTheDocument();
+  });
+
+  it('renders without the callbacks (actions are inert, not crashing)', async () => {
     const user = userEvent.setup();
     renderModal();
     await user.click(screen.getByRole('button', { name: 'Восстановить' }));
+    await user.click(screen.getByRole('button', { name: 'Создать ветку от этой версии' }));
     // Still open — closing is the caller's decision.
     expect(screen.getByRole('dialog', { name: 'Сравнение версий' })).toBeInTheDocument();
   });

@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   createProject,
+  duplicateProject,
   getProjects,
   getProject,
   updateProject,
   deleteProject,
   getProjectVersions,
+  branchFromVersion,
   getModels,
   testProvider,
   getUsage,
@@ -307,5 +309,111 @@ describe('api client', () => {
     fetchMock.mockResolvedValue(mockResponse('boom', false, 500));
 
     await expect(testProvider(null)).rejects.toThrow('Ошибка сервера (500)');
+  });
+
+  it('duplicateProject POSTs /api/projects/:id/duplicate with the name and returns the project', async () => {
+    const project = {
+      id: 2,
+      name: 'Copy',
+      prompt: 'p',
+      current_code: 'c',
+      theme: 'dark',
+      style: 'minimal',
+      session_id: 's',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+    };
+    fetchMock.mockResolvedValue(mockResponse(project, true, 201));
+
+    const result = await duplicateProject(1, 'Copy');
+
+    expect(result).toEqual(project);
+    expect(fetchMock).toHaveBeenCalledWith('/api/projects/1/duplicate', {
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+      body: JSON.stringify({ name: 'Copy' }),
+    });
+  });
+
+  it('duplicateProject omits the name (sends null) when none is given', async () => {
+    const project = {
+      id: 2,
+      name: 'My Site (копия)',
+      prompt: 'p',
+      current_code: 'c',
+      theme: 'dark',
+      style: 'minimal',
+      session_id: 's',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+    };
+    fetchMock.mockResolvedValue(mockResponse(project, true, 201));
+
+    await duplicateProject(1);
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/projects/1/duplicate', {
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+      body: JSON.stringify({ name: null }),
+    });
+  });
+
+  it('duplicateProject maps a backend failure to its detail', async () => {
+    fetchMock.mockResolvedValue(mockResponse({ detail: 'project_not_found' }, false, 404));
+
+    await expect(duplicateProject(1)).rejects.toThrow('project_not_found');
+  });
+
+  it('branchFromVersion POSTs /api/projects/:id/versions/:versionId/branch and returns the project', async () => {
+    const project = {
+      id: 3,
+      name: 'Branch',
+      prompt: 'p',
+      current_code: 'c',
+      theme: 'dark',
+      style: 'minimal',
+      session_id: 's',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+    };
+    fetchMock.mockResolvedValue(mockResponse(project, true, 201));
+
+    const result = await branchFromVersion(1, 5, 'Branch');
+
+    expect(result).toEqual(project);
+    expect(fetchMock).toHaveBeenCalledWith('/api/projects/1/versions/5/branch', {
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+      body: JSON.stringify({ name: 'Branch' }),
+    });
+  });
+
+  it('branchFromVersion sends null when no name is given', async () => {
+    const project = {
+      id: 3,
+      name: 'A (branch)',
+      prompt: 'p',
+      current_code: 'c',
+      theme: 'dark',
+      style: 'minimal',
+      session_id: 's',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+    };
+    fetchMock.mockResolvedValue(mockResponse(project, true, 201));
+
+    await branchFromVersion(1, 5);
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/projects/1/versions/5/branch', {
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+      body: JSON.stringify({ name: null }),
+    });
+  });
+
+  it('branchFromVersion maps a backend failure to its detail', async () => {
+    fetchMock.mockResolvedValue(mockResponse({ detail: 'version_not_found' }, false, 404));
+
+    await expect(branchFromVersion(1, 5)).rejects.toThrow('version_not_found');
   });
 });

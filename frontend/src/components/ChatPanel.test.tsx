@@ -13,6 +13,8 @@ vi.mock('../services/sse', () => ({
 vi.mock('../services/api', () => ({
   getModels: vi.fn(),
   getProjectVersions: vi.fn(),
+  getProjects: vi.fn(),
+  branchFromVersion: vi.fn(),
   testProvider: vi.fn(),
 }));
 
@@ -22,7 +24,7 @@ vi.mock('react-hot-toast', () => {
 });
 
 import { connectIterateSSE } from '../services/sse';
-import { getModels, getProjectVersions, testProvider } from '../services/api';
+import { branchFromVersion, getModels, getProjectVersions, getProjects, testProvider } from '../services/api';
 import toast from 'react-hot-toast';
 
 const project: Project = {
@@ -70,6 +72,9 @@ beforeEach(() => {
   vi.mocked(connectIterateSSE).mockResolvedValue(undefined);
   vi.mocked(getProjectVersions).mockReset();
   vi.mocked(getProjectVersions).mockResolvedValue([]);
+  vi.mocked(getProjects).mockReset();
+  vi.mocked(getProjects).mockResolvedValue({ items: [], total: 0, page: 1, page_size: 50 });
+  vi.mocked(branchFromVersion).mockReset();
   vi.mocked(getModels).mockReset();
   vi.mocked(getModels).mockResolvedValue(providers);
   vi.mocked(testProvider).mockReset();
@@ -201,6 +206,46 @@ describe('ChatPanel', () => {
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: 'Сравнение версий' })).not.toBeInTheDocument();
     });
+  });
+
+  it('branches from a snapshot, activates the new project and closes the modal', async () => {
+    const branch: Project = { ...project, id: 42, name: 'Лендинг — v1' };
+    vi.mocked(branchFromVersion).mockResolvedValue(branch);
+    useAppStore.setState({ currentProject: project, currentCode: '<html>\ncurrent\n</html>' });
+    vi.mocked(getProjectVersions).mockResolvedValue(versions);
+    const user = userEvent.setup();
+    render(<ChatPanel />);
+
+    const compareButtons = await screen.findAllByRole('button', { name: 'Сравнить' });
+    await user.click(compareButtons[0]);
+    await user.click(await screen.findByRole('button', { name: 'Создать ветку от этой версии' }));
+
+    await waitFor(() => {
+      expect(branchFromVersion).toHaveBeenCalledWith(1, 11, 'Лендинг — v1');
+    });
+    expect(useAppStore.getState().currentProject?.id).toBe(42);
+    expect(useAppStore.getState().currentCode).toBe(branch.current_code);
+    expect(toast.success).toHaveBeenCalledWith('Ветка создана');
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Сравнение версий' })).not.toBeInTheDocument();
+    });
+  });
+
+  it('keeps the modal open and toasts when branching fails', async () => {
+    vi.mocked(branchFromVersion).mockRejectedValue(new Error('nope'));
+    useAppStore.setState({ currentProject: project, currentCode: '<html>\ncurrent\n</html>' });
+    vi.mocked(getProjectVersions).mockResolvedValue(versions);
+    const user = userEvent.setup();
+    render(<ChatPanel />);
+
+    const compareButtons = await screen.findAllByRole('button', { name: 'Сравнить' });
+    await user.click(compareButtons[0]);
+    await user.click(await screen.findByRole('button', { name: 'Создать ветку от этой версии' }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Не удалось создать ветку');
+    });
+    expect(screen.getByRole('dialog', { name: 'Сравнение версий' })).toBeInTheDocument();
   });
 
   it('tests the auto provider (null) from the model popover', async () => {

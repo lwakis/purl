@@ -16,7 +16,8 @@ import {
 import toast from 'react-hot-toast';
 import { useAppStore } from '../store/appStore';
 import { useGeneration } from '../hooks/useGeneration';
-import { getModels, getProjectVersions, testProvider } from '../services/api';
+import { useProjects } from '../hooks/useProjects';
+import { branchFromVersion, getModels, getProjectVersions, testProvider } from '../services/api';
 import { useT } from '../i18n';
 import { diffLines } from '../utils/lineDiff';
 import type { ProjectVersion, ProviderInfo } from '../types';
@@ -39,6 +40,10 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
     currentCode,
     currentProject,
     setCurrentCode,
+    setCurrentProject,
+    setPrompt,
+    setSessionId,
+    setChatHistory,
     selectedModel,
     setSelectedModel,
     planOn,
@@ -52,6 +57,7 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
     removeAttachment,
   } = useAppStore();
   const { iterate } = useGeneration();
+  const { fetchProjects } = useProjects();
   const { t } = useT();
   const [message, setMessage] = useState('');
   const [inputHeight, setInputHeight] = useState(40);
@@ -288,6 +294,41 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
       setCompareVersion(null);
     },
     [handleRestoreVersion],
+  );
+
+  // Branch a brand-new project off a snapshot, then make it the active one
+  // (same load-into-store sequence as picking a project in the sidebar).
+  const handleCompareBranch = useCallback(
+    async (version: ProjectVersion) => {
+      if (!currentProject) return;
+      try {
+        const project = await branchFromVersion(
+          currentProject.id,
+          version.id,
+          `${currentProject.name} — v${version.version_num}`,
+        );
+        setCurrentProject(project);
+        setCurrentCode(project.current_code ?? '');
+        setPrompt(project.prompt ?? '');
+        setSessionId(project.session_id);
+        setChatHistory([]);
+        void fetchProjects();
+        toast.success(t('toasts.branchCreated'));
+        setCompareVersion(null);
+      } catch {
+        toast.error(t('errors.branchVersion'));
+      }
+    },
+    [
+      currentProject,
+      fetchProjects,
+      setCurrentProject,
+      setCurrentCode,
+      setPrompt,
+      setSessionId,
+      setChatHistory,
+      t,
+    ],
   );
 
   const handleDownloadVersion = useCallback(
@@ -672,6 +713,7 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
           initialVersionId={compareVersion.id}
           onClose={() => setCompareVersion(null)}
           onRestore={handleCompareRestore}
+          onBranch={handleCompareBranch}
         />
       )}
     </div>

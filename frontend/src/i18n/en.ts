@@ -160,6 +160,8 @@ export const en: RuDictionary = {
     notEnough: 'At least two versions are needed',
     diffStats: '+{added} / −{removed}',
     restore: 'Restore',
+    branch: 'Branch',
+    branchVersion: 'Branch from this version',
   },
   sidebar: {
     title: 'Projects',
@@ -180,6 +182,8 @@ export const en: RuDictionary = {
     noVersions: 'No versions yet',
     version: 'Version {num}',
     deleteConfirm: 'Delete project? This action cannot be undone.',
+    duplicate: 'Duplicate project',
+    copySuffix: ' (copy)',
   },
   app: {
     sendAria: 'Send',
@@ -202,9 +206,13 @@ export const en: RuDictionary = {
     updateProject: 'Failed to update project',
     deleteProject: 'Failed to delete project',
     enhancePrompt: 'Failed to improve prompt',
+    duplicateProject: 'Failed to duplicate project',
+    branchVersion: 'Failed to branch from this version',
   },
   toasts: {
     projectSaved: 'Project saved',
     projectDeleted: 'Project deleted',
+    projectDuplicated: 'Project duplicated',
+    branchCreated: 'Branch created',
   },
 };
