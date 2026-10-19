@@ -10,7 +10,7 @@ from app.services.cache_service import cache
 
 def test_cache_persists_across_memory_clear(client):
     """A generated result must be served from the DB after memory is dropped."""
-    payload = {'prompt': 'Persistent cache proof', 'theme': 'dark', 'style': 'techno'}
+    payload = {'prompt': 'Persistent cache proof'}
 
     first = client.post('/api/generate', json=payload)
     assert first.status_code == 200
@@ -52,7 +52,7 @@ def test_generate_survives_db_failure(client, monkeypatch):
 
     monkeypatch.setattr(db, 'async_session_factory', _boom)
 
-    payload = {'prompt': 'DB failure resilience', 'theme': 'dark', 'style': 'minimal'}
+    payload = {'prompt': 'DB failure resilience'}
     resp = client.post('/api/generate', json=payload)
     assert resp.status_code == 200
 

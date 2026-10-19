@@ -53,27 +53,23 @@ class TTLCache:
     def get_cached(
         self,
         prompt: str,
-        theme: str,
-        style: str,
         model: str | None = None,
         plan: bool = False,
     ) -> str | None:
-        """Convenience: hash prompt+theme+style+model+plan and return cached HTML if any."""
-        key = hash_prompt(prompt, theme, style, model or '', plan)
+        """Convenience: hash prompt+model+plan and return cached HTML if any."""
+        key = hash_prompt(prompt, model or '', plan)
         return self.get(key)
 
     def set_cache(
         self,
         prompt: str,
-        theme: str,
-        style: str,
         html: str,
         model: str | None = None,
         plan: bool = False,
         ttl: int | None = None,
     ) -> None:
-        """Convenience: hash prompt+theme+style+model+plan and cache the HTML."""
-        key = hash_prompt(prompt, theme, style, model or '', plan)
+        """Convenience: hash prompt+model+plan and cache the HTML."""
+        key = hash_prompt(prompt, model or '', plan)
         self.set(key, html, ttl)
 
     # ── Persistent (SQLite-backed) async layer ───────────────────────────────
@@ -156,27 +152,23 @@ class TTLCache:
     async def aget_cached(
         self,
         prompt: str,
-        theme: str,
-        style: str,
         model: str | None = None,
         plan: bool = False,
     ) -> str | None:
-        """Async convenience: hash prompt+theme+style+model+plan and look up."""
-        key = hash_prompt(prompt, theme, style, model or '', plan)
+        """Async convenience: hash prompt+model+plan and look up."""
+        key = hash_prompt(prompt, model or '', plan)
         return await self.aget(key)
 
     async def aset_cache(
         self,
         prompt: str,
-        theme: str,
-        style: str,
         html: str,
         model: str | None = None,
         plan: bool = False,
         ttl: int | None = None,
     ) -> None:
-        """Async convenience: hash prompt+theme+style+model+plan and persist HTML."""
-        key = hash_prompt(prompt, theme, style, model or '', plan)
+        """Async convenience: hash prompt+model+plan and persist HTML."""
+        key = hash_prompt(prompt, model or '', plan)
         await self.aset(key, html, ttl)
 
 

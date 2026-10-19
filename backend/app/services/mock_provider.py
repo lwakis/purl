@@ -170,7 +170,7 @@ def plan_comment(lang: str) -> str:
 # ── Template ─────────────────────────────────────────────────────────────────
 
 _MOCK_TEMPLATE = """<!DOCTYPE html>
-<html lang="{lang}" data-theme="{theme}">
+<html lang="{lang}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -261,13 +261,6 @@ _MOCK_TEMPLATE = """<!DOCTYPE html>
     margin-top: var(--space-xl);
   }}
   @media (prefers-reduced-motion: reduce) {{ *, *::before, *::after {{ transition-duration: 0s !important; }} }}
-  @media (prefers-color-scheme: dark) {{
-    :root[data-theme="auto"] {{
-      --color-bg: #0f0f13; --color-surface: #1a1a23;
-      --color-text: #e4e4ec; --color-text-secondary: #8b8b9e;
-      --color-primary: #6366f1; --color-primary-hover: #818cf8; --color-accent: #a78bfa;
-    }}
-  }}
 </style>
 </head>
 <body>
@@ -295,29 +288,17 @@ _MOCK_TEMPLATE = """<!DOCTYPE html>
 </html>"""
 
 
-def _mock_generate_html(prompt: str, theme: str, style: str, plan: bool = False) -> str:
+def _mock_generate_html(prompt: str, plan: bool = False) -> str:
     """Return a hardcoded, beautiful HTML page based on prompt keywords."""
     t = _MOCK_TEXTS[detect_lang(prompt)]
     title = t['title']
     headline = t['default_headline']
     subheadline = t['default_sub']
 
-    # Theme colours
-    if theme == 'dark':
-        bg, surface = '#0f0f13', '#1a1a23'
-        text, text_sec = '#e4e4ec', '#8b8b9e'
-    else:
-        bg, surface = '#f8f9fc', '#ffffff'
-        text, text_sec = '#1a1a2e', '#6b6b80'
-
-    if style == 'corporate':
-        primary, primary_hover, accent = '#2563eb', '#3b82f6', '#60a5fa'
-    elif style == 'playful':
-        primary, primary_hover, accent = '#ec4899', '#f472b6', '#fbbf24'
-    elif style == 'techno':
-        primary, primary_hover, accent = '#06b6d4', '#22d3ee', '#8b5cf6'
-    else:  # minimal
-        primary, primary_hover, accent = '#6366f1', '#818cf8', '#a78bfa'
+    # Fixed dark palette
+    bg, surface = '#0f0f13', '#1a1a23'
+    text, text_sec = '#e4e4ec', '#8b8b9e'
+    primary, primary_hover, accent = '#6366f1', '#818cf8', '#a78bfa'
 
     # Extract keywords from prompt
     lower = prompt.lower()
@@ -339,7 +320,6 @@ def _mock_generate_html(prompt: str, theme: str, style: str, plan: bool = False)
 
     html = _MOCK_TEMPLATE.format(
         lang=t['lang'],
-        theme=theme,
         title=title,
         bg=bg,
         surface=surface,

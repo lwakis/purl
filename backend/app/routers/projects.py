@@ -39,8 +39,6 @@ def _project_to_response(p: Project) -> ProjectResponse:
         name=p.name,
         prompt=p.prompt,
         current_code=p.current_code,
-        theme=p.theme or 'auto',
-        style=p.style or 'minimal',
         session_id=p.session_id,
         created_at=p.created_at,
         updated_at=p.updated_at,
@@ -141,8 +139,6 @@ async def duplicate_project(
         name=(req.name if req and req.name else None) or f'{source.name} (copy)',
         prompt=source.prompt,
         current_code=source.current_code,
-        theme=source.theme,
-        style=source.style,
         session_id=source.session_id,
     )
     db.add(project)
@@ -183,10 +179,6 @@ async def update_project(
         project.prompt = req.prompt
     if req.current_code is not None:
         project.current_code = req.current_code
-    if req.theme is not None:
-        project.theme = req.theme
-    if req.style is not None:
-        project.style = req.style
     await db.flush()
     await db.refresh(project)
     return _project_to_response(project)
@@ -298,8 +290,6 @@ async def branch_from_version(
         name=(req.name if req and req.name else None) or f'{source.name} — v{version.version_num}',
         prompt=version.message or source.prompt,
         current_code=version.code,
-        theme=source.theme,
-        style=source.style,
         session_id=source.session_id,
     )
     db.add(project)

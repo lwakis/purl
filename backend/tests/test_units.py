@@ -29,21 +29,15 @@ def test_validate_html_missing_doctype_reports_error():
 
 
 def test_hash_prompt_is_deterministic():
-    first = hash_prompt('prompt', 'auto', 'minimal')
-    second = hash_prompt('prompt', 'auto', 'minimal')
+    first = hash_prompt('prompt')
+    second = hash_prompt('prompt')
     assert first == second
 
 
-def test_hash_prompt_differs_on_theme_and_style():
-    base = hash_prompt('prompt', 'auto', 'minimal')
-    assert hash_prompt('prompt', 'dark', 'minimal') != base
-    assert hash_prompt('prompt', 'auto', 'techno') != base
-
-
-def test_build_system_prompt_contains_theme_and_style_instructions():
-    prompt = build_system_prompt('dark', 'techno')
-    assert 'Use a dark color scheme' in prompt
-    assert 'neon accents' in prompt
+def test_build_system_prompt_has_no_style_section():
+    prompt = build_system_prompt()
+    assert 'ADDITIONAL STYLE REQUIREMENTS' not in prompt
+    assert 'same language as the user' in prompt
 
 
 def test_build_generate_prompt_wraps_user_prompt():

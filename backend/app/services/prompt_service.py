@@ -4,41 +4,6 @@ from __future__ import annotations
 
 from app.prompts import SYSTEM_PROMPT
 
-_THEME_INSTRUCTIONS: dict[str, str] = {
-    'light': (
-        'Use a light color scheme with a light background and dark text. '
-        'Prefer white or light-gray backgrounds.'
-    ),
-    'dark': (
-        'Use a dark color scheme with a dark background and light text. '
-        'Prefer #0f0f13 and #1a1a23 as the primary backgrounds.'
-    ),
-    'auto': (
-        'Honor prefers-color-scheme with a media query for the dark theme. '
-        'Default to the light theme.'
-    ),
-}
-
-_STYLE_INSTRUCTIONS: dict[str, str] = {
-    'minimal': (
-        'Minimalist design with generous whitespace, thin lines and restrained colors. Font: Inter.'
-    ),
-    'corporate': (
-        'Corporate style with strict lines, a blue or navy color palette and '
-        'clear CTA buttons. Font: Inter or Roboto.'
-    ),
-    'playful': (
-        'Playful design with vivid colors (pink, yellow, purple), rounded '
-        'corners and fun micro-animations. Font: Nunito or Poppins.'
-    ),
-    'techno': (
-        'Futuristic/tech style with dark backgrounds, neon accents '
-        '(cyan, green, purple) and glassmorphism effects. Font: Space Grotesk '
-        'or JetBrains Mono.'
-    ),
-}
-
-
 _PLAN_INSTRUCTION = (
     'Before generating code, write a concise markdown plan of the implementation steps, '
     'then generate the code.'
@@ -59,24 +24,9 @@ def _detect_lang(text: str) -> str:
     return detect_lang(text)
 
 
-def build_system_prompt(
-    theme: str = 'auto',
-    style: str = 'minimal',
-    plan: bool = False,
-) -> str:
-    """Return the full system prompt with theme/style instructions appended."""
-    theme_instruction = _THEME_INSTRUCTIONS.get(theme, _THEME_INSTRUCTIONS['auto'])
-    style_instruction = _STYLE_INSTRUCTIONS.get(style, _STYLE_INSTRUCTIONS['minimal'])
-
-    prompt = (
-        SYSTEM_PROMPT
-        + '\n\nADDITIONAL STYLE REQUIREMENTS:\n'
-        + theme_instruction
-        + '\n'
-        + style_instruction
-        + '\n'
-        + _LANG_INSTRUCTION
-    )
+def build_system_prompt(plan: bool = False) -> str:
+    """Return the full system prompt, optionally with the planning instruction."""
+    prompt = SYSTEM_PROMPT + '\n\n' + _LANG_INSTRUCTION
     if plan:
         prompt += '\n\n' + _PLAN_INSTRUCTION
     return prompt

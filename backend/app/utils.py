@@ -12,13 +12,11 @@ def generate_session_id() -> str:
 
 def hash_prompt(
     prompt: str,
-    theme: str,
-    style: str,
     model: str = '',
     plan: bool = False,
 ) -> str:
-    """Return SHA-256 hex digest of prompt + theme + style + model + plan for cache keys."""
-    raw = f'{prompt}||{theme}||{style}||{model}||{plan}'
+    """Return SHA-256 hex digest of prompt + model + plan for cache keys."""
+    raw = f'{prompt}||{model}||{plan}'
     return hashlib.sha256(raw.encode()).hexdigest()
 
 

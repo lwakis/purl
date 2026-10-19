@@ -75,12 +75,12 @@ def test_resolve_provider_not_ready_override_falls_back(monkeypatch):
 
 
 def test_build_system_prompt_plan_adds_instruction():
-    prompt = build_system_prompt('dark', 'techno', plan=True)
+    prompt = build_system_prompt(plan=True)
     assert 'Before generating code, write a concise markdown plan' in prompt
 
 
 def test_build_system_prompt_without_plan_has_no_instruction():
-    prompt = build_system_prompt('dark', 'techno')
+    prompt = build_system_prompt()
     assert 'Before generating code' not in prompt
 
 
@@ -101,10 +101,10 @@ def test_build_iterate_prompt_without_selected_element():
 
 
 def test_hash_prompt_includes_model_and_plan():
-    base = hash_prompt('prompt', 'auto', 'minimal')
-    assert hash_prompt('prompt', 'auto', 'minimal', model='openai:gpt-4o') != base
-    assert hash_prompt('prompt', 'auto', 'minimal', plan=True) != base
-    assert hash_prompt('prompt', 'auto', 'minimal', model='openai:gpt-4o', plan=True) != base
+    base = hash_prompt('prompt')
+    assert hash_prompt('prompt', model='openai:gpt-4o') != base
+    assert hash_prompt('prompt', plan=True) != base
+    assert hash_prompt('prompt', model='openai:gpt-4o', plan=True) != base
 
 
 # ── Multimodal content ────────────────────────────────────────────────────────
@@ -311,7 +311,7 @@ def test_iterate_plan_prepends_plan_comment_in_mock(client):
 
 
 def test_generate_images_skip_cache(client):
-    payload = {'prompt': 'Дашборд', 'theme': 'dark', 'style': 'techno'}
+    payload = {'prompt': 'Дашборд'}
     first = client.post('/api/generate', json={**payload, 'images': ['data:image/png;base64,AAAA']})
     assert first.status_code == 200
     first_html = extract_complete_html(first.text)
@@ -326,7 +326,7 @@ def test_generate_images_skip_cache(client):
 
 
 def test_generate_cache_key_includes_model_and_plan(client):
-    payload = {'prompt': 'Дашборд', 'theme': 'dark', 'style': 'techno'}
+    payload = {'prompt': 'Дашборд'}
     first = client.post('/api/generate', json=payload)
     assert first.status_code == 200
     first_html = extract_complete_html(first.text)

@@ -38,7 +38,7 @@ def test_generate_streams_all_events(client):
 
 
 def test_generate_second_identical_call_served_from_cache(client):
-    payload = {'prompt': 'Дашборд аналитики', 'theme': 'dark', 'style': 'techno'}
+    payload = {'prompt': 'Дашборд аналитики'}
 
     first = client.post('/api/generate', json=payload)
     assert first.status_code == 200

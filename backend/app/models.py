@@ -39,8 +39,6 @@ def validate_images(value: list[str]) -> list[str]:
 
 class GenerateRequest(BaseModel):
     prompt: str = Field(..., max_length=2000, description='User prompt describing the design')
-    theme: Literal['light', 'dark', 'auto'] = 'auto'
-    style: Literal['minimal', 'corporate', 'playful', 'techno'] = 'minimal'
     session_id: str | None = Field(None, description='Client-generated browser session identifier')
     model: str | None = Field(None, description='Provider override in "provider:model" format')
     plan: bool = Field(False, description='Ask the model to plan before generating code')
@@ -93,8 +91,6 @@ class ProjectResponse(BaseModel):
     name: str
     prompt: str | None = None
     current_code: str | None = None
-    theme: str = 'auto'
-    style: str = 'minimal'
     session_id: str | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
@@ -137,8 +133,6 @@ class ProjectUpdate(BaseModel):
     name: str | None = None
     prompt: str | None = None
     current_code: str | None = None
-    theme: str | None = None
-    style: str | None = None
 
 
 class ProjectVersionCreate(BaseModel):

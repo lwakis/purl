@@ -64,8 +64,6 @@ class Project(Base):
     session_id = Column(String(50), nullable=True, index=True)
     prompt = Column(Text, nullable=True)
     current_code = Column(Text, nullable=True)
-    theme = Column(String(20), default='auto')
-    style = Column(String(20), default='minimal')
     created_at = Column(DateTime(timezone=True), default=_utcnow)
     updated_at = Column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
 

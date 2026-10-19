@@ -237,8 +237,6 @@ async def _stream_llm(
 
 async def generate(
     prompt: str,
-    theme: str = 'auto',
-    style: str = 'minimal',
     *,
     model: str | None = None,
     plan: bool = False,
@@ -268,7 +266,7 @@ async def generate(
     from app.services.prompt_service import build_generate_prompt, build_system_prompt
     from app.services.token_usage import usage_store
 
-    system = build_system_prompt(theme, style, plan=plan)
+    system = build_system_prompt(plan=plan)
     user_msg = build_generate_prompt(prompt)
 
     st = status_texts(detect_lang(prompt))
@@ -284,7 +282,7 @@ async def generate(
     usage = UsageAccumulator()
 
     if not provider.ready:
-        full_html = _mock_generate_html(prompt, theme, style, plan=plan)
+        full_html = _mock_generate_html(prompt, plan=plan)
         async for sse in _stream_mock(full_html, intro=st['intro']):
             yield sse
     else:
@@ -313,7 +311,7 @@ async def iterate_stream(
 ) -> AsyncGenerator[str]:
     """Iterate on existing design, yielding SSE events.
 
-    *system_prompt* – the full system prompt including theme/style instructions.
+    *system_prompt* – the full system prompt.
     *history* – list of ``{"role": "user"|"assistant", "content": "..."}`` messages.
     *current_code* – the current HTML code.
     *user_message* – the user's iteration request.

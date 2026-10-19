@@ -15,10 +15,6 @@ def _add_version(client, project_id, code, message=None):
 
 def test_duplicate_project_copies_fields(client, create_project):
     source = create_project(name='Original', session_id='ses-dup')
-    client.put(
-        f'/api/projects/{source["id"]}',
-        json={'theme': 'dark', 'style': 'playful'},
-    )
 
     resp = client.post(f'/api/projects/{source["id"]}/duplicate')
     assert resp.status_code == 201
@@ -27,8 +23,6 @@ def test_duplicate_project_copies_fields(client, create_project):
     assert copy['id'] != source['id']
     assert copy['prompt'] == source['prompt']
     assert copy['current_code'] == source['current_code']
-    assert copy['theme'] == 'dark'
-    assert copy['style'] == 'playful'
     assert copy['session_id'] == source['session_id']
 
 

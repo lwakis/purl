@@ -187,7 +187,7 @@ async def api_generate(
 
     # Check cache — skipped entirely when images are present (data URLs are huge)
     if not req.images:
-        cached_html = await cache.aget_cached(req.prompt, req.theme, req.style, req.model, req.plan)
+        cached_html = await cache.aget_cached(req.prompt, req.model, req.plan)
         if cached_html is not None:
 
             async def _cached() -> AsyncGenerator[bytes]:
@@ -201,8 +201,6 @@ async def api_generate(
         async for event in _stream_events(
             generate(
                 req.prompt,
-                req.theme,
-                req.style,
                 model=req.model,
                 plan=req.plan,
                 images=req.images,
@@ -222,9 +220,7 @@ async def api_generate(
                     pass
 
         if collected_html and not req.images:
-            await cache.aset_cache(
-                req.prompt, req.theme, req.style, collected_html, req.model, req.plan
-            )
+            await cache.aset_cache(req.prompt, collected_html, req.model, req.plan)
 
     return _build_sse_response(_generate_sse())
 
@@ -246,7 +242,7 @@ async def api_iterate(
     if not result.allowed:
         return _rate_limit_error(int(result.reset_time))
 
-    system_prompt = build_system_prompt('auto', 'minimal', plan=req.plan)
+    system_prompt = build_system_prompt(plan=req.plan)
 
     history_dicts: list[dict[str, str]] = [
         {'role': m.role, 'content': m.content} for m in req.history
