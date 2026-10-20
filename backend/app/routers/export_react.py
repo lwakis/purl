@@ -1,13 +1,18 @@
-"""React export endpoint (non-streaming JSON)."""
+"""React export endpoint (downloads a Vite + React project zip)."""
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 
 from app.config import settings
-from app.models import ReactExportRequest, ReactExportResponse
-from app.services.export_react_service import LLMProviderError, convert_to_react
+from app.models import ReactExportRequest
+from app.services.export_react_service import (
+    LLMProviderError,
+    build_project_zip,
+    convert_to_react,
+    extract_title,
+)
 from app.services.rate_limiter import rate_limiter
 
 router = APIRouter(prefix='/api', tags=['export'])
@@ -31,9 +36,9 @@ def _rate_limit_error(retry_after: int) -> JSONResponse:
     )
 
 
-@router.post('/export-react', response_model=ReactExportResponse)
+@router.post('/export-react')
 async def api_export_react(req: ReactExportRequest, request: Request):
-    """Convert a single-file HTML page into one React functional component."""
+    """Download a single-file HTML page as a ready-to-run Vite + React project."""
     rate_key, limit = _get_rate_limit_key(request)
     result = rate_limiter.check(rate_key, limit)
     if not result.allowed:
@@ -44,4 +49,10 @@ async def api_export_react(req: ReactExportRequest, request: Request):
     except LLMProviderError:
         raise HTTPException(status_code=502, detail='llm_provider_error') from None
 
-    return {'code': converted}
+    archive = build_project_zip(converted, title=extract_title(req.code))
+
+    return Response(
+        content=archive,
+        media_type='application/zip',
+        headers={'Content-Disposition': 'attachment; filename="react-project.zip"'},
+    )

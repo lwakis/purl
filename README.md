@@ -29,7 +29,7 @@ Flagship features:
 
 - **Prompt to page.** Describe what you want and get complete, self-contained HTML with inline CSS and JS. Live preview, syntax-highlighted source, copy and download.
 - **Iterate by chat.** "Make the buttons bigger", "switch to a dark theme". Purl rewrites the page and the preview updates.
-- **React export.** Turn a finished page into a single `.jsx` component — CSS embedded, scripts as hooks — ready for a Vite or CRA project.
+- **React export.** Turn a finished page into a ready-to-run Vite + React project — download a zip with `App.jsx`, `main.jsx`, `package.json`, `index.html` and a README; `npm install && npm run dev` is all it takes.
 - **Projects with autosave.** Work is saved automatically, like chats in AI assistants — no Save button. Projects keep a version history you can roll back, duplicate a project, or branch a new one from any snapshot.
 - **Your model, your context.** Pick a provider and model from a catalog (`GET /api/models`), test the connection right from the picker, ask for a plan before code, attach up to 8 images (5 MB each), or click an element in the preview to iterate on it.
 - **Command palette.** Press Ctrl/Cmd+K to switch views, find in code, copy or download the page, switch the language, or cancel a running generation.
@@ -191,7 +191,7 @@ Interactive docs are served at `/docs` when the backend is running (FastAPI Swag
 | POST | `/api/generate` | Generate a design; returns an SSE stream |
 | POST | `/api/iterate` | Iterate on existing code via chat; SSE stream |
 | POST | `/api/enhance-prompt` | Rewrite a short brief into a richer, concrete spec; returns `{prompt}` |
-| POST | `/api/export-react` | Convert the current page into a single React component (`.jsx`, CSS embedded) |
+| POST | `/api/export-react` | Download the current page as a ready-to-run Vite + React project (`.zip`) |
 | GET | `/api/projects` | List projects for a session — supports `q` (name/prompt search), `page`, `page_size`; returns `{items, total, page, page_size}` |
 | POST | `/api/projects` | Create a project |
 | GET | `/api/projects/{id}` | Get a project |

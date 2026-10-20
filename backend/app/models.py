@@ -93,10 +93,6 @@ class GenerateResponse(BaseModel):
     data: str
 
 
-class ReactExportResponse(BaseModel):
-    code: str
-
-
 class ProjectResponse(BaseModel):
     id: int
     name: str
