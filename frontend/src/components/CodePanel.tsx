@@ -20,7 +20,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { useAppStore } from '../store/appStore';
-import { exportReact } from '../services/api';
+import { exportReactProject } from '../services/api';
 import { useT } from '../i18n';
 import { clampMatchIndex, findMatches, nextMatchIndex, prevMatchIndex } from '../utils/findMatches';
 
@@ -273,12 +273,11 @@ export default function CodePanel() {
     if (!currentCode || exporting) return;
     setExporting(true);
     try {
-      const { code } = await exportReact(currentCode, selectedModel);
-      const blob = new Blob([code], { type: 'text/javascript' });
+      const blob = await exportReactProject(currentCode, selectedModel);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${slugifyProjectName(currentProject?.name ?? '')}.jsx`;
+      a.download = `${slugifyProjectName(currentProject?.name ?? '')}.zip`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success(t('code.reactDone'));

@@ -6,7 +6,7 @@ import { useAppStore } from '../store/appStore';
 import type { Project } from '../types';
 
 vi.mock('../services/api', () => ({
-  exportReact: vi.fn(),
+  exportReactProject: vi.fn(),
 }));
 
 vi.mock('react-hot-toast', () => {
@@ -31,7 +31,7 @@ vi.mock('react-syntax-highlighter/dist/esm/styles/prism/one-dark', () => ({
 }));
 
 import toast from 'react-hot-toast';
-import { exportReact } from '../services/api';
+import { exportReactProject } from '../services/api';
 
 const CODE = '<html><body>Hello</body></html>';
 const SEARCH_CODE = '<p>match</p><p>match</p><p>match</p>';
@@ -51,7 +51,7 @@ const PROJECT: Project = {
 beforeEach(() => {
   vi.mocked(toast.success).mockReset();
   vi.mocked(toast.error).mockReset();
-  vi.mocked(exportReact).mockReset();
+  vi.mocked(exportReactProject).mockReset();
   useAppStore.setState({ currentCode: '', currentProject: null, selectedModel: null });
 });
 
@@ -119,14 +119,15 @@ describe('CodePanel', () => {
     expect(toast.success).toHaveBeenCalledWith('Скачивание начато');
   });
 
-  it('exports the code to React and downloads it as a .jsx file', async () => {
+  it('exports the code as a ready-to-run React project ZIP', async () => {
     const user = userEvent.setup();
     useAppStore.setState({
       currentCode: CODE,
       currentProject: PROJECT,
       selectedModel: 'openai:gpt-4o',
     });
-    vi.mocked(exportReact).mockResolvedValue({ code: '<App />' });
+    const zip = new Blob(['zip-bytes'], { type: 'application/zip' });
+    vi.mocked(exportReactProject).mockResolvedValue(zip);
     const createObjectURL = vi.fn(() => 'blob:mock-url');
     const revokeObjectURL = vi.fn();
     vi.stubGlobal('URL', { ...URL, createObjectURL, revokeObjectURL });
@@ -140,18 +141,19 @@ describe('CodePanel', () => {
     render(<CodePanel />);
     await user.click(screen.getByRole('button', { name: /React/ }));
 
-    expect(exportReact).toHaveBeenCalledWith(CODE, 'openai:gpt-4o');
+    expect(exportReactProject).toHaveBeenCalledWith(CODE, 'openai:gpt-4o');
     expect(createObjectURL).toHaveBeenCalledTimes(1);
+    expect(createObjectURL).toHaveBeenCalledWith(zip);
     expect(clickSpy).toHaveBeenCalledTimes(1);
-    expect(downloads).toEqual(['my-project.jsx']);
+    expect(downloads).toEqual(['my-project.zip']);
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
-    expect(toast.success).toHaveBeenCalledWith('React-компонент скачан');
+    expect(toast.success).toHaveBeenCalledWith('React-проект скачан');
   });
 
   it('shows an error toast when the React export fails', async () => {
     const user = userEvent.setup();
     useAppStore.setState({ currentCode: CODE });
-    vi.mocked(exportReact).mockRejectedValue(new Error('boom'));
+    vi.mocked(exportReactProject).mockRejectedValue(new Error('boom'));
 
     render(<CodePanel />);
     await user.click(screen.getByRole('button', { name: /React/ }));
@@ -163,10 +165,10 @@ describe('CodePanel', () => {
   it('disables the React button while the export is in flight', async () => {
     const user = userEvent.setup();
     useAppStore.setState({ currentCode: CODE });
-    let resolveExport!: (value: { code: string }) => void;
-    vi.mocked(exportReact).mockImplementation(
+    let resolveExport!: (value: Blob) => void;
+    vi.mocked(exportReactProject).mockImplementation(
       () =>
-        new Promise<{ code: string }>((resolve) => {
+        new Promise<Blob>((resolve) => {
           resolveExport = resolve;
         }),
     );
@@ -184,7 +186,7 @@ describe('CodePanel', () => {
     expect(button).toBeDisabled();
 
     await act(async () => {
-      resolveExport({ code: '<App />' });
+      resolveExport(new Blob(['zip-bytes'], { type: 'application/zip' }));
     });
 
     await waitFor(() => expect(button).toBeEnabled());

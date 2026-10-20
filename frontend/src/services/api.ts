@@ -138,11 +138,34 @@ export async function enhancePrompt(prompt: string, model?: string | null): Prom
   return data.prompt;
 }
 
-export async function exportReact(code: string, model?: string | null): Promise<{ code: string }> {
-  return request<{ code: string }>('/api/export-react', {
-    method: 'POST',
-    body: JSON.stringify({ code, model: model ?? null }),
-  });
+export async function exportReactProject(code: string, model?: string | null): Promise<Blob> {
+  let response: Response;
+  try {
+    response = await fetch(`${BASE_URL}/api/export-react`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, model: model ?? null }),
+    });
+  } catch {
+    throw new Error(t('errors.network'));
+  }
+
+  if (!response.ok) {
+    const raw = await response.text().catch(() => '');
+    if (response.status === 429) {
+      throw new Error(t('errors.rateLimit'));
+    }
+    let detail = '';
+    try {
+      const parsed = JSON.parse(raw);
+      if (typeof parsed.detail === 'string') detail = parsed.detail;
+    } catch {
+      // body is not JSON — ignore raw technical body
+    }
+    throw new Error(detail || t('errors.serverError', { status: response.status }));
+  }
+
+  return response.blob();
 }
 
 export async function getUsage(sessionId: string): Promise<TokenUsage | null> {
