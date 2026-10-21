@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title='Purl AI',
     description='AI-powered design generation service',
-    version='0.6.0',
+    version='0.7.0',
     lifespan=lifespan,
     redirect_slashes=False,
 )
@@ -56,7 +56,7 @@ app.include_router(projects.router)
 
 @app.get('/')
 async def root():
-    return {'status': 'ok', 'version': '0.6.0'}
+    return {'status': 'ok', 'version': '0.7.0'}
 
 
 @app.get('/health')

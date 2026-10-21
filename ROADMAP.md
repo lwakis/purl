@@ -12,7 +12,7 @@ What's in the repo right now:
 - [x] Streaming output over SSE (`analysis` → `design` → `code` → `complete`)
 - [x] Sandboxed iframe preview (`sandbox="allow-scripts"`, no `allow-same-origin`)
 - [x] Copy and download HTML
-- [x] React export — convert the finished page into one `.jsx` component (CSS embedded, scripts as hooks)
+- [x] React export — download the finished page as a ready-to-run Vite + React project (zip)
 - [x] Iterative chat on existing designs (history + current code sent with each request)
 - [x] Plan mode — a design-planning pass before code generation
 - [x] Element selection — click a preview element to iterate on it directly

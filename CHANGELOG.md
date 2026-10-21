@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-10-21
+
+### Changed
+
+- React export now ships a runnable project: `POST /api/export-react` returns an `application/zip` attachment with a ready-to-run Vite + React project — `package.json`, `index.html`, `vite.config.js`, `src/main.jsx`, `src/App.jsx`, `README.md` and `.gitignore` — instead of JSON with a single component, and the code-panel button downloads `<project>.zip`. Archives are byte-for-byte deterministic, the source page `<title>` is carried into `index.html`, and mock mode embeds the page verbatim so the project builds without a provider.
+
 ## [0.6.0] - 2026-10-19
 
 ### Added

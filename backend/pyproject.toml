@@ -1,6 +1,6 @@
 [project]
 name = "purl-backend"
-version = "0.6.0"
+version = "0.7.0"
 description = "Purl AI — AI design generation service backend"
 authors = [{ name = "lwakis" }]
 license = "MIT"
