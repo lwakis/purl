@@ -1,16 +1,19 @@
 services:
-  backend:
-    build: ./backend
-    image: purl-backend:latest
-    ports:
-      - "8000:8000"
+  purl:
+    image: ghcr.io/lwakis/purl:latest
+    build: .
+    ports: ["8000:8000"]
     environment:
       DATABASE_URL: sqlite+aiosqlite:////app/data/purl.db
+      INSTANCE_TOKEN: ${INSTANCE_TOKEN:-}
       LLM_API_KEY: ${LLM_API_KEY:-}
       LLM_PROVIDER: ${LLM_PROVIDER:-openai}
       LLM_BASE_URL: ${LLM_BASE_URL:-}
       LLM_MODEL: ${LLM_MODEL:-}
-      CORS_ORIGINS: '["http://localhost:5173"]'
+      LLM_FALLBACK_MODEL: ${LLM_FALLBACK_MODEL:-}
+      LLM_FALLBACK_API_KEY: ${LLM_FALLBACK_API_KEY:-}
+      LLM_FALLBACK_BASE_URL: ${LLM_FALLBACK_BASE_URL:-}
+      CORS_ORIGINS: '["http://localhost:8000"]'
     volumes:
       - purl-data:/app/data
     healthcheck:
@@ -20,16 +23,5 @@ services:
       retries: 12
       start_period: 10s
     restart: unless-stopped
-
-  frontend:
-    build: ./frontend
-    image: purl-frontend:latest
-    ports:
-      - "5173:80"
-    depends_on:
-      backend:
-        condition: service_healthy
-    restart: unless-stopped
-
 volumes:
   purl-data:

@@ -1,0 +1,21 @@
+# Version control / CI
+.git
+.github
+
+# Backend
+backend/.venv
+backend/**/__pycache__
+backend/tests
+backend/*.db
+backend/.env
+
+# Frontend build artifacts and dependencies
+frontend/node_modules
+frontend/dist
+frontend/coverage
+frontend/playwright-report
+frontend/test-results
+
+# Docs / prose (not needed in the image)
+docs
+*.md
