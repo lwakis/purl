@@ -1,5 +1,6 @@
 import type { ChatMessage, SSEEvent } from '../types';
 import { BASE_URL } from './api';
+import { instanceAuthHeaders, notifyUnauthorized } from './instanceAuth';
 import { t, type TranslationKey } from '../i18n';
 
 // Backend sends machine-readable error codes in an `error` event's content
@@ -113,10 +114,15 @@ async function connectSSE(url: string, body: unknown, options: SSEOptions): Prom
     try {
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...instanceAuthHeaders() },
         body: JSON.stringify(body),
         signal: controller.signal,
       });
+
+      if (response.status === 401) {
+        notifyUnauthorized();
+        throw new Error(t('errors.unauthorized'));
+      }
 
       if (response.status >= 500) {
         if (isRetryable(undefined, response.status)) return true;
@@ -211,11 +217,7 @@ export function connectGenerateSSE(
   options: SSEOptions,
   extras?: GenerateSSEExtras,
 ): Promise<void> {
-  return connectSSE(
-    `${BASE_URL}/api/generate`,
-    { prompt, ...(extras ?? {}) },
-    options,
-  );
+  return connectSSE(`${BASE_URL}/api/generate`, { prompt, ...(extras ?? {}) }, options);
 }
 
 export function connectIterateSSE(

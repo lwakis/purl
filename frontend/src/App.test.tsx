@@ -21,6 +21,8 @@ vi.mock('./services/api', () => ({
   getProjectVersions: vi.fn(),
   deleteProject: vi.fn(),
   saveProjectVersion: vi.fn(),
+  getInstanceInfo: vi.fn(),
+  unlockInstance: vi.fn(),
 }));
 
 vi.mock('./services/sse', () => ({
@@ -39,7 +41,16 @@ vi.mock('./components/CodePanel', () => ({
   default: () => <div>CodePanel mock</div>,
 }));
 
-import { getProjects } from './services/api';
+// The real gate owns input/pending/error states; the App suite only verifies
+// that App mounts it and forwards submitted tokens.
+vi.mock('./components/TokenGate', () => ({
+  default: ({ onSubmit }: { onSubmit: (token: string) => Promise<void> }) => (
+    <button onClick={() => void onSubmit('tok')}>TokenGate mock</button>
+  ),
+}));
+
+import { getInstanceInfo, getProjects, unlockInstance } from './services/api';
+import { UNAUTHORIZED_EVENT } from './services/instanceAuth';
 
 beforeEach(() => {
   vi.mocked(createSessionId).mockReset();
@@ -47,6 +58,14 @@ beforeEach(() => {
   vi.mocked(saveSession).mockReset();
   vi.mocked(getProjects).mockReset();
   vi.mocked(getProjects).mockResolvedValue({ items: [], total: 0, page: 1, page_size: 50 });
+  vi.mocked(getInstanceInfo).mockReset();
+  vi.mocked(getInstanceInfo).mockResolvedValue({
+    auth_required: false,
+    authenticated: true,
+    version: 'test',
+  });
+  vi.mocked(unlockInstance).mockReset();
+  vi.mocked(unlockInstance).mockResolvedValue(undefined);
   // jsdom does not implement matchMedia; PromptInput's example rotation
   // guards on it.
   window.matchMedia = vi.fn().mockReturnValue({ matches: false });
@@ -59,11 +78,13 @@ beforeEach(() => {
 });
 
 describe('App', () => {
-  it('renders the landing screen when there is no design', () => {
+  it('renders the landing screen when there is no design', async () => {
     vi.mocked(loadSession).mockReturnValue(null);
     vi.mocked(createSessionId).mockReturnValue('fresh-sid');
     render(<App />);
-    expect(screen.getByRole('heading', { name: 'Что вы хотите создать?' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Что вы хотите создать?' }),
+    ).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Проекты' })).toBeInTheDocument();
     expect(screen.getByText('Purl')).toBeInTheDocument();
     expect(screen.queryByRole('tab', { name: 'Предпросмотр' })).not.toBeInTheDocument();
@@ -91,12 +112,12 @@ describe('App', () => {
     expect(saveSession).not.toHaveBeenCalled();
   });
 
-  it('renders the workspace when a design exists', () => {
+  it('renders the workspace when a design exists', async () => {
     vi.mocked(loadSession).mockReturnValue(null);
     vi.mocked(createSessionId).mockReturnValue('fresh-sid');
     useAppStore.setState({ currentCode: '<html>design</html>', sessionId: 's1' });
     render(<App />);
-    expect(screen.getByRole('tab', { name: 'Предпросмотр' })).toBeInTheDocument();
+    expect(await screen.findByRole('tab', { name: 'Предпросмотр' })).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'Сообщение в чат' })).toBeInTheDocument();
     expect(screen.getByTestId('preview-iframe')).toBeInTheDocument();
     expect(
@@ -123,7 +144,7 @@ describe('App', () => {
     useAppStore.setState({ currentCode: '<html>design</html>', sessionId: 's1' });
     const { container } = render(<App />);
 
-    const trigger = screen.getByRole('button', { name: 'Панель дизайнера' });
+    const trigger = await screen.findByRole('button', { name: 'Панель дизайнера' });
     await user.click(trigger);
     expect(screen.queryByRole('button', { name: 'Панель дизайнера' })).not.toBeInTheDocument();
     expect(container.querySelector('[class*="bg-surface-950/60"]')).not.toBeNull();
@@ -139,7 +160,7 @@ describe('App', () => {
     useAppStore.setState({ currentCode: '<html>design</html>', sessionId: 's1' });
     const { container } = render(<App />);
 
-    await user.click(screen.getByRole('button', { name: 'Панель дизайнера' }));
+    await user.click(await screen.findByRole('button', { name: 'Панель дизайнера' }));
     const backdrop = container.querySelector('[class*="bg-surface-950/60"]');
     expect(backdrop).not.toBeNull();
     await user.click(backdrop as HTMLElement);
@@ -152,5 +173,71 @@ describe('App', () => {
     useAppStore.setState({ locale: 'en' });
     render(<App />);
     expect(document.documentElement.lang).toBe('en');
+  });
+
+  it('renders the token gate instead of the landing screen when auth is required', async () => {
+    vi.mocked(loadSession).mockReturnValue(null);
+    vi.mocked(createSessionId).mockReturnValue('fresh-sid');
+    vi.mocked(getInstanceInfo).mockResolvedValue({
+      auth_required: true,
+      authenticated: false,
+      version: 'test',
+    });
+    render(<App />);
+
+    expect(
+      await screen.findByRole('button', { name: 'TokenGate mock' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Что вы хотите создать?' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('unlocks the app and reloads when the gate submits a valid token', async () => {
+    const user = userEvent.setup();
+    vi.mocked(loadSession).mockReturnValue(null);
+    vi.mocked(createSessionId).mockReturnValue('fresh-sid');
+    vi.mocked(getInstanceInfo).mockResolvedValue({
+      auth_required: true,
+      authenticated: false,
+      version: 'test',
+    });
+    const reload = vi.fn();
+    const originalLocation = window.location;
+    Object.defineProperty(window, 'location', {
+      value: { ...window.location, reload },
+      configurable: true,
+    });
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: 'TokenGate mock' }));
+
+    await waitFor(() => {
+      expect(unlockInstance).toHaveBeenCalledWith('tok');
+    });
+    await waitFor(() => {
+      expect(reload).toHaveBeenCalledTimes(1);
+    });
+
+    Object.defineProperty(window, 'location', {
+      value: originalLocation,
+      configurable: true,
+    });
+  });
+
+  it('falls back to the gate when an API call reports 401', async () => {
+    vi.mocked(loadSession).mockReturnValue(null);
+    vi.mocked(createSessionId).mockReturnValue('fresh-sid');
+    render(<App />);
+
+    // Wait for the boot check to settle into the normal UI first.
+    await screen.findByRole('heading', { name: 'Что вы хотите создать?' });
+
+    fireEvent(window, new Event(UNAUTHORIZED_EVENT));
+
+    expect(await screen.findByRole('button', { name: 'TokenGate mock' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Что вы хотите создать?' }),
+    ).not.toBeInTheDocument();
   });
 });

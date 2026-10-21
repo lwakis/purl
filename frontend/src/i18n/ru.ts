@@ -201,6 +201,15 @@ export const ru = {
     placeholder: 'Команда или поиск…',
     empty: 'Ничего не найдено',
   },
+  gate: {
+    title: 'Токен инстанса',
+    subtitle: 'Этот инстанс Purl защищён. Введите токен, заданный в INSTANCE_TOKEN.',
+    label: 'Токен',
+    placeholder: 'Вставьте токен инстанса',
+    submit: 'Войти',
+    submitting: 'Проверяю…',
+    invalidToken: 'Токен не подошёл. Проверьте INSTANCE_TOKEN и попробуйте снова.',
+  },
   errors: {
     title: 'Ошибка',
     network: 'Не удалось связаться с сервером',
@@ -218,6 +227,7 @@ export const ru = {
     enhancePrompt: 'Не удалось улучшить промпт',
     duplicateProject: 'Не удалось продублировать проект',
     branchVersion: 'Не удалось создать ветку',
+    unauthorized: 'Для доступа к этому инстансу нужен токен',
   },
   toasts: {
     projectSaved: 'Проект сохранён',

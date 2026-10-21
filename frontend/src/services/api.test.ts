@@ -12,7 +12,16 @@ import {
   testProvider,
   getUsage,
   enhancePrompt,
+  exportReactProject,
+  getInstanceInfo,
+  unlockInstance,
 } from './api';
+import {
+  UNAUTHORIZED_EVENT,
+  clearInstanceToken,
+  getInstanceToken,
+  setInstanceToken,
+} from './instanceAuth';
 
 interface MockResponse {
   ok: boolean;
@@ -35,10 +44,12 @@ const fetchMock = vi.fn();
 beforeEach(() => {
   fetchMock.mockReset();
   vi.stubGlobal('fetch', fetchMock);
+  clearInstanceToken();
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  clearInstanceToken();
 });
 
 describe('api client', () => {
@@ -397,5 +408,116 @@ describe('api client', () => {
     fetchMock.mockResolvedValue(mockResponse({ detail: 'version_not_found' }, false, 404));
 
     await expect(branchFromVersion(1, 5)).rejects.toThrow('version_not_found');
+  });
+});
+
+describe('instance auth', () => {
+  it('attaches a stored instance token as a Bearer header', async () => {
+    setInstanceToken('secret-token');
+    fetchMock.mockResolvedValue(mockResponse({ items: [], total: 0, page: 1, page_size: 50 }));
+
+    await getProjects();
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/projects', {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer secret-token',
+      },
+    });
+  });
+
+  it('omits the Authorization header when no token is stored', async () => {
+    fetchMock.mockResolvedValue(mockResponse({ items: [], total: 0, page: 1, page_size: 50 }));
+
+    await getProjects();
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/projects', {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  });
+
+  it('getInstanceInfo uses an explicit token header when one is passed', async () => {
+    const info = { auth_required: true, authenticated: true, version: '1.2.3' };
+    fetchMock.mockResolvedValue(mockResponse(info));
+
+    const result = await getInstanceInfo('typed-token');
+
+    expect(result).toEqual(info);
+    expect(fetchMock).toHaveBeenCalledWith('/api/instance', {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer typed-token',
+      },
+    });
+  });
+
+  it('notifies and throws the unauthorized error on 401', async () => {
+    const onUnauthorized = vi.fn();
+    window.addEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
+    fetchMock.mockResolvedValue(mockResponse({ detail: 'unauthorized' }, false, 401));
+
+    await expect(getProjects()).rejects.toThrow('Для доступа к этому инстансу нужен токен');
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+
+    window.removeEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
+  });
+
+  it('exportReactProject sends auth headers and handles 401', async () => {
+    setInstanceToken('secret-token');
+    fetchMock.mockResolvedValue(mockResponse({ detail: 'unauthorized' }, false, 401));
+    const onUnauthorized = vi.fn();
+    window.addEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
+
+    await expect(exportReactProject('<div/>')).rejects.toThrow(
+      'Для доступа к этому инстансу нужен токен',
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/export-react', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer secret-token',
+      },
+      body: JSON.stringify({ code: '<div/>', model: null }),
+    });
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+
+    window.removeEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
+  });
+
+  it('unlockInstance stores a valid token for a protected instance', async () => {
+    fetchMock.mockResolvedValue(
+      mockResponse({ auth_required: true, authenticated: true, version: '1' }),
+    );
+
+    await unlockInstance('good-token');
+
+    expect(getInstanceToken()).toBe('good-token');
+    expect(fetchMock).toHaveBeenCalledWith('/api/instance', {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer good-token',
+      },
+    });
+  });
+
+  it('unlockInstance rejects an invalid token without storing it', async () => {
+    fetchMock.mockResolvedValue(
+      mockResponse({ auth_required: true, authenticated: false, version: '1' }),
+    );
+
+    await expect(unlockInstance('bad-token')).rejects.toThrow(
+      'Токен не подошёл. Проверьте INSTANCE_TOKEN и попробуйте снова.',
+    );
+    expect(getInstanceToken()).toBeNull();
+  });
+
+  it('unlockInstance stores nothing when the instance does not require auth', async () => {
+    fetchMock.mockResolvedValue(
+      mockResponse({ auth_required: false, authenticated: true, version: '1' }),
+    );
+
+    await expect(unlockInstance('any-token')).resolves.toBeUndefined();
+    expect(getInstanceToken()).toBeNull();
   });
 });

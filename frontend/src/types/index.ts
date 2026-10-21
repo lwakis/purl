@@ -102,3 +102,9 @@ export interface PaginatedProjects {
   page: number;
   page_size: number;
 }
+
+export interface InstanceInfo {
+  auth_required: boolean;
+  authenticated: boolean;
+  version: string;
+}

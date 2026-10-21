@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { connectGenerateSSE, connectIterateSSE } from './sse';
+import {
+  UNAUTHORIZED_EVENT,
+  clearInstanceToken,
+  setInstanceToken,
+} from './instanceAuth';
 
 const fetchMock = vi.fn();
 
@@ -19,10 +24,12 @@ const noopComplete = () => {};
 beforeEach(() => {
   fetchMock.mockReset();
   vi.stubGlobal('fetch', fetchMock);
+  clearInstanceToken();
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  clearInstanceToken();
 });
 
 describe('sse client', () => {
@@ -124,5 +131,43 @@ describe('sse client', () => {
     expect(onError).toHaveBeenCalledWith(
       new Error('Ошибка LLM-провайдера (401). Проверьте ключ и настройки.'),
     );
+  });
+
+  it('attaches a stored instance token as a Bearer header', async () => {
+    setInstanceToken('secret-token');
+    fetchMock.mockResolvedValue(sseResponse(completeFrame));
+
+    await connectGenerateSSE('Build a page', {
+      onEvent: noopEvent,
+      onError: noopError,
+      onComplete: noopComplete,
+    });
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.headers).toEqual({
+      'Content-Type': 'application/json',
+      Authorization: 'Bearer secret-token',
+    });
+  });
+
+  it('notifies and reports the unauthorized error on 401 without retrying', async () => {
+    const onError = vi.fn();
+    const onUnauthorized = vi.fn();
+    window.addEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
+    fetchMock.mockResolvedValue(new Response('unauthorized', { status: 401 }));
+
+    await connectGenerateSSE('Build a page', {
+      onEvent: noopEvent,
+      onError,
+      onComplete: noopComplete,
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(onError).toHaveBeenCalledWith(
+      new Error('Для доступа к этому инстансу нужен токен'),
+    );
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+
+    window.removeEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
   });
 });

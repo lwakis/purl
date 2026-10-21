@@ -3,6 +3,8 @@ import { Toaster } from 'react-hot-toast';
 import { ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 import { useAppStore } from './store/appStore';
 import { createSessionId, loadSession, saveSession } from './services/session';
+import { getInstanceInfo, unlockInstance } from './services/api';
+import { UNAUTHORIZED_EVENT } from './services/instanceAuth';
 import { useT } from './i18n';
 import Header from './components/Header';
 import Topbar from './components/Topbar';
@@ -11,6 +13,7 @@ import PreviewPanel from './components/PreviewPanel';
 import ChatPanel from './components/ChatPanel';
 import ProjectSidebar from './components/ProjectSidebar';
 import CommandPalette from './components/CommandPalette';
+import TokenGate from './components/TokenGate';
 import { useAutosave } from './hooks/useAutosave';
 
 // react-syntax-highlighter is heavy (~300kB) — load CodePanel on demand so
@@ -47,6 +50,34 @@ export default function App() {
   const [chatMobileOpen, setChatMobileOpen] = useState(false);
   const hasDesign = !!currentCode;
 
+  // Instance-token gate. `checking` renders no app UI at all so no child
+  // component fires an API call before we know whether the instance is locked.
+  const [authState, setAuthState] = useState<'checking' | 'locked' | 'ready'>('checking');
+
+  useEffect(() => {
+    let cancelled = false;
+    getInstanceInfo()
+      .then((info) => {
+        if (cancelled) return;
+        setAuthState(info.auth_required && !info.authenticated ? 'locked' : 'ready');
+      })
+      .catch(() => {
+        // Older backends without /api/instance, or a network hiccup: assume
+        // the app is usable and let individual requests surface real errors.
+        if (!cancelled) setAuthState('ready');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Any 401 from the API layer sends the user back to the gate.
+  useEffect(() => {
+    const onUnauthorized = () => setAuthState('locked');
+    window.addEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
+    return () => window.removeEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
+  }, []);
+
   // Escape closes the mobile chat overlay.
   useEffect(() => {
     if (!chatMobileOpen) return;
@@ -74,6 +105,23 @@ export default function App() {
   }, [setSessionId]);
 
   const closeChatMobile = useCallback(() => setChatMobileOpen(false), []);
+
+  if (authState === 'checking') {
+    return <div className="h-dvh bg-surface-950" aria-busy="true" />;
+  }
+
+  if (authState === 'locked') {
+    return (
+      <div className="h-dvh flex items-center justify-center bg-surface-950 text-surface-100">
+        <TokenGate
+          onSubmit={async (token) => {
+            await unlockInstance(token);
+            window.location.reload();
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="h-dvh flex flex-col bg-surface-950 text-surface-100">

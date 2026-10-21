@@ -197,6 +197,15 @@ export const en: RuDictionary = {
     placeholder: 'Type a command or search…',
     empty: 'No commands found',
   },
+  gate: {
+    title: 'Instance token',
+    subtitle: 'This Purl instance is protected. Enter the token configured with INSTANCE_TOKEN.',
+    label: 'Token',
+    placeholder: 'Paste the instance token',
+    submit: 'Unlock',
+    submitting: 'Unlocking…',
+    invalidToken: 'That token did not work. Check INSTANCE_TOKEN and try again.',
+  },
   errors: {
     title: 'Error',
     network: 'Failed to connect to the server',
@@ -214,6 +223,7 @@ export const en: RuDictionary = {
     enhancePrompt: 'Failed to improve prompt',
     duplicateProject: 'Failed to duplicate project',
     branchVersion: 'Failed to branch from this version',
+    unauthorized: 'This instance requires an access token',
   },
   toasts: {
     projectSaved: 'Project saved',

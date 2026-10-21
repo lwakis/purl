@@ -1,4 +1,5 @@
 import type {
+  InstanceInfo,
   Project,
   ProjectVersion,
   ProviderInfo,
@@ -7,6 +8,7 @@ import type {
   PaginatedProjects,
 } from '../types';
 import { t } from '../i18n';
+import { instanceAuthHeaders, notifyUnauthorized, setInstanceToken } from './instanceAuth';
 
 // API base URL. Empty (default) = same origin as the frontend
 // (Vite dev proxy or a reverse proxy in production).
@@ -16,13 +18,20 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   let response: Response;
   try {
     response = await fetch(`${BASE_URL}${path}`, {
+      ...options,
       headers: {
         'Content-Type': 'application/json',
+        ...instanceAuthHeaders(),
+        ...(options?.headers as Record<string, string> | undefined),
       },
-      ...options,
     });
   } catch {
     throw new Error(t('errors.network'));
+  }
+
+  if (response.status === 401) {
+    notifyUnauthorized();
+    throw new Error(t('errors.unauthorized'));
   }
 
   if (!response.ok) {
@@ -41,6 +50,27 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   }
 
   return response.json();
+}
+
+export async function getInstanceInfo(token?: string): Promise<InstanceInfo> {
+  return request<InstanceInfo>(
+    '/api/instance',
+    token ? { headers: { Authorization: `Bearer ${token}` } } : undefined,
+  );
+}
+
+/**
+ * Validate a token against the running backend before storing it.
+ * A backend without INSTANCE_TOKEN configured accepts anything (auth not
+ * required), so the token is simply not persisted.
+ */
+export async function unlockInstance(token: string): Promise<void> {
+  const info = await getInstanceInfo(token);
+  if (!info.auth_required) return;
+  if (!info.authenticated) {
+    throw new Error(t('gate.invalidToken'));
+  }
+  setInstanceToken(token);
 }
 
 export async function createProject(data: {
@@ -143,11 +173,16 @@ export async function exportReactProject(code: string, model?: string | null): P
   try {
     response = await fetch(`${BASE_URL}/api/export-react`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...instanceAuthHeaders() },
       body: JSON.stringify({ code, model: model ?? null }),
     });
   } catch {
     throw new Error(t('errors.network'));
+  }
+
+  if (response.status === 401) {
+    notifyUnauthorized();
+    throw new Error(t('errors.unauthorized'));
   }
 
   if (!response.ok) {
