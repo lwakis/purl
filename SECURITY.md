@@ -28,6 +28,14 @@ Purl renders LLM-generated HTML and JavaScript in the browser. We treat code-exe
 
 The preview iframe is sandboxed with `sandbox="allow-scripts"` and **without** `allow-same-origin`. That keeps generated code in a unique, opaque origin with no access to the parent page, its cookies, or its storage. Any change that weakens this isolation is a security regression and will be rejected in review.
 
+## Instance access and transport
+
+By default an instance is open: anyone who can reach it can use it. Set `INSTANCE_TOKEN` to require an `Authorization: Bearer <token>` header on every `/api/*` route. Only `/health` and `/api/instance` stay public, so liveness checks and the UI's token screen keep working. The web UI prompts for the token, stores it in the browser, and sends it on every API and SSE request.
+
+- Use a long, random token (for example `openssl rand -hex 32`); never reuse a password or an API key.
+- Treat the token as a bearer secret: it authenticates a session but does **not** encrypt traffic. Anyone who holds it has full access, so serve the instance over HTTPS (a reverse proxy or platform TLS) whenever it is exposed to the internet.
+- Rotating the token invalidates every stored copy — the UI re-prompts and old values stop matching.
+
 ## Threat model
 
 | Area | Current posture |
@@ -51,6 +59,7 @@ The preview iframe is sandboxed with `sandbox="allow-scripts"` and **without** `
 Before deploying Purl anywhere public:
 
 - [ ] Set `CORS_ORIGINS` to your real frontend origin(s)
+- [ ] Set `INSTANCE_TOKEN` before exposing the instance to untrusted networks
 - [ ] Keep `LLM_API_KEY` in the environment, never in the repo
 - [ ] Run behind HTTPS (reverse proxy or platform TLS)
 - [ ] Review the rate limits (`RATE_LIMIT_PER_HOUR`) for your expected load

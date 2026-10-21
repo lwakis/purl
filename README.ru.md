@@ -49,14 +49,37 @@
 
 ### Docker
 
+Purl запускается как один all-in-one контейнер: FastAPI отдаёт собранный SPA на порту 8000, а SQLite хранится в volume по пути `/app/data`. Готовый образ публикуется в GitHub Container Registry, поэтому запустить можно без локальной сборки:
+
+```bash
+docker run -d --name purl -p 8000:8000 \
+  -v purl-data:/app/data \
+  -e LLM_PROVIDER=openai -e LLM_API_KEY=sk-... \
+  ghcr.io/lwakis/purl:latest
+```
+
+Затем откройте http://localhost:8000 (health-проверка на `/health`, документация Swagger на `/docs`).
+
+Если хотите запустить из исходников, склонируйте репозиторий и соберите тот же образ локально через Docker Compose (один сервис `purl`):
+
 ```bash
 git clone https://github.com/lwakis/purl.git && cd purl
 docker compose up --build
 ```
 
-Затем откройте: фронтенд на http://localhost:5173, бэкенд на http://localhost:8000 (health-проверка на `/health`, документация Swagger на `/docs`).
+Защитите доступный извне инстанс bearer-токеном — передайте `INSTANCE_TOKEN` (длинное случайное значение, см. [Переменные окружения](#переменные-окружения)):
+
+```bash
+docker run -d --name purl -p 8000:8000 \
+  -v purl-data:/app/data \
+  -e LLM_PROVIDER=openai -e LLM_API_KEY=sk-... \
+  -e INSTANCE_TOKEN=$(openssl rand -hex 32) \
+  ghcr.io/lwakis/purl:latest
+```
 
 API-ключ не требуется. Оставьте `LLM_API_KEY` пустым, и бэкенд запустится в mock-режиме, генерируя локальный HTML-дизайн без внешних вызовов.
+
+> Образ публикуется при выходе версий для `linux/amd64` и `linux/arm64` с тегами `latest` и semver. Пакеты GHCR по умолчанию **приватные** — чтобы разрешить анонимные загрузки, откройте пакет `purl` в GitHub → ваш профиль → **Packages** и сделайте его публичным (либо сначала выполните `docker login ghcr.io`).
 
 ### Локальная разработка
 
@@ -171,6 +194,14 @@ purl/
 | `CORS_ORIGINS` | `["http://localhost:5173","http://localhost:5174","http://127.0.0.1:5173","http://127.0.0.1:5174"]` | Разрешённые CORS-источники (JSON-массив) |
 | `MAX_PROMPT_LENGTH` | `2000` | Максимальная длина промпта в символах |
 | `CACHE_TTL_SECONDS` | `86400` | TTL кэша результатов в секундах |
+| `INSTANCE_TOKEN` | *(пусто)* | Опциональный bearer-токен; если задан, все маршруты `/api/*` требуют `Authorization: Bearer <token>` (пусто = открытый инстанс) |
+| `LLM_FALLBACK_MODEL` | *(пусто)* | Опциональный fallback-LLM в формате `provider:model`, например `openrouter:openai/gpt-4o`, `ollama:llama3.2`, `custom:my-model` |
+| `LLM_FALLBACK_API_KEY` | *(пусто)* | API-ключ fallback; при пустом значении берётся `LLM_API_KEY` (для Ollama не нужен) |
+| `LLM_FALLBACK_BASE_URL` | *(пусто)* | Базовый URL fallback; обязателен для `custom`, если не задан `LLM_BASE_URL`, иначе опциональное переопределение |
+
+**Токен инстанса.** `INSTANCE_TOKEN` опционален и по умолчанию пуст (открытый инстанс). Если он задан, все маршруты `/api/*` требуют заголовок `Authorization: Bearer <token>`; публичными остаются только `GET /health` и `GET /api/instance`. Веб-интерфейс показывает экран ввода токена, сохраняет его в браузере и отправляет в каждом запросе к API и SSE. Используйте длинное случайное значение (например `openssl rand -hex 32`) и отдавайте инстанс по HTTPS, если он доступен из интернета. Токен — это bearer-секрет, а не шифрование: у кого он есть, у того полный доступ.
+
+**Fallback-провайдер.** Когда основной провайдер падает до начала стриминга контента, Purl один раз повторяет запрос через `LLM_FALLBACK_MODEL`. Повтор происходит только при сетевых ошибках/таймаутах и HTTP 408, 429, 500, 502, 503, 504; ошибки аутентификации и прочие 4xx, а также сбои после начала стриминга показываются как раньше. Fallback пропускается, если он указывает на тот же эндпоинт, что и основной провайдер. Работает для генерации, итераций, улучшения промпта и React-экспорта.
 
 ### Фронтенд
 
@@ -186,6 +217,7 @@ Env-переменные фронтенда читаются на этапе с�
 
 | Метод | Путь | Описание |
 |---|---|---|
+| GET | `/api/instance` | Публичный bootstrap: `{auth_required, authenticated, version}` |
 | GET | `/api/models` | Список доступных LLM-провайдеров и их моделей |
 | POST | `/api/models/test` | Проверить соединение с провайдером (учитывает mock-режим) |
 | POST | `/api/generate` | Сгенерировать дизайн; возвращает SSE-стрим |

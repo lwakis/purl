@@ -49,14 +49,37 @@ Iterate by chat — every change becomes a restorable version snapshot:
 
 ### Docker
 
+Purl runs as a single all-in-one container: FastAPI serves the built SPA on port 8000, with SQLite persisted in a volume at `/app/data`. A prebuilt image is published to GitHub Container Registry, so you can run it without a local build:
+
+```bash
+docker run -d --name purl -p 8000:8000 \
+  -v purl-data:/app/data \
+  -e LLM_PROVIDER=openai -e LLM_API_KEY=sk-... \
+  ghcr.io/lwakis/purl:latest
+```
+
+Then open http://localhost:8000 (health check at `/health`, Swagger docs at `/docs`).
+
+To run from source instead, clone the repo and build the same image locally with Docker Compose (a single `purl` service):
+
 ```bash
 git clone https://github.com/lwakis/purl.git && cd purl
 docker compose up --build
 ```
 
-Then open: frontend at http://localhost:5173, backend at http://localhost:8000 (health check at `/health`, Swagger docs at `/docs`).
+Protect a publicly reachable instance with a bearer token by passing `INSTANCE_TOKEN`, a long random value (see [Environment variables](#environment-variables)):
+
+```bash
+docker run -d --name purl -p 8000:8000 \
+  -v purl-data:/app/data \
+  -e LLM_PROVIDER=openai -e LLM_API_KEY=sk-... \
+  -e INSTANCE_TOKEN=$(openssl rand -hex 32) \
+  ghcr.io/lwakis/purl:latest
+```
 
 No API key required. Leave `LLM_API_KEY` empty and the backend runs in mock mode, generating a local HTML design without any external calls.
+
+> The image is published on version tags for `linux/amd64` and `linux/arm64`, tagged `latest` plus the semver tag. GHCR packages are **private by default** — to allow anonymous pulls, open the `purl` package under GitHub → your profile → **Packages** and make it public (or run `docker login ghcr.io` first).
 
 ### Local development
 
@@ -171,6 +194,14 @@ All variables are optional; defaults live in `backend/app/config.py`. Copy `back
 | `CORS_ORIGINS` | `["http://localhost:5173","http://localhost:5174","http://127.0.0.1:5173","http://127.0.0.1:5174"]` | Allowed CORS origins (JSON array) |
 | `MAX_PROMPT_LENGTH` | `2000` | Maximum prompt length in characters |
 | `CACHE_TTL_SECONDS` | `86400` | Result cache TTL in seconds |
+| `INSTANCE_TOKEN` | *(empty)* | Optional bearer token; when set, every `/api/*` route requires `Authorization: Bearer <token>` (empty = open instance) |
+| `LLM_FALLBACK_MODEL` | *(empty)* | Optional fallback LLM as `provider:model`, e.g. `openrouter:openai/gpt-4o`, `ollama:llama3.2`, `custom:my-model` |
+| `LLM_FALLBACK_API_KEY` | *(empty)* | Fallback API key; falls back to `LLM_API_KEY` when empty (Ollama needs none) |
+| `LLM_FALLBACK_BASE_URL` | *(empty)* | Fallback base URL; required for `custom` unless `LLM_BASE_URL` is set, optional override otherwise |
+
+**Instance token.** `INSTANCE_TOKEN` is optional and empty by default (open instance). When set, every `/api/*` route requires an `Authorization: Bearer <token>` header; only `GET /health` and `GET /api/instance` stay public. The web UI shows a token screen, stores the token in the browser, and sends it on every API and SSE request. Use a long random value (for example `openssl rand -hex 32`) and serve the instance over HTTPS whenever it is reachable from the internet. The token is a bearer secret, not encryption — anyone who holds it has full access.
+
+**Fallback provider.** When the primary provider fails before any content is streamed, Purl retries once with `LLM_FALLBACK_MODEL`. The retry happens only for network/timeout errors and HTTP 408, 429, 500, 502, 503, 504; authentication and other 4xx errors, and failures after streaming has started, surface exactly as before. The fallback is skipped when it resolves to the same endpoint as the primary. It applies to generate, iterate, prompt enhancement, and React export.
 
 ### Frontend
 
@@ -186,6 +217,7 @@ Interactive docs are served at `/docs` when the backend is running (FastAPI Swag
 
 | Method | Path | Description |
 |---|---|---|
+| GET | `/api/instance` | Public bootstrap: `{auth_required, authenticated, version}` |
 | GET | `/api/models` | List available LLM providers and their models |
 | POST | `/api/models/test` | Test the resolved provider connection (mock-aware) |
 | POST | `/api/generate` | Generate a design; returns an SSE stream |
