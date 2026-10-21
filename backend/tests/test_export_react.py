@@ -121,18 +121,19 @@ def test_export_react_rate_limit_returns_429(client, monkeypatch):
 
 
 def test_export_react_provider_error_returns_502(client, monkeypatch):
-    from app.services import export_react_service
+    from app.services import export_react_service, llm_service
     from app.services.llm_service import ProviderConfig
 
     ready = ProviderConfig(
         'openai', 'https://api.openai.com/v1', 'gpt-4o', 'openai', 'sk-test', True
     )
     monkeypatch.setattr(export_react_service, 'resolve_provider', lambda model=None: ready)
+    monkeypatch.setattr(settings, 'llm_fallback_model', '')
 
     async def _fake_stream(provider, system_prompt, user_message, *args, **kwargs):
         yield 'data: {"type": "error", "content": "llm_provider_error:401"}\n\n'
 
-    monkeypatch.setattr(export_react_service, '_stream_llm', _fake_stream)
+    monkeypatch.setattr(llm_service, '_stream_llm', _fake_stream)
 
     resp = client.post('/api/export-react', json={'code': _HTML})
     assert resp.status_code == 502

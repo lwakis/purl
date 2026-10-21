@@ -14,7 +14,7 @@ import json
 
 from app.config import settings
 from app.services.llm_service import (
-    _stream_llm,
+    _stream_llm_with_fallback,
     _strip_code_fences,
     resolve_provider,
 )
@@ -85,7 +85,7 @@ async def enhance_prompt(
     usage = UsageAccumulator()
     chunks: list[str] = []
 
-    async for sse in _stream_llm(provider, _SYSTEM_PROMPT, prompt, usage=usage):
+    async for sse in _stream_llm_with_fallback(provider, _SYSTEM_PROMPT, prompt, usage=usage):
         if not sse.startswith('data: '):
             continue
         try:

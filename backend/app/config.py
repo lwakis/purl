@@ -23,6 +23,13 @@ class Settings(BaseSettings):
     llm_temperature: float = 0.7
     llm_max_tokens: int = 8192
 
+    # ── Fallback provider (optional) ──────────────────────────────────────
+    # "provider:model" used when the primary provider fails before streaming.
+    # Example: openrouter:openai/gpt-4o (needs LLM_FALLBACK_API_KEY).
+    llm_fallback_model: str = ''
+    llm_fallback_api_key: str = ''
+    llm_fallback_base_url: str = ''
+
     # ── Instance protection ───────────────────────────────────────────────
     # When set, every /api/* route requires `Authorization: Bearer <token>`.
     instance_token: str = ''

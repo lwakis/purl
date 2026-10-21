@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import dataclasses
 import json
+import logging
 import re
 from collections.abc import AsyncGenerator, Sequence
 
@@ -18,6 +19,8 @@ import httpx
 
 from app.config import LLM_PRESETS, settings
 from app.services.token_usage import UsageAccumulator
+
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -73,6 +76,49 @@ def resolve_provider(model: str | None = None) -> ProviderConfig:
     api_key = settings.llm_api_key
     ready = name == 'ollama' or bool(api_key)
     return ProviderConfig(name, base_url, model, api, api_key, ready)
+
+
+def resolve_fallback_provider(primary: ProviderConfig | None = None) -> ProviderConfig | None:
+    """Resolve ``LLM_FALLBACK_MODEL`` into a usable secondary endpoint.
+
+    Returns ``None`` when no fallback is configured, the ``"provider:model"``
+    value is malformed or names an unknown provider, the provider is not ready
+    (no fallback/primary API key; ``ollama`` never needs one), or the resolved
+    endpoint is identical to *primary* — retrying the same endpoint would only
+    loop. ``custom`` needs a base URL (fallback base URL, else the primary one).
+    """
+    value = settings.llm_fallback_model.strip()
+    if not value:
+        return None
+
+    provider, sep, model_id = value.partition(':')
+    provider = provider.strip()
+    model_id = model_id.strip()
+    if not sep or not provider or not model_id:
+        return None
+
+    api_key = settings.llm_fallback_api_key or settings.llm_api_key
+
+    if provider in LLM_PRESETS:
+        base_url, _default_model, api = LLM_PRESETS[provider]
+    elif provider == 'custom':
+        base_url = settings.llm_fallback_base_url or settings.llm_base_url
+        if not base_url:
+            return None
+        api = 'openai'
+    else:
+        return None
+
+    ready = provider == 'ollama' or bool(api_key)
+    if not ready:
+        return None
+
+    if primary is not None and (
+        provider == primary.name and base_url == primary.base_url and model_id == primary.model
+    ):
+        return None
+
+    return ProviderConfig(provider, base_url, model_id, api, api_key, True)
 
 
 def _sse_event(event_type: str, content: str) -> str:
@@ -232,6 +278,71 @@ async def _stream_llm(
         yield _sse_event('error', f'llm_provider_error:{status}')
 
 
+# Statuses worth retrying on the fallback provider: transient network/timeout
+# failures surface as an empty status, the rest are classic retryable HTTP codes.
+_RETRYABLE_STATUSES = frozenset({'', '408', '429', '500', '502', '503', '504'})
+_ERROR_PREFIX = 'llm_provider_error'
+
+
+def _error_status(content: str) -> str | None:
+    """Return the machine-readable status of an error event, or None if unknown."""
+    prefix, sep, status = content.partition(':')
+    if prefix == _ERROR_PREFIX and sep:
+        return status.strip()
+    return None
+
+
+async def _stream_llm_with_fallback(
+    provider: ProviderConfig,
+    system_prompt: str,
+    user_message: str,
+    images: Sequence[str] = (),
+    usage: UsageAccumulator | None = None,
+) -> AsyncGenerator[str]:
+    """Stream from *provider*, retrying once on the fallback for early retryable failures.
+
+    Only an ``error`` event that arrives before any ``code`` content and carries
+    a retryable status triggers the fallback; the primary's error is then
+    swallowed and the fallback's stream is relayed instead. Post-content errors
+    and non-retryable ones are forwarded unchanged so callers still surface them.
+    """
+    fallback = resolve_fallback_provider(provider)
+    if fallback is None:
+        async for sse in _stream_llm(provider, system_prompt, user_message, images, usage=usage):
+            yield sse
+        return
+
+    emitted_code = False
+
+    async for sse in _stream_llm(provider, system_prompt, user_message, images, usage=usage):
+        if sse.startswith('data: '):
+            try:
+                payload = json.loads(sse[6:])
+            except (json.JSONDecodeError, IndexError):
+                payload = None
+            if isinstance(payload, dict):
+                event_type = payload.get('type')
+                if event_type == 'code':
+                    if payload.get('content'):
+                        emitted_code = True
+                elif event_type == 'error' and not emitted_code:
+                    status = _error_status(str(payload.get('content', '')))
+                    if status in _RETRYABLE_STATUSES:
+                        logger.warning(
+                            'Provider %s failed before streaming (status %r); '
+                            'retrying with fallback %s',
+                            provider.name,
+                            status,
+                            fallback.name,
+                        )
+                        async for fallback_sse in _stream_llm(
+                            fallback, system_prompt, user_message, images, usage=usage
+                        ):
+                            yield fallback_sse
+                        return
+        yield sse
+
+
 # ── Public API ───────────────────────────────────────────────────────────────
 
 
@@ -287,7 +398,7 @@ async def generate(
             yield sse
     else:
         async for sse, cleaned in _stream_cleaned_code(
-            _stream_llm(provider, system, user_msg, images, usage=usage)
+            _stream_llm_with_fallback(provider, system, user_msg, images, usage=usage)
         ):
             full_html += cleaned
             yield sse
@@ -354,7 +465,7 @@ async def iterate_stream(
             yield sse
     else:
         async for sse, cleaned in _stream_cleaned_code(
-            _stream_llm(provider, system_prompt, iterate_msg, images, usage=usage)
+            _stream_llm_with_fallback(provider, system_prompt, iterate_msg, images, usage=usage)
         ):
             full_html += cleaned
             yield sse

@@ -22,7 +22,7 @@ import zipfile
 from html import escape, unescape
 
 from app.services.llm_service import (
-    _stream_llm,
+    _stream_llm_with_fallback,
     _strip_code_fences,
     resolve_provider,
 )
@@ -229,7 +229,7 @@ async def convert_to_react(code: str, model: str | None = None) -> str:
     usage = UsageAccumulator()
     chunks: list[str] = []
 
-    async for sse in _stream_llm(provider, _SYSTEM_PROMPT, user_message, usage=usage):
+    async for sse in _stream_llm_with_fallback(provider, _SYSTEM_PROMPT, user_message, usage=usage):
         if not sse.startswith('data: '):
             continue
         try:
