@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     llm_temperature: float = 0.7
     llm_max_tokens: int = 8192
 
+    # ── Instance protection ───────────────────────────────────────────────
+    # When set, every /api/* route requires `Authorization: Bearer <token>`.
+    instance_token: str = ''
+
     # ── Rate limiting ─────────────────────────────────────────────────────
     rate_limit_per_hour: int = 100  # requests / hour per client IP
 
