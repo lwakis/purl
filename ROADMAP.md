@@ -29,6 +29,7 @@ What's in the repo right now:
 - [x] Model selector in the chat UI with a provider catalog (`GET /api/models`), per-request `provider:model` override, and a fallback to the configured default
 - [x] Self-hosted LLM support (Ollama is always ready; `custom` preset for any OpenAI-compatible local endpoint)
 - [x] Provider connection test from the model picker (`POST /api/models/test`; mock-aware)
+- [x] Optional fallback provider — one retry on network/timeout, 408, 429 or 5xx before any content is streamed (`LLM_FALLBACK_MODEL="provider:model"`)
 
 ### Projects
 
@@ -48,9 +49,11 @@ What's in the repo right now:
 - [x] Persistent result cache (memory + SQLite, survives restarts)
 - [x] Mock mode: full end-to-end flow without an LLM API key
 - [x] Docker Compose setup, CI workflow, test suites, pre-commit hooks
+- [x] All-in-one Docker image published to GHCR (amd64 + arm64 on version tags) — `docker run ghcr.io/lwakis/purl` with no local build
+- [x] Optional instance token (`INSTANCE_TOKEN`) — bearer-token gate for `/api/*` with a token screen in the UI; `/health` and `/api/instance` stay public
 - [x] Extended health check (`/health`: version, database, mock mode, provider)
 - [x] Bundle splitting (react/ui/markdown vendor chunks; none over the 500 kB warning threshold)
-- [x] Versioned releases and changelogs (release workflow; tags `v0.1.0`/`v0.2.0` published)
+- [x] Versioned releases and changelogs (release workflow; tags `v0.1.0`–`v0.8.0` published)
 - [x] Open-source documentation (README, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY)
 - [x] Token usage display (`GET /api/usage` keyed by session; in-memory per-session token counts shown in the header — purely informational for self-hosted users who pay for their own LLM API; mock mode reports zero)
 

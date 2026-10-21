@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-10-21
+
+### Added
+
+- Instance token: `INSTANCE_TOKEN` requires `Authorization: Bearer <token>` on every `/api/*` route (constant-time compare), while `GET /health` and the new public `GET /api/instance` bootstrap (`{auth_required, authenticated, version}`) stay open. The web UI shows a Darkroom token screen, stores the token in the browser and sends it with every API and SSE request; any 401 locks the workspace again.
+- Fallback provider: `LLM_FALLBACK_MODEL="provider:model"` (with `LLM_FALLBACK_API_KEY` and `LLM_FALLBACK_BASE_URL`) retries once with a secondary endpoint when the primary fails before any content is streamed — network/timeout errors and HTTP 408, 429, 500, 502, 503 or 504. Auth errors, other 4xx and mid-stream failures surface unchanged, and the fallback is skipped when it resolves to the same endpoint. It applies to generate, iterate, prompt enhancement and React export.
+- Single all-in-one Docker image: `ghcr.io/lwakis/purl` builds the SPA and serves it from FastAPI on port 8000 with SQLite in `/app/data`, so `docker run` needs no local build. A `Docker` workflow publishes `linux/amd64` + `linux/arm64` images on `v*` tags (semver and `latest`).
+
+### Changed
+
+- `docker-compose.yml` now runs the single `purl` service (published image or a local build from the same Dockerfile); the documented quick start uses the GHCR image on port 8000.
+
+### Removed
+
+- The split `backend/Dockerfile` / `frontend/Dockerfile` images and the frontend nginx config, replaced by the all-in-one image.
+
 ## [0.7.0] - 2026-10-21
 
 ### Changed

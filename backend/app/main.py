@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title='Purl AI',
     description='AI-powered design generation service',
-    version='0.7.0',
+    version='0.8.0',
     lifespan=lifespan,
     redirect_slashes=False,
 )
