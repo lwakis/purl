@@ -19,6 +19,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - The model picker no longer marks every provider ready when only `LLM_API_KEY` is set, and selecting a different provider can no longer send the configured provider's key to it.
 
+### Security
+
+- Updated `certifi` to 2026.10.23, and the transitive frontend dev dependencies `undici` to 8.12.3 and `zod` to 4.6.7, closing Dependabot critical/high advisories (GHSA-6q48-6c7w-9gw2, GHSA-xjj6-f33q-929c, GHSA-mrhx-c7xc-m3w5).
+
 ## [0.8.0] - 2026-10-21
 
 ### Added
