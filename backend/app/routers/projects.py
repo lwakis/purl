@@ -40,6 +40,7 @@ def _project_to_response(p: Project) -> ProjectResponse:
         prompt=p.prompt,
         current_code=p.current_code,
         session_id=p.session_id,
+        preset=p.preset,
         created_at=p.created_at,
         updated_at=p.updated_at,
     )
@@ -109,6 +110,7 @@ async def create_project(
         prompt=req.prompt,
         current_code=req.current_code,
         session_id=req.session_id or generate_session_id(),
+        preset=req.preset,
     )
     db.add(project)
     await db.flush()
@@ -140,6 +142,7 @@ async def duplicate_project(
         prompt=source.prompt,
         current_code=source.current_code,
         session_id=source.session_id,
+        preset=source.preset,
     )
     db.add(project)
     await db.flush()
@@ -179,6 +182,8 @@ async def update_project(
         project.prompt = req.prompt
     if req.current_code is not None:
         project.current_code = req.current_code
+    if 'preset' in req.model_fields_set:
+        project.preset = req.preset
     await db.flush()
     await db.refresh(project)
     return _project_to_response(project)
@@ -291,6 +296,7 @@ async def branch_from_version(
         prompt=version.message or source.prompt,
         current_code=version.code,
         session_id=source.session_id,
+        preset=source.preset,
     )
     db.add(project)
     await db.flush()

@@ -12,7 +12,8 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.config import settings
-from app.models import GenerateRequest, IterateRequest
+from app.models import GenerateRequest, IterateRequest, PresetListResponse
+from app.presets import presets_payload
 from app.services.cache_service import cache
 from app.services.llm_service import (
     _stream_llm,
@@ -56,6 +57,12 @@ _TEST_TIMEOUT_SECONDS = 20
 async def api_models():
     """List available LLM providers and their models."""
     return {'providers': list_providers()}
+
+
+@router.get('/presets', response_model=PresetListResponse)
+async def api_presets():
+    """List curated style presets (metadata only; fragments stay server-side)."""
+    return {'presets': presets_payload()}
 
 
 @router.get('/usage')
@@ -187,7 +194,8 @@ async def api_generate(
 
     # Check cache — skipped entirely when images are present (data URLs are huge)
     if not req.images:
-        cached_html = await cache.aget_cached(req.prompt, req.model, req.plan)
+        preset_key = req.preset or ''
+        cached_html = await cache.aget_cached(req.prompt, req.model, req.plan, preset_key)
         if cached_html is not None:
 
             async def _cached() -> AsyncGenerator[bytes]:
@@ -205,6 +213,7 @@ async def api_generate(
                 plan=req.plan,
                 images=req.images,
                 session_id=req.session_id,
+                preset=req.preset,
             ),
             request,
         ):
@@ -220,7 +229,9 @@ async def api_generate(
                     pass
 
         if collected_html and not req.images:
-            await cache.aset_cache(req.prompt, collected_html, req.model, req.plan)
+            await cache.aset_cache(
+                req.prompt, collected_html, req.model, req.plan, req.preset or ''
+            )
 
     return _build_sse_response(_generate_sse())
 
@@ -242,7 +253,7 @@ async def api_iterate(
     if not result.allowed:
         return _rate_limit_error(int(result.reset_time))
 
-    system_prompt = build_system_prompt(plan=req.plan)
+    system_prompt = build_system_prompt(plan=req.plan, preset=req.preset)
 
     history_dicts: list[dict[str, str]] = [
         {'role': m.role, 'content': m.content} for m in req.history

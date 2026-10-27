@@ -56,6 +56,7 @@ beforeEach(() => {
   vi.mocked(createSessionId).mockClear();
   useAppStore.setState({
     selectedModel: 'openai:gpt-4o',
+    preset: null,
     planOn: true,
     attachments: [attachment],
     selectedElement: element,
@@ -83,6 +84,7 @@ describe('useGeneration', () => {
         model: 'openai:gpt-4o',
         plan: true,
         images: ['data:image/png;base64,AAA'],
+        preset: null,
       },
     );
   });
@@ -98,7 +100,7 @@ describe('useGeneration', () => {
     expect(connectGenerateSSE).toHaveBeenCalledWith(
       'Build a page',
       expect.any(Object),
-      { session_id: 'sess-test', model: null, plan: false, images: [] },
+      { session_id: 'sess-test', model: null, plan: false, images: [], preset: null },
     );
   });
 
@@ -126,7 +128,41 @@ describe('useGeneration', () => {
           text: 'Go',
           selector: 'button.btn.primary',
         }),
+        preset: null,
       },
+    );
+  });
+
+  it('generate forwards the selected style preset', async () => {
+    useAppStore.setState({ preset: 'brutalist' });
+    const { result } = renderHook(() => useGeneration());
+
+    await act(async () => {
+      await result.current.generate('Build a page');
+    });
+
+    expect(connectGenerateSSE).toHaveBeenCalledWith(
+      'Build a page',
+      expect.any(Object),
+      expect.objectContaining({ preset: 'brutalist' }),
+    );
+  });
+
+  it('iterate forwards the selected style preset', async () => {
+    useAppStore.setState({ preset: 'brutalist' });
+    const { result } = renderHook(() => useGeneration());
+
+    await act(async () => {
+      await result.current.iterate('Make it bigger');
+    });
+
+    expect(connectIterateSSE).toHaveBeenCalledWith(
+      'sess-test',
+      'Make it bigger',
+      '',
+      expect.any(Array),
+      expect.any(Object),
+      expect.objectContaining({ preset: 'brutalist' }),
     );
   });
 
@@ -307,6 +343,7 @@ describe('useGeneration', () => {
       prompt: 'old',
       current_code: 'old-code',
       session_id: 'sess-1',
+      preset: null,
       created_at: '2024-01-01T00:00:00Z',
       updated_at: '2024-01-01T00:00:00Z',
     };

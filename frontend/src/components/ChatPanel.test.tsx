@@ -16,6 +16,7 @@ vi.mock('../services/api', () => ({
   getProjects: vi.fn(),
   branchFromVersion: vi.fn(),
   testProvider: vi.fn(),
+  getPresets: vi.fn(),
 }));
 
 vi.mock('react-hot-toast', () => {
@@ -24,7 +25,14 @@ vi.mock('react-hot-toast', () => {
 });
 
 import { connectIterateSSE } from '../services/sse';
-import { branchFromVersion, getModels, getProjectVersions, getProjects, testProvider } from '../services/api';
+import {
+  branchFromVersion,
+  getModels,
+  getPresets,
+  getProjectVersions,
+  getProjects,
+  testProvider,
+} from '../services/api';
 import toast from 'react-hot-toast';
 
 const project: Project = {
@@ -33,6 +41,7 @@ const project: Project = {
   prompt: 'Лендинг для стартапа',
   current_code: '<html>current</html>',
   session_id: 's1',
+  preset: null,
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
 };
@@ -65,6 +74,15 @@ const providers: ProviderInfo[] = [
   },
 ];
 
+const presets = [
+  {
+    id: 'brutalist',
+    name: { ru: 'Брутализм', en: 'Brutalist' },
+    description: { ru: 'Крупные блоки и резкий контраст', en: 'Heavy blocks and sharp contrast' },
+    swatch: ['#EDEAE2', '#1C1A17', '#D8492F'] as [string, string, string],
+  },
+];
+
 beforeEach(() => {
   vi.mocked(connectIterateSSE).mockReset();
   vi.mocked(connectIterateSSE).mockResolvedValue(undefined);
@@ -75,6 +93,8 @@ beforeEach(() => {
   vi.mocked(branchFromVersion).mockReset();
   vi.mocked(getModels).mockReset();
   vi.mocked(getModels).mockResolvedValue(providers);
+  vi.mocked(getPresets).mockReset();
+  vi.mocked(getPresets).mockResolvedValue(presets);
   vi.mocked(testProvider).mockReset();
   vi.mocked(toast).mockReset();
   vi.mocked(toast.success).mockReset();
@@ -84,6 +104,7 @@ beforeEach(() => {
     sessionId: 's1',
     chatHistory: [],
     isGenerating: false,
+    preset: null,
   });
 });
 
@@ -114,11 +135,32 @@ describe('ChatPanel', () => {
         '<html>design</html>',
         expect.any(Array),
         expect.any(Object),
-        expect.any(Object),
+        expect.objectContaining({ preset: null }),
       );
     });
     expect(screen.getByText('Сделай кнопки больше')).toBeInTheDocument();
     expect(useAppStore.getState().chatHistory[0].content).toBe('Сделай кнопки больше');
+  });
+
+  it('sends the selected style with subsequent iterations', async () => {
+    const user = userEvent.setup();
+    render(<ChatPanel />);
+
+    await user.click(await screen.findByRole('button', { name: 'Стиль: Авто' }));
+    await user.click(await screen.findByRole('option', { name: 'Брутализм' }));
+    await user.type(screen.getByRole('textbox', { name: 'Сообщение в чат' }), 'Сделай крупнее');
+    await user.click(screen.getByRole('button', { name: 'Отправить' }));
+
+    await waitFor(() => {
+      expect(connectIterateSSE).toHaveBeenCalledWith(
+        's1',
+        'Сделай крупнее',
+        '<html>design</html>',
+        expect.any(Array),
+        expect.any(Object),
+        expect.objectContaining({ preset: 'brutalist' }),
+      );
+    });
   });
 
   it('renders existing chat history', () => {
@@ -207,7 +249,7 @@ describe('ChatPanel', () => {
   });
 
   it('branches from a snapshot, activates the new project and closes the modal', async () => {
-    const branch: Project = { ...project, id: 42, name: 'Лендинг — v1' };
+    const branch: Project = { ...project, id: 42, name: 'Лендинг — v1', preset: 'brutalist' };
     vi.mocked(branchFromVersion).mockResolvedValue(branch);
     useAppStore.setState({ currentProject: project, currentCode: '<html>\ncurrent\n</html>' });
     vi.mocked(getProjectVersions).mockResolvedValue(versions);
@@ -223,6 +265,7 @@ describe('ChatPanel', () => {
     });
     expect(useAppStore.getState().currentProject?.id).toBe(42);
     expect(useAppStore.getState().currentCode).toBe(branch.current_code);
+    expect(useAppStore.getState().preset).toBe('brutalist');
     expect(toast.success).toHaveBeenCalledWith('Ветка создана');
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: 'Сравнение версий' })).not.toBeInTheDocument();

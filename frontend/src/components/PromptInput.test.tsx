@@ -13,6 +13,7 @@ vi.mock('../services/api', () => ({
   enhancePrompt: vi.fn(),
   getUsage: vi.fn(),
   saveProjectVersion: vi.fn(),
+  getPresets: vi.fn(),
 }));
 
 vi.mock('react-hot-toast', () => ({
@@ -20,13 +21,24 @@ vi.mock('react-hot-toast', () => ({
 }));
 
 import { connectGenerateSSE } from '../services/sse';
-import { enhancePrompt } from '../services/api';
+import { enhancePrompt, getPresets } from '../services/api';
 import toast from 'react-hot-toast';
+
+const presets = [
+  {
+    id: 'brutalist',
+    name: { ru: 'Брутализм', en: 'Brutalist' },
+    description: { ru: 'Крупные блоки и резкий контраст', en: 'Heavy blocks and sharp contrast' },
+    swatch: ['#EDEAE2', '#1C1A17', '#D8492F'] as [string, string, string],
+  },
+];
 
 beforeEach(() => {
   vi.mocked(connectGenerateSSE).mockReset();
   vi.mocked(connectGenerateSSE).mockResolvedValue(undefined);
   vi.mocked(enhancePrompt).mockReset();
+  vi.mocked(getPresets).mockReset();
+  vi.mocked(getPresets).mockResolvedValue(presets);
   vi.mocked(toast.error).mockReset();
   vi.mocked(toast.success).mockReset();
   // Each test starts from a clean prompt/generation slice.
@@ -35,6 +47,7 @@ beforeEach(() => {
     isGenerating: false,
     generationError: null,
     selectedModel: null,
+    preset: null,
   });
   // jsdom does not implement matchMedia; the rotation effect guards on it.
   window.matchMedia = vi.fn().mockReturnValue({ matches: false });
@@ -89,7 +102,7 @@ describe('PromptInput', () => {
     expect(screen.getByRole('button', { name: 'Сгенерировать' })).toBeDisabled();
   });
 
-  it('calls generate with the trimmed prompt', async () => {
+  it('calls generate with the trimmed prompt and the Auto style (null)', async () => {
     const user = userEvent.setup();
     render(<PromptInput />);
     await user.type(screen.getByRole('textbox', { name: 'Описание дизайна' }), '  Лендинг для HR  ');
@@ -98,7 +111,22 @@ describe('PromptInput', () => {
       expect(connectGenerateSSE).toHaveBeenCalledWith(
         'Лендинг для HR',
         expect.any(Object),
+        expect.objectContaining({ preset: null }),
+      );
+    });
+  });
+
+  it('sends the selected style preset with the generation request', async () => {
+    const user = userEvent.setup();
+    useAppStore.setState({ preset: 'brutalist' });
+    render(<PromptInput />);
+    await user.type(screen.getByRole('textbox', { name: 'Описание дизайна' }), 'Лендинг');
+    await user.click(screen.getByRole('button', { name: 'Сгенерировать' }));
+    await waitFor(() => {
+      expect(connectGenerateSSE).toHaveBeenCalledWith(
+        'Лендинг',
         expect.any(Object),
+        expect.objectContaining({ preset: 'brutalist' }),
       );
     });
   });

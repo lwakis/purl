@@ -135,6 +135,12 @@ export const ru = {
     improve: 'Улучшить промпт',
     improving: 'Улучшаю…',
   },
+  preset: {
+    label: 'Стиль',
+    auto: 'Авто',
+    autoDescription: 'Стиль подбирается по промпту',
+    groupAria: 'Выбор стиля',
+  },
   code: {
     copyTitle: 'Копировать код',
     downloadTitle: 'Скачать HTML',

@@ -14,9 +14,10 @@ def hash_prompt(
     prompt: str,
     model: str = '',
     plan: bool = False,
+    preset: str = '',
 ) -> str:
-    """Return SHA-256 hex digest of prompt + model + plan for cache keys."""
-    raw = f'{prompt}||{model}||{plan}'
+    """Return SHA-256 hex digest of prompt + model + plan + preset for cache keys."""
+    raw = f'{prompt}||{model}||{plan}||{preset}'
     return hashlib.sha256(raw.encode()).hexdigest()
 
 

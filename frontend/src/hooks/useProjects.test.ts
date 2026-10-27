@@ -24,6 +24,7 @@ const project: Project = {
   prompt: 'old',
   current_code: 'old-code',
   session_id: 'sess-1',
+  preset: null,
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
 };
@@ -33,6 +34,7 @@ const createPayload = {
   prompt: 'P',
   current_code: 'C',
   session_id: 'sess-1',
+  preset: null,
 };
 
 beforeEach(() => {

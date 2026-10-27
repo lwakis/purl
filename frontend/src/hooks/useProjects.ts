@@ -70,12 +70,7 @@ export function useProjects() {
   const totalPages = Math.max(1, Math.ceil(projectTotal / PAGE_SIZE));
 
   const create = useCallback(
-    async (data: {
-      name: string;
-      prompt: string;
-      current_code: string;
-      session_id: string;
-    }) => {
+    async (data: { name: string; prompt: string; current_code: string; session_id: string }) => {
       try {
         const project = await createProject(data);
         addProject(project);

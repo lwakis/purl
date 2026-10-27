@@ -15,6 +15,7 @@ What's in the repo right now:
 - [x] React export — download the finished page as a ready-to-run Vite + React project (zip)
 - [x] Iterative chat on existing designs (history + current code sent with each request)
 - [x] Plan mode — a design-planning pass before code generation
+- [x] Style presets — seven curated visual directions (`swiss`, `editorial`, `brutalist`, `minimal`, `warm`, `playful`, `retro`; Auto by default) via `GET /api/presets` and the `preset` request field on generate/iterate, stored per project and included in the result-cache key
 - [x] Element selection — click a preview element to iterate on it directly
 - [x] Reference image attachments — multimodal input (OpenAI and Anthropic wire formats; cache is skipped when images are present)
 - [x] Local-first: projects and versions stored in SQLite via the backend (no accounts, no signup)
@@ -64,7 +65,7 @@ Ideas that may or may not be worth building. Nothing here is a promise.
 | Item | Notes |
 |---|---|
 | [ ] Figma-compatible export | Would need design-token mapping from generated HTML; large effort, unclear payoff for the core use case |
-| [ ] Custom system prompts | User-defined generation instructions; useful for power users who run their own models |
+| [ ] Custom system prompts | The curated preset layer shipped (`GET /api/presets`, `preset` on generate/iterate); free-form user-defined generation instructions remain uncommitted |
 | [ ] Plugin / theme system | Community themes and generation presets — only if there is a community to serve them |
 | [ ] Export to CodeSandbox / StackBlitz | One-click "open in sandbox" — mostly a wrapper around existing download/export, low effort |
 | [ ] CLI | Headless generation for scripting and CI |

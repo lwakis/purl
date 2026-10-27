@@ -2,6 +2,7 @@ import type {
   InstanceInfo,
   Project,
   ProjectVersion,
+  PresetInfo,
   ProviderInfo,
   ProviderTestResult,
   TokenUsage,
@@ -78,6 +79,7 @@ export async function createProject(data: {
   prompt: string;
   current_code: string;
   session_id: string;
+  preset?: string | null;
 }): Promise<Project> {
   return request<Project>('/api/projects', {
     method: 'POST',
@@ -108,6 +110,11 @@ export async function getProjects(
 export async function getModels(): Promise<ProviderInfo[]> {
   const data = await request<{ providers: ProviderInfo[] }>('/api/models');
   return data.providers;
+}
+
+export async function getPresets(): Promise<PresetInfo[]> {
+  const data = await request<{ presets: PresetInfo[] }>('/api/presets');
+  return data.presets;
 }
 
 export async function testProvider(model: string | null): Promise<ProviderTestResult> {

@@ -24,6 +24,7 @@ export function useAutosave() {
     prompt,
     sessionId,
     isGenerating,
+    preset,
     projects,
     setCurrentProject,
     addProject,
@@ -47,7 +48,12 @@ export function useAutosave() {
 
     const timer = window.setTimeout(async () => {
       if (inFlightRef.current) return;
-      if (currentProject && currentProject.current_code === currentCode) return;
+      if (
+        currentProject &&
+        currentProject.current_code === currentCode &&
+        (currentProject.preset ?? null) === preset
+      )
+        return;
 
       inFlightRef.current = true;
       setStatus('saving');
@@ -58,6 +64,7 @@ export function useAutosave() {
             prompt,
             current_code: currentCode,
             session_id: sessionId,
+            preset,
           });
           setCurrentProject(created);
           addProject(created);
@@ -65,6 +72,7 @@ export function useAutosave() {
           const updated = await updateProject(currentProject.id, {
             current_code: currentCode,
             prompt,
+            preset,
           });
           setCurrentProject(updated);
           setProjects(projects.map((p) => (p.id === updated.id ? updated : p)));
@@ -88,6 +96,7 @@ export function useAutosave() {
     prompt,
     sessionId,
     isGenerating,
+    preset,
     projects,
     setCurrentProject,
     addProject,

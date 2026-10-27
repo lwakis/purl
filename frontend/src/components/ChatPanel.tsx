@@ -24,6 +24,7 @@ import type { ProjectVersion, ProviderInfo } from '../types';
 import MarkdownMessage from './MarkdownMessage';
 import VersionCard from './VersionCard';
 import CompareModal from './CompareModal';
+import PresetPicker from './PresetPicker';
 
 interface ChatPanelProps {
   hideInput?: boolean;
@@ -44,6 +45,7 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
     setPrompt,
     setSessionId,
     setChatHistory,
+    setPreset,
     selectedModel,
     setSelectedModel,
     planOn,
@@ -311,6 +313,7 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
         setCurrentCode(project.current_code ?? '');
         setPrompt(project.prompt ?? '');
         setSessionId(project.session_id);
+        setPreset(project.preset ?? null);
         setChatHistory([]);
         void fetchProjects();
         toast.success(t('toasts.branchCreated'));
@@ -327,6 +330,7 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
       setPrompt,
       setSessionId,
       setChatHistory,
+      setPreset,
       t,
     ],
   );
@@ -533,6 +537,9 @@ export default function ChatPanel({ hideInput }: ChatPanelProps) {
                 ))}
               </div>
             )}
+            <div className="flex items-center border-t border-line-subtle px-2 pt-1">
+              <PresetPicker compact />
+            </div>
             <div className="flex items-center justify-between px-2 pb-2 pt-1">
               <div className="flex items-center gap-0.5">
                 <input

@@ -6,6 +6,7 @@ import { useGeneration } from '../hooks/useGeneration';
 import { enhancePrompt } from '../services/api';
 import GenerationProgress from './GenerationProgress';
 import ErrorAlert from './ErrorAlert';
+import PresetPicker from './PresetPicker';
 import { useT } from '../i18n';
 
 const MAX_PROMPT_LENGTH = 2000;
@@ -178,6 +179,8 @@ export default function PromptInput() {
           )}
         </button>
       </div>
+
+      <PresetPicker />
 
       <GenerationProgress />
     </div>

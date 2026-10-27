@@ -18,6 +18,7 @@ vi.mock('./services/api', () => ({
   getProjects: vi.fn(),
   getProject: vi.fn(),
   getModels: vi.fn(),
+  getPresets: vi.fn(),
   getProjectVersions: vi.fn(),
   deleteProject: vi.fn(),
   saveProjectVersion: vi.fn(),
@@ -49,15 +50,29 @@ vi.mock('./components/TokenGate', () => ({
   ),
 }));
 
-import { getInstanceInfo, getProjects, unlockInstance } from './services/api';
+import { getInstanceInfo, getPresets, getProjects, unlockInstance } from './services/api';
+import { connectGenerateSSE } from './services/sse';
 import { UNAUTHORIZED_EVENT } from './services/instanceAuth';
+
+const presets = [
+  {
+    id: 'brutalist',
+    name: { ru: 'Брутализм', en: 'Brutalist' },
+    description: { ru: 'Крупные блоки и резкий контраст', en: 'Heavy blocks and sharp contrast' },
+    swatch: ['#EDEAE2', '#1C1A17', '#D8492F'] as [string, string, string],
+  },
+];
 
 beforeEach(() => {
   vi.mocked(createSessionId).mockReset();
   vi.mocked(loadSession).mockReset();
   vi.mocked(saveSession).mockReset();
+  vi.mocked(connectGenerateSSE).mockReset();
+  vi.mocked(connectGenerateSSE).mockResolvedValue(undefined);
   vi.mocked(getProjects).mockReset();
   vi.mocked(getProjects).mockResolvedValue({ items: [], total: 0, page: 1, page_size: 50 });
+  vi.mocked(getPresets).mockReset();
+  vi.mocked(getPresets).mockResolvedValue(presets);
   vi.mocked(getInstanceInfo).mockReset();
   vi.mocked(getInstanceInfo).mockResolvedValue({
     auth_required: false,
@@ -74,6 +89,7 @@ beforeEach(() => {
     sessionId: '',
     workspaceView: 'preview',
     locale: 'ru',
+    preset: null,
   });
 });
 
@@ -89,6 +105,46 @@ describe('App', () => {
     expect(screen.getByText('Purl')).toBeInTheDocument();
     expect(screen.queryByRole('tab', { name: 'Предпросмотр' })).not.toBeInTheDocument();
     expect(document.documentElement.lang).toBe('ru');
+  });
+
+  it('sends the style chosen on the landing with the generation request', async () => {
+    const user = userEvent.setup();
+    vi.mocked(loadSession).mockReturnValue(null);
+    vi.mocked(createSessionId).mockReturnValue('fresh-sid');
+    render(<App />);
+
+    await user.click(await screen.findByRole('radio', { name: 'Брутализм' }));
+    await user.type(screen.getByRole('textbox', { name: 'Описание дизайна' }), 'Лендинг');
+    await user.click(screen.getByRole('button', { name: 'Сгенерировать' }));
+
+    await waitFor(() => {
+      expect(connectGenerateSSE).toHaveBeenCalledWith(
+        'Лендинг',
+        expect.any(Object),
+        expect.objectContaining({ preset: 'brutalist' }),
+      );
+    });
+  });
+
+  it('sends Auto as a null preset when no style is chosen', async () => {
+    const user = userEvent.setup();
+    vi.mocked(loadSession).mockReturnValue(null);
+    vi.mocked(createSessionId).mockReturnValue('fresh-sid');
+    render(<App />);
+
+    await user.type(
+      await screen.findByRole('textbox', { name: 'Описание дизайна' }),
+      'Лендинг',
+    );
+    await user.click(screen.getByRole('button', { name: 'Сгенерировать' }));
+
+    await waitFor(() => {
+      expect(connectGenerateSSE).toHaveBeenCalledWith(
+        'Лендинг',
+        expect.any(Object),
+        expect.objectContaining({ preset: null }),
+      );
+    });
   });
 
   it('creates and persists a new session when none is stored', async () => {

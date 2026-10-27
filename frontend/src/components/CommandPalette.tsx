@@ -60,6 +60,7 @@ export default function CommandPalette() {
   const setPrompt = useAppStore((s) => s.setPrompt);
   const setChatHistory = useAppStore((s) => s.setChatHistory);
   const setSessionId = useAppStore((s) => s.setSessionId);
+  const setPreset = useAppStore((s) => s.setPreset);
 
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -115,6 +116,7 @@ export default function CommandPalette() {
           setPrompt('');
           setChatHistory([]);
           setSessionId('');
+          setPreset(null);
           setSidebarOpen(false);
         },
       },
@@ -204,6 +206,7 @@ export default function CommandPalette() {
     setPrompt,
     setChatHistory,
     setSessionId,
+    setPreset,
   ]);
 
   // Case-insensitive substring match on the localized label or a hidden keyword.

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Curated style presets: seven visual directions — `swiss`, `editorial`, `brutalist`, `minimal`, `warm`, `playful` and `retro` — append a visual-direction fragment to the fixed system prompt without replacing the base generation contract; `preset=null` is Auto (no fragment). `GET /api/presets` returns localized `id`, `name` and `description` plus a 3-color `swatch` per preset, while the internal prompt fragment stays private. `preset` is accepted by `POST /api/generate` and `POST /api/iterate`, is part of the result-cache key, and is stored on projects (`preset` on project JSON/create/update). The landing prompt input gains preset chips and the workspace chat a compact picker; selection applies per generation/iteration.
+
 ## [0.8.0] - 2026-10-21
 
 ### Added

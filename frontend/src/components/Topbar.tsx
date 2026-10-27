@@ -54,6 +54,7 @@ const ProjectsPopover = forwardRef<HTMLDivElement, ProjectsPopoverProps>(functio
     setPrompt,
     setChatHistory,
     setSessionId,
+    setPreset,
   } = useAppStore();
   const { t } = useT();
   const [versionsOpen, setVersionsOpen] = useState<number | null>(null);
@@ -68,8 +69,17 @@ const ProjectsPopover = forwardRef<HTMLDivElement, ProjectsPopoverProps>(functio
     setPrompt('');
     setChatHistory([]);
     setSessionId('');
+    setPreset(null);
     onClose();
-  }, [setCurrentProject, setCurrentCode, setPrompt, setChatHistory, setSessionId, onClose]);
+  }, [
+    setCurrentProject,
+    setCurrentCode,
+    setPrompt,
+    setChatHistory,
+    setSessionId,
+    setPreset,
+    onClose,
+  ]);
 
   const handleLoadProject = useCallback(
     (project: Project) => {
@@ -77,10 +87,19 @@ const ProjectsPopover = forwardRef<HTMLDivElement, ProjectsPopoverProps>(functio
       setCurrentCode(project.current_code ?? '');
       setPrompt(project.prompt ?? '');
       setSessionId(project.session_id);
+      setPreset(project.preset ?? null);
       setChatHistory([]);
       onClose();
     },
-    [setCurrentProject, setCurrentCode, setPrompt, setSessionId, setChatHistory, onClose],
+    [
+      setCurrentProject,
+      setCurrentCode,
+      setPrompt,
+      setSessionId,
+      setPreset,
+      setChatHistory,
+      onClose,
+    ],
   );
 
   const handleDelete = useCallback(
@@ -119,10 +138,19 @@ const ProjectsPopover = forwardRef<HTMLDivElement, ProjectsPopoverProps>(functio
       setCurrentCode(version.code ?? '');
       setPrompt(project.prompt ?? '');
       setSessionId(project.session_id);
+      setPreset(project.preset ?? null);
       setChatHistory([]);
       onClose();
     },
-    [setCurrentProject, setCurrentCode, setPrompt, setSessionId, setChatHistory, onClose],
+    [
+      setCurrentProject,
+      setCurrentCode,
+      setPrompt,
+      setSessionId,
+      setPreset,
+      setChatHistory,
+      onClose,
+    ],
   );
 
   return (

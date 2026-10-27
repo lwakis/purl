@@ -4,9 +4,9 @@ import { test, expect } from '@playwright/test';
 // mock mode (see playwright.config.ts — LLM_API_KEY is forced empty, so the
 // backend streams a local mock design for any prompt with no external calls).
 //
-// The redesigned landing has no template gallery or chips: generation starts
-// from a plain prompt typed straight into the hero textarea. The default UI
-// locale is 'ru', so the headline above the input is asserted in Russian.
+// The landing carries the prompt as its only input; the style row below it is
+// a curated direction (Auto by default), not a template gallery. The default
+// UI locale is 'ru', so the headline above the input is asserted in Russian.
 
 test('generate flow: prompt → streamed preview', async ({ page }) => {
   await page.goto('/');
@@ -29,4 +29,22 @@ test('landing shows the headline and hero prompt input', async ({ page }) => {
 
   // The hero prompt textarea is ready for direct input.
   await expect(page.getByTestId('prompt-input')).toBeVisible();
+});
+
+test('style preset: Brutalist is selectable and reaches the preview', async ({ page }) => {
+  await page.goto('/');
+
+  // The catalogue arrives from the backend; pick a curated direction.
+  const brutalist = page.getByRole('radio', { name: 'Брутализм' });
+  await expect(brutalist).toBeVisible();
+  await brutalist.click();
+  await expect(brutalist).toBeChecked();
+
+  await page.getByTestId('prompt-input').fill('Создай лендинг для HR-SaaS с тёмной темой');
+  await page.getByTestId('generate-button').click();
+
+  // Generation completes → the design canvas replaces the landing; the
+  // preview iframe must get non-empty content.
+  const previewFrame = page.frameLocator('[data-testid="preview-iframe"]');
+  await expect(previewFrame.locator('body')).not.toBeEmpty({ timeout: 30_000 });
 });

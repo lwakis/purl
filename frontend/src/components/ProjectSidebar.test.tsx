@@ -25,6 +25,7 @@ const projectA: Project = {
   prompt: 'Лендинг для стартапа',
   current_code: '<html>A</html>',
   session_id: 's1',
+  preset: null,
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
 };
@@ -35,6 +36,7 @@ const projectB: Project = {
   prompt: 'Аналитика продаж',
   current_code: '<html>B</html>',
   session_id: 's1',
+  preset: 'brutalist',
   created_at: '2024-01-02T00:00:00Z',
   updated_at: '2024-01-02T00:00:00Z',
 };
@@ -79,6 +81,7 @@ beforeEach(() => {
     sidebarOpen: true,
     projects: [projectA, projectB],
     currentProject: projectA,
+    preset: null,
   });
 });
 
@@ -138,7 +141,18 @@ describe('ProjectSidebar', () => {
     expect(state.currentProject?.id).toBe(2);
     expect(state.currentCode).toBe('<html>B</html>');
     expect(state.prompt).toBe(projectB.prompt);
+    expect(state.preset).toBe('brutalist');
     expect(state.sidebarOpen).toBe(false);
+  });
+
+  it('clears the style preset when starting a new project', async () => {
+    const user = userEvent.setup();
+    useAppStore.setState({ preset: 'brutalist' });
+    render(<ProjectSidebar />);
+
+    await user.click(screen.getByRole('button', { name: 'Новый проект' }));
+
+    expect(useAppStore.getState().preset).toBeNull();
   });
 
   it('normalizes null code/prompt to empty strings when loading a project', async () => {
@@ -148,6 +162,7 @@ describe('ProjectSidebar', () => {
       prompt: null,
       current_code: null,
       session_id: 's1',
+      preset: null,
       created_at: '2024-01-03T00:00:00Z',
       updated_at: '2024-01-03T00:00:00Z',
     };

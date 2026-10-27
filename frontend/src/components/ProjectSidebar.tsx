@@ -27,6 +27,7 @@ export default function ProjectSidebar() {
     setPrompt,
     setChatHistory,
     setSessionId,
+    setPreset,
   } = useAppStore();
   const { projects, loading, remove, search, setSearch, page, setPage, totalPages, fetchProjects } =
     useProjects();
@@ -41,8 +42,17 @@ export default function ProjectSidebar() {
     setPrompt('');
     setChatHistory([]);
     setSessionId('');
+    setPreset(null);
     setSidebarOpen(false);
-  }, [setCurrentProject, setCurrentCode, setPrompt, setChatHistory, setSessionId, setSidebarOpen]);
+  }, [
+    setCurrentProject,
+    setCurrentCode,
+    setPrompt,
+    setChatHistory,
+    setSessionId,
+    setPreset,
+    setSidebarOpen,
+  ]);
 
   const handleLoadProject = useCallback(
     (project: Project) => {
@@ -50,10 +60,19 @@ export default function ProjectSidebar() {
       setCurrentCode(project.current_code ?? '');
       setPrompt(project.prompt ?? '');
       setSessionId(project.session_id);
+      setPreset(project.preset ?? null);
       setChatHistory([]);
       setSidebarOpen(false);
     },
-    [setCurrentProject, setCurrentCode, setPrompt, setSessionId, setChatHistory, setSidebarOpen],
+    [
+      setCurrentProject,
+      setCurrentCode,
+      setPrompt,
+      setSessionId,
+      setPreset,
+      setChatHistory,
+      setSidebarOpen,
+    ],
   );
 
   const handleDelete = useCallback(
@@ -108,10 +127,19 @@ export default function ProjectSidebar() {
       setCurrentCode(version.code ?? '');
       setPrompt(project.prompt ?? '');
       setSessionId(project.session_id);
+      setPreset(project.preset ?? null);
       setChatHistory([]);
       setSidebarOpen(false);
     },
-    [setCurrentProject, setCurrentCode, setPrompt, setSessionId, setChatHistory, setSidebarOpen],
+    [
+      setCurrentProject,
+      setCurrentCode,
+      setPrompt,
+      setSessionId,
+      setPreset,
+      setChatHistory,
+      setSidebarOpen,
+    ],
   );
 
   const isEmpty = !loading && projects.length === 0;

@@ -32,6 +32,7 @@ Flagship features:
 - **React export.** Turn a finished page into a ready-to-run Vite + React project — download a zip with `App.jsx`, `main.jsx`, `package.json`, `index.html` and a README; `npm install && npm run dev` is all it takes.
 - **Projects with autosave.** Work is saved automatically, like chats in AI assistants — no Save button. Projects keep a version history you can roll back, duplicate a project, or branch a new one from any snapshot.
 - **Your model, your context.** Pick a provider and model from a catalog (`GET /api/models`), test the connection right from the picker, ask for a plan before code, attach up to 8 images (5 MB each), or click an element in the preview to iterate on it.
+- **Style presets.** Choose a visual direction — Swiss, editorial, brutalist, minimal, warm, playful or retro — from chips on the landing input or the compact picker in the workspace chat. A preset appends a curated style fragment to the fixed system prompt; Auto is the default, and the base generation contract is never replaced.
 - **Command palette.** Press Ctrl/Cmd+K to switch views, find in code, copy or download the page, switch the language, or cancel a running generation.
 - **Mock mode.** With no LLM API key configured, Purl still works end to end. Great for local development, CI, and demos.
 
@@ -106,7 +107,7 @@ The Vite dev server runs on port 5173 and proxies `/api` to http://localhost:800
 
 ## How it works
 
-You type a prompt. The backend wraps the prompt in a curated system prompt, streams the request to a configured LLM provider (OpenAI-compatible endpoints or Anthropic — see presets below), and relays the response to the browser as Server-Sent Events. The frontend accumulates the streamed HTML and renders it in a sandboxed iframe (`sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"`, no `allow-same-origin`), so generated code can never touch the host page. When you ask for changes, the chat history and current code are sent back and the cycle repeats.
+You type a prompt. The backend wraps the prompt in a curated system prompt, optionally extended with a style fragment when a preset is selected (Auto adds none — the base generation contract is never replaced), streams the request to a configured LLM provider (OpenAI-compatible endpoints or Anthropic — see the provider presets below), and relays the response to the browser as Server-Sent Events. The frontend accumulates the streamed HTML and renders it in a sandboxed iframe (`sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"`, no `allow-same-origin`), so generated code can never touch the host page. When you ask for changes, the chat history and current code are sent back and the cycle repeats.
 
 ## Architecture
 
@@ -220,6 +221,7 @@ Interactive docs are served at `/docs` when the backend is running (FastAPI Swag
 | GET | `/api/instance` | Public bootstrap: `{auth_required, authenticated, version}` |
 | GET | `/api/models` | List available LLM providers and their models |
 | POST | `/api/models/test` | Test the resolved provider connection (mock-aware) |
+| GET | `/api/presets` | List curated style presets: `id`, localized `name`/`description` and a 3-color `swatch` (prompt fragments are not exposed) |
 | POST | `/api/generate` | Generate a design; returns an SSE stream |
 | POST | `/api/iterate` | Iterate on existing code via chat; SSE stream |
 | POST | `/api/enhance-prompt` | Rewrite a short brief into a richer, concrete spec; returns `{prompt}` |

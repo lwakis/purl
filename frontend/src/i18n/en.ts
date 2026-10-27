@@ -131,6 +131,12 @@ export const en: RuDictionary = {
     improve: 'Improve prompt',
     improving: 'Improving…',
   },
+  preset: {
+    label: 'Style',
+    auto: 'Auto',
+    autoDescription: 'Style follows the prompt',
+    groupAria: 'Choose a style',
+  },
   code: {
     copyTitle: 'Copy code',
     downloadTitle: 'Download HTML',

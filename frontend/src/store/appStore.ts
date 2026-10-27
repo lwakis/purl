@@ -28,6 +28,7 @@ interface AppState {
   previewRefreshKey: number;
   locale: Locale;
   selectedModel: string | null;
+  preset: string | null;
   planOn: boolean;
   selectMode: boolean;
   selectedElement: SelectedElement | null;
@@ -54,6 +55,7 @@ interface AppState {
   bumpPreviewRefresh: () => void;
   setLocale: (locale: Locale) => void;
   setSelectedModel: (model: string | null) => void;
+  setPreset: (preset: string | null) => void;
   setPlanOn: (on: boolean) => void;
   setSelectMode: (on: boolean) => void;
   setSelectedElement: (element: SelectedElement | null) => void;
@@ -89,6 +91,7 @@ const initialState = {
   previewRefreshKey: 0,
   locale: 'ru' as Locale,
   selectedModel: null,
+  preset: null as string | null,
   planOn: false,
   selectMode: false,
   selectedElement: null,
@@ -152,6 +155,7 @@ export const useAppStore = create<AppState>()(
         set((state) => ({ previewRefreshKey: state.previewRefreshKey + 1 })),
       setLocale: (locale) => set({ locale }),
       setSelectedModel: (selectedModel) => set({ selectedModel }),
+      setPreset: (preset) => set({ preset }),
       setPlanOn: (planOn) => set({ planOn }),
       setSelectMode: (selectMode) => set({ selectMode }),
       setSelectedElement: (selectedElement) => set({ selectedElement }),

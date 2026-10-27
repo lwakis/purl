@@ -20,6 +20,7 @@ const project: Project = {
   prompt: 'p',
   current_code: CODE,
   session_id: 's1',
+  preset: null,
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
 };

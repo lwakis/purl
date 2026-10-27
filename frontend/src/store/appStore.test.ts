@@ -23,6 +23,7 @@ const initialState = {
   previewSize: 'desktop' as PreviewSize,
   locale: 'ru' as Locale,
   selectedModel: null as string | null,
+  preset: null as string | null,
   planOn: false,
   selectMode: false,
   selectedElement: null as SelectedElement | null,
@@ -38,6 +39,7 @@ const projectA: Project = {
   prompt: 'p',
   current_code: 'code-a',
   session_id: 's1',
+  preset: null,
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
 };
@@ -48,6 +50,7 @@ const projectB: Project = {
   prompt: 'p',
   current_code: 'code-b',
   session_id: 's2',
+  preset: null,
   created_at: '2024-01-02T00:00:00Z',
   updated_at: '2024-01-02T00:00:00Z',
 };
@@ -73,6 +76,7 @@ describe('appStore', () => {
     expect(state.previewSize).toBe('desktop');
     expect(state.locale).toBe('ru');
     expect(state.selectedModel).toBeNull();
+    expect(state.preset).toBeNull();
     expect(state.planOn).toBe(false);
     expect(state.selectMode).toBe(false);
     expect(state.selectedElement).toBeNull();
@@ -150,6 +154,14 @@ describe('appStore', () => {
 
     useAppStore.getState().setSelectedModel(null);
     expect(useAppStore.getState().selectedModel).toBeNull();
+  });
+
+  it('setPreset updates the style preset', () => {
+    useAppStore.getState().setPreset('brutalist');
+    expect(useAppStore.getState().preset).toBe('brutalist');
+
+    useAppStore.getState().setPreset(null);
+    expect(useAppStore.getState().preset).toBeNull();
   });
 
   it('setPlanOn toggles the plan flag', () => {
@@ -300,6 +312,7 @@ describe('appStore', () => {
     useAppStore.getState().setPreviewSize('mobile');
     useAppStore.getState().setLocale('en');
     useAppStore.getState().setSelectedModel('openai:gpt-4o');
+    useAppStore.getState().setPreset('brutalist');
     useAppStore.getState().setPlanOn(true);
     useAppStore.getState().setSelectMode(true);
     useAppStore.getState().setSelectedElement({
@@ -332,6 +345,7 @@ describe('appStore', () => {
     expect(state.previewSize).toBe('desktop');
     expect(state.locale).toBe('ru');
     expect(state.selectedModel).toBeNull();
+    expect(state.preset).toBeNull();
     expect(state.planOn).toBe(false);
     expect(state.selectMode).toBe(false);
     expect(state.selectedElement).toBeNull();

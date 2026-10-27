@@ -353,6 +353,7 @@ async def generate(
     plan: bool = False,
     images: Sequence[str] = (),
     session_id: str | None = None,
+    preset: str | None = None,
 ) -> AsyncGenerator[str]:
     """Generate a design as an SSE event stream.
 
@@ -377,7 +378,7 @@ async def generate(
     from app.services.prompt_service import build_generate_prompt, build_system_prompt
     from app.services.token_usage import usage_store
 
-    system = build_system_prompt(plan=plan)
+    system = build_system_prompt(plan=plan, preset=preset)
     user_msg = build_generate_prompt(prompt)
 
     st = status_texts(detect_lang(prompt))

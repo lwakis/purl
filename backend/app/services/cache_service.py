@@ -55,9 +55,10 @@ class TTLCache:
         prompt: str,
         model: str | None = None,
         plan: bool = False,
+        preset: str = '',
     ) -> str | None:
-        """Convenience: hash prompt+model+plan and return cached HTML if any."""
-        key = hash_prompt(prompt, model or '', plan)
+        """Convenience: hash prompt+model+plan+preset and return cached HTML if any."""
+        key = hash_prompt(prompt, model or '', plan, preset)
         return self.get(key)
 
     def set_cache(
@@ -66,10 +67,11 @@ class TTLCache:
         html: str,
         model: str | None = None,
         plan: bool = False,
+        preset: str = '',
         ttl: int | None = None,
     ) -> None:
-        """Convenience: hash prompt+model+plan and cache the HTML."""
-        key = hash_prompt(prompt, model or '', plan)
+        """Convenience: hash prompt+model+plan+preset and cache the HTML."""
+        key = hash_prompt(prompt, model or '', plan, preset)
         self.set(key, html, ttl)
 
     # ── Persistent (SQLite-backed) async layer ───────────────────────────────
@@ -154,9 +156,10 @@ class TTLCache:
         prompt: str,
         model: str | None = None,
         plan: bool = False,
+        preset: str = '',
     ) -> str | None:
-        """Async convenience: hash prompt+model+plan and look up."""
-        key = hash_prompt(prompt, model or '', plan)
+        """Async convenience: hash prompt+model+plan+preset and look up."""
+        key = hash_prompt(prompt, model or '', plan, preset)
         return await self.aget(key)
 
     async def aset_cache(
@@ -165,10 +168,11 @@ class TTLCache:
         html: str,
         model: str | None = None,
         plan: bool = False,
+        preset: str = '',
         ttl: int | None = None,
     ) -> None:
-        """Async convenience: hash prompt+model+plan and persist HTML."""
-        key = hash_prompt(prompt, model or '', plan)
+        """Async convenience: hash prompt+model+plan+preset and persist HTML."""
+        key = hash_prompt(prompt, model or '', plan, preset)
         await self.aset(key, html, ttl)
 
 

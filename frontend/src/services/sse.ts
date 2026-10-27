@@ -30,6 +30,7 @@ export interface GenerateSSEExtras {
   model?: string | null;
   plan?: boolean;
   images?: string[];
+  preset?: string | null;
 }
 
 export interface IterateSSEExtras {
@@ -37,6 +38,7 @@ export interface IterateSSEExtras {
   plan?: boolean;
   images?: string[];
   selected_element?: string | null;
+  preset?: string | null;
 }
 
 const INACTIVITY_TIMEOUT_MS = 120_000;

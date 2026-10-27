@@ -32,6 +32,7 @@ const projectA: Project = {
   prompt: 'Лендинг для стартапа',
   current_code: '<html>A</html>',
   session_id: 's1',
+  preset: 'swiss',
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
 };
@@ -42,6 +43,7 @@ const projectB: Project = {
   prompt: 'Аналитика продаж',
   current_code: '<html>B</html>',
   session_id: 's1',
+  preset: 'brutalist',
   created_at: '2024-01-02T00:00:00Z',
   updated_at: '2024-01-02T00:00:00Z',
 };
@@ -397,6 +399,7 @@ describe('Topbar projects popover', () => {
 
   it('starts a new project via the "Новый проект" button', async () => {
     const user = userEvent.setup();
+    useAppStore.setState({ preset: 'brutalist' });
     render(<Topbar />);
     await user.click(screen.getByRole('button', { name: 'Проекты' }));
     await user.click(screen.getByRole('button', { name: 'Новый проект' }));
@@ -405,6 +408,7 @@ describe('Topbar projects popover', () => {
     expect(state.currentCode).toBe('');
     expect(state.prompt).toBe('');
     expect(state.sessionId).toBe('');
+    expect(state.preset).toBeNull();
     expect(state.chatHistory).toEqual([]);
     expect(screen.queryByRole('heading', { name: 'Проекты' })).not.toBeInTheDocument();
   });
@@ -419,6 +423,7 @@ describe('Topbar projects popover', () => {
     expect(state.currentCode).toBe('<html>B</html>');
     expect(state.prompt).toBe(projectB.prompt);
     expect(state.sessionId).toBe('s1');
+    expect(state.preset).toBe('brutalist');
     expect(screen.queryByRole('heading', { name: 'Проекты' })).not.toBeInTheDocument();
   });
 
@@ -430,6 +435,7 @@ describe('Topbar projects popover', () => {
       prompt: null,
       current_code: null,
       session_id: 's1',
+      preset: null,
       created_at: '2024-01-03T00:00:00Z',
       updated_at: '2024-01-03T00:00:00Z',
     };
@@ -478,6 +484,7 @@ describe('Topbar projects popover', () => {
     expect(state.currentProject?.id).toBe(1);
     expect(state.currentCode).toBe('<html>v1</html>');
     expect(state.prompt).toBe(projectA.prompt);
+    expect(state.preset).toBe('swiss');
     expect(screen.queryByRole('heading', { name: 'Проекты' })).not.toBeInTheDocument();
   });
 

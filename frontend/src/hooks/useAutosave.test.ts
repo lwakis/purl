@@ -25,6 +25,7 @@ const project: Project = {
   prompt: 'old',
   current_code: 'old-code',
   session_id: 'sess-1',
+  preset: null,
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
 };
@@ -42,6 +43,7 @@ const storeDefaults = {
   sidebarOpen: false,
   previewSize: 'desktop' as 'desktop' | 'tablet' | 'mobile',
   locale: 'ru' as 'ru' | 'en',
+  preset: null as string | null,
 };
 
 beforeEach(() => {
@@ -75,6 +77,7 @@ describe('useAutosave', () => {
       prompt: PROMPT,
       current_code: CODE,
       session_id: 'sess-1',
+      preset: null,
     });
     expect(result.current.status).toBe('saved');
     expect(useAppStore.getState().currentProject).toEqual(created);
@@ -128,6 +131,7 @@ describe('useAutosave', () => {
     expect(updateProject).toHaveBeenCalledWith(7, {
       current_code: CODE,
       prompt: PROMPT,
+      preset: null,
     });
     expect(result.current.status).toBe('saved');
     expect(useAppStore.getState().currentProject).toEqual(updated);
@@ -138,6 +142,36 @@ describe('useAutosave', () => {
       await vi.advanceTimersByTimeAsync(1500);
     });
     expect(updateProject).toHaveBeenCalledTimes(1);
+  });
+
+  it('persists a style change even when the code is unchanged', async () => {
+    const updated: Project = {
+      ...project,
+      prompt: PROMPT,
+      current_code: CODE,
+      preset: 'brutalist',
+    };
+    vi.mocked(updateProject).mockResolvedValue(updated);
+    useAppStore.setState({
+      sessionId: 'sess-1',
+      currentCode: CODE,
+      prompt: PROMPT,
+      currentProject: { ...project, prompt: PROMPT, current_code: CODE },
+      projects: [project],
+      preset: 'brutalist',
+    });
+
+    const { result } = renderHook(() => useAutosave());
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1500);
+    });
+
+    expect(updateProject).toHaveBeenCalledWith(7, {
+      current_code: CODE,
+      prompt: PROMPT,
+      preset: 'brutalist',
+    });
+    expect(result.current.status).toBe('saved');
   });
 
   it('does nothing for empty code, while generating, or without a session', async () => {

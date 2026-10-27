@@ -143,7 +143,7 @@ export function useGeneration() {
         void refreshUsage();
       };
 
-      const { selectedModel, planOn, attachments } = useAppStore.getState();
+      const { selectedModel, planOn, attachments, preset } = useAppStore.getState();
       // A fresh generation starts a new visual context: consume the current
       // attachments for this request only, so stale images never leak into
       // an unrelated page created later.
@@ -160,6 +160,7 @@ export function useGeneration() {
           model: selectedModel,
           plan: planOn,
           images: attachments.map((a) => a.dataUrl),
+          preset,
         },
       );
     },
@@ -251,7 +252,8 @@ export function useGeneration() {
         }
       };
 
-      const { selectedModel, planOn, attachments, selectedElement } = useAppStore.getState();
+      const { selectedModel, planOn, attachments, selectedElement, preset } =
+        useAppStore.getState();
       const selectedElementJson = selectedElement
         ? JSON.stringify({
             tag: selectedElement.tag,
@@ -277,6 +279,7 @@ export function useGeneration() {
           plan: planOn,
           images: attachments.map((a) => a.dataUrl),
           selected_element: selectedElementJson,
+          preset,
         },
       );
     },

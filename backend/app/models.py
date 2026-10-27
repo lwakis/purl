@@ -42,6 +42,7 @@ class GenerateRequest(BaseModel):
     session_id: str | None = Field(None, description='Client-generated browser session identifier')
     model: str | None = Field(None, description='Provider override in "provider:model" format')
     plan: bool = Field(False, description='Ask the model to plan before generating code')
+    preset: str | None = Field(None, max_length=32, description='Style preset id (null = Auto)')
     images: list[str] = Field(
         default_factory=list, description='Base64 data URLs for multimodal input'
     )
@@ -69,6 +70,7 @@ class IterateRequest(BaseModel):
     history: list[ChatMessage] = Field(default_factory=list)
     model: str | None = Field(None, description='Provider override in "provider:model" format')
     plan: bool = Field(False, description='Ask the model to plan before generating code')
+    preset: str | None = Field(None, max_length=32, description='Style preset id (null = Auto)')
     images: list[str] = Field(
         default_factory=list, description='Base64 data URLs for multimodal input'
     )
@@ -93,12 +95,28 @@ class GenerateResponse(BaseModel):
     data: str
 
 
+class PresetInfo(BaseModel):
+    """Public metadata for a curated style preset (never the fragment)."""
+
+    id: str
+    name: dict[str, str]
+    description: dict[str, str]
+    swatch: list[str]
+
+
+class PresetListResponse(BaseModel):
+    """Envelope returned by ``GET /api/presets``."""
+
+    presets: list[PresetInfo]
+
+
 class ProjectResponse(BaseModel):
     id: int
     name: str
     prompt: str | None = None
     current_code: str | None = None
     session_id: str | None = None
+    preset: str | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -134,12 +152,14 @@ class ProjectCreate(BaseModel):
     prompt: str | None = None
     current_code: str | None = None
     session_id: str | None = None
+    preset: str | None = Field(None, max_length=32, description='Style preset id')
 
 
 class ProjectUpdate(BaseModel):
     name: str | None = None
     prompt: str | None = None
     current_code: str | None = None
+    preset: str | None = Field(None, max_length=32, description='Style preset id')
 
 
 class ProjectVersionCreate(BaseModel):

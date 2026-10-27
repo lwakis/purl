@@ -9,6 +9,7 @@ import {
   getProjectVersions,
   branchFromVersion,
   getModels,
+  getPresets,
   testProvider,
   getUsage,
   enhancePrompt,
@@ -215,6 +216,25 @@ describe('api client', () => {
 
     expect(result).toEqual(providers);
     expect(fetchMock).toHaveBeenCalledWith('/api/models', {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  });
+
+  it('getPresets GETs /api/presets and unwraps the presets array', async () => {
+    const presets = [
+      {
+        id: 'swiss',
+        name: { ru: 'Швейцарский', en: 'Swiss' },
+        description: { ru: 'Точная сетка', en: 'Precise grid' },
+        swatch: ['#111111', '#F4F0E8', '#E04A2F'],
+      },
+    ];
+    fetchMock.mockResolvedValue(mockResponse({ presets }));
+
+    const result = await getPresets();
+
+    expect(result).toEqual(presets);
+    expect(fetchMock).toHaveBeenCalledWith('/api/presets', {
       headers: { 'Content-Type': 'application/json' },
     });
   });

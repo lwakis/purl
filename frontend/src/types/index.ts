@@ -4,6 +4,7 @@ export interface GenerateRequest {
   model?: string | null;
   plan?: boolean;
   images?: string[];
+  preset?: string | null;
 }
 
 export interface IterateRequest {
@@ -15,6 +16,7 @@ export interface IterateRequest {
   plan?: boolean;
   images?: string[];
   selected_element?: string | null;
+  preset?: string | null;
 }
 
 export interface ChatMessage {
@@ -32,8 +34,16 @@ export interface Project {
   prompt: string | null;
   current_code: string | null;
   session_id: string;
+  preset: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface PresetInfo {
+  id: string;
+  name: { ru: string; en: string };
+  description: { ru: string; en: string };
+  swatch: [string, string, string];
 }
 
 export interface ProjectVersion {

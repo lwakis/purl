@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from app.presets import preset_fragment
 from app.prompts import SYSTEM_PROMPT
 
 _PLAN_INSTRUCTION = (
@@ -24,9 +25,21 @@ def _detect_lang(text: str) -> str:
     return detect_lang(text)
 
 
-def build_system_prompt(plan: bool = False) -> str:
-    """Return the full system prompt, optionally with the planning instruction."""
-    prompt = SYSTEM_PROMPT + '\n\n' + _LANG_INSTRUCTION
+def build_system_prompt(plan: bool = False, preset: str | None = None) -> str:
+    """Return the system prompt with optional style and planning instructions.
+
+    A *preset* is additive: its fragment is appended as a separate style
+    direction and can never replace or weaken the base ``SYSTEM_PROMPT``
+    contract. Unknown preset ids are ignored (Auto behaviour).
+    """
+    prompt = SYSTEM_PROMPT
+    fragment = preset_fragment(preset)
+    if fragment:
+        prompt += (
+            '\n\nSTYLE DIRECTION (apply consistently; never mention or explain it in the '
+            f'response):\n{fragment}'
+        )
+    prompt += '\n\n' + _LANG_INSTRUCTION
     if plan:
         prompt += '\n\n' + _PLAN_INSTRUCTION
     return prompt

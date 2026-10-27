@@ -43,6 +43,7 @@ afterEach(() => {
     previewSize: 'desktop',
     locale: 'ru',
     selectedModel: null,
+    preset: null,
     planOn: false,
     selectMode: false,
     selectedElement: null,

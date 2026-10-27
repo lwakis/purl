@@ -4,7 +4,8 @@ import uuid
 from collections.abc import AsyncGenerator
 from datetime import UTC, datetime
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text, inspect, text
+from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, relationship
 
@@ -30,9 +31,27 @@ async def get_db() -> AsyncGenerator[AsyncSession]:  # type: ignore[misc]
 
 
 async def init_db() -> None:
-    """Create all tables on startup."""
+    """Create all tables on startup, then apply lightweight schema migrations."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # create_all never alters an existing table, so additive columns such as
+        # ``projects.preset`` need an explicit, inspector-based migration.
+        await conn.run_sync(migrate_projects_table)
+
+
+def migrate_projects_table(sync_conn: Connection) -> None:
+    """Add post-initial columns to ``projects`` on already-existing databases.
+
+    Dialect-safe: relies on SQLAlchemy's inspector rather than SQLite PRAGMA.
+    No-op when the table is missing (fresh DB handled by ``create_all``) or the
+    column already exists.
+    """
+    inspector = inspect(sync_conn)
+    if 'projects' not in inspector.get_table_names():
+        return
+    columns = {column['name'] for column in inspector.get_columns('projects')}
+    if 'preset' not in columns:
+        sync_conn.execute(text('ALTER TABLE projects ADD COLUMN preset VARCHAR(32)'))
 
 
 # ── Base ─────────────────────────────────────────────────────────────────────
@@ -64,6 +83,7 @@ class Project(Base):
     session_id = Column(String(50), nullable=True, index=True)
     prompt = Column(Text, nullable=True)
     current_code = Column(Text, nullable=True)
+    preset = Column(String(32), nullable=True)
     created_at = Column(DateTime(timezone=True), default=_utcnow)
     updated_at = Column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
 
