@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - Curated style presets: seven visual directions — `swiss`, `editorial`, `brutalist`, `minimal`, `warm`, `playful` and `retro` — append a visual-direction fragment to the fixed system prompt without replacing the base generation contract; `preset=null` is Auto (no fragment). `GET /api/presets` returns localized `id`, `name` and `description` plus a 3-color `swatch` per preset, while the internal prompt fragment stays private. `preset` is accepted by `POST /api/generate` and `POST /api/iterate`, is part of the result-cache key, and is stored on projects (`preset` on project JSON/create/update). The landing prompt input gains preset chips and the workspace chat a compact picker; selection applies per generation/iteration.
 
+### Changed
+
+- Per-provider API keys: `OPENAI_API_KEY`, `OPENROUTER_API_KEY`, `GROQ_API_KEY`, `DEEPSEEK_API_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY` and `CUSTOM_API_KEY` enable their own provider in the model picker, and a `provider:model` override uses the selected provider's key. `LLM_API_KEY` remains the key for `LLM_PROVIDER` and is never forwarded to a different provider; existing single-key installs keep working. A fallback to another provider also needs that provider's key or an explicit `LLM_FALLBACK_API_KEY`.
+- `custom:<model>` model-picker overrides now resolve against `LLM_BASE_URL` and `CUSTOM_API_KEY` (or the configured custom provider's key) instead of silently falling back to the default provider.
+
+### Fixed
+
+- The model picker no longer marks every provider ready when only `LLM_API_KEY` is set, and selecting a different provider can no longer send the configured provider's key to it.
+
 ## [0.8.0] - 2026-10-21
 
 ### Added

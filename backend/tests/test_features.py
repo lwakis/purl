@@ -28,14 +28,60 @@ def test_resolve_provider_model_override_uses_preset(monkeypatch):
     assert provider.ready is True
 
 
+def test_resolve_provider_specific_key_wins_over_legacy_key(monkeypatch):
+    monkeypatch.setattr(settings, 'llm_provider', 'openai')
+    monkeypatch.setattr(settings, 'llm_api_key', 'sk-legacy')
+    monkeypatch.setattr(settings, 'openai_api_key', 'sk-provider')
+    provider = resolve_provider()
+    assert provider.api_key == 'sk-provider'
+    assert provider.ready is True
+
+
 def test_resolve_provider_anthropic_model_override(monkeypatch):
     monkeypatch.setattr(settings, 'llm_provider', 'openai')
-    monkeypatch.setattr(settings, 'llm_api_key', 'sk-test')
+    monkeypatch.setattr(settings, 'llm_api_key', '')
+    monkeypatch.setattr(settings, 'anthropic_api_key', 'sk-ant-test')
     provider = resolve_provider('anthropic:claude-sonnet-4-5')
     assert provider.name == 'anthropic'
     assert provider.api == 'anthropic'
     assert provider.model == 'claude-sonnet-4-5'
+    assert provider.api_key == 'sk-ant-test'
     assert provider.ready is True
+
+
+def test_resolve_provider_cross_provider_override_without_key_falls_back(monkeypatch):
+    monkeypatch.setattr(settings, 'llm_provider', 'deepseek')
+    monkeypatch.setattr(settings, 'llm_api_key', 'sk-deepseek')
+    monkeypatch.setattr(settings, 'anthropic_api_key', '')
+    provider = resolve_provider('anthropic:claude-sonnet-4-5')
+    assert provider.name == 'deepseek'
+    assert provider.model == 'deepseek-chat'
+    assert provider.api_key == 'sk-deepseek'
+
+
+def test_resolve_provider_custom_model_override(monkeypatch):
+    monkeypatch.setattr(settings, 'llm_provider', 'openai')
+    monkeypatch.setattr(settings, 'llm_api_key', '')
+    monkeypatch.setattr(settings, 'llm_base_url', 'https://my-llm.example/v1')
+    monkeypatch.setattr(settings, 'custom_api_key', 'sk-custom')
+    provider = resolve_provider('custom:my-model')
+    assert provider.name == 'custom'
+    assert provider.base_url == 'https://my-llm.example/v1'
+    assert provider.model == 'my-model'
+    assert provider.api == 'openai'
+    assert provider.api_key == 'sk-custom'
+    assert provider.ready is True
+
+
+def test_resolve_provider_custom_override_without_key_falls_back(monkeypatch):
+    monkeypatch.setattr(settings, 'llm_provider', 'openai')
+    monkeypatch.setattr(settings, 'llm_api_key', 'sk-openai')
+    monkeypatch.setattr(settings, 'llm_base_url', 'https://my-llm.example/v1')
+    monkeypatch.setattr(settings, 'custom_api_key', '')
+    provider = resolve_provider('custom:my-model')
+    assert provider.name == 'openai'
+    assert provider.model == 'gpt-4o'
+    assert provider.api_key == 'sk-openai'
 
 
 def test_resolve_provider_ollama_model_override_ready_without_key(monkeypatch):

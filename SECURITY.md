@@ -43,10 +43,10 @@ By default an instance is open: anyone who can reach it can use it. Set `INSTANC
 | Generated code | Rendered in an iframe with `sandbox="allow-scripts"` only. No `allow-same-origin`, no `allow-top-navigation`, no `allow-forms`. |
 | Rate limiting | In-memory sliding window: `RATE_LIMIT_PER_HOUR` (default 100 requests/hour) per client IP. Note: in-memory means limits reset on restart and apply per process. |
 | Accounts | None. The app is anonymous-only and self-hosted; projects are scoped by a client-generated browser session id, which is not a security boundary. |
-| Secrets | Never commit `.env` files or API keys. The repo's `.gitignore` excludes `.env`; the LLM API key is read from the environment only. |
+| Secrets | Never commit `.env` files or API keys. The repo's `.gitignore` excludes `.env`; all API keys are read from the environment only. Each provider key is scoped to that provider, and `LLM_API_KEY` is only sent to the provider selected by `LLM_PROVIDER`. |
 | CORS | Restricted to the origins in `CORS_ORIGINS` (default `["http://localhost:5173","http://localhost:5174","http://127.0.0.1:5173","http://127.0.0.1:5174"]`). |
-| Cache | In-memory TTL cache keyed by a SHA-256 hash of prompt + theme + style + model + plan. No user data is stored in cache keys. |
-| LLM provider | The API key is passed to the configured OpenAI-compatible endpoint over HTTPS. The system prompt instructs the model not to generate malicious JavaScript. |
+| Cache | In-memory TTL cache keyed by a SHA-256 hash of prompt + model + plan + preset. No user data is stored in cache keys. |
+| LLM provider | Each provider-specific API key is passed only to that provider's endpoint over HTTPS; `LLM_API_KEY` is never forwarded to a different provider. The system prompt instructs the model not to generate malicious JavaScript. |
 
 ## Reporting expectations
 
@@ -60,7 +60,7 @@ Before deploying Purl anywhere public:
 
 - [ ] Set `CORS_ORIGINS` to your real frontend origin(s)
 - [ ] Set `INSTANCE_TOKEN` before exposing the instance to untrusted networks
-- [ ] Keep `LLM_API_KEY` in the environment, never in the repo
+- [ ] Keep `LLM_API_KEY` and every provider-specific `*_API_KEY` in the environment, never in the repo
 - [ ] Run behind HTTPS (reverse proxy or platform TLS)
 - [ ] Review the rate limits (`RATE_LIMIT_PER_HOUR`) for your expected load
 - [ ] Confirm the preview iframe still uses `sandbox="allow-scripts"` without `allow-same-origin`

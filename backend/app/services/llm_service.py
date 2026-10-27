@@ -17,7 +17,7 @@ from collections.abc import AsyncGenerator, Sequence
 
 import httpx
 
-from app.config import LLM_PRESETS, settings
+from app.config import LLM_PRESETS, api_key_for_provider, settings
 from app.services.token_usage import UsageAccumulator
 
 logger = logging.getLogger(__name__)
@@ -39,15 +39,18 @@ def resolve_provider(model: str | None = None) -> ProviderConfig:
     """Resolve settings into a concrete provider endpoint.
 
     ``model`` may be a ``"provider:model"`` override (e.g. ``"openai:gpt-4o"``).
-    When the override names a known preset whose provider is ready (API key set;
-    ``ollama`` is always ready), the preset's base URL and wire protocol are used
-    with the requested model id. Otherwise — unknown provider, invalid format, or
-    not-ready provider — the override is ignored and settings-based resolution
-    proceeds as before.
+    When the override names a known preset whose provider is ready (its own API
+    key set; ``ollama`` is always ready), the preset's base URL and wire protocol
+    are used with the requested model id. A ``"custom:model"`` override uses
+    ``LLM_BASE_URL`` when both it and the custom key are configured. Otherwise —
+    unknown provider, invalid format, or not-ready provider — the override is
+    ignored and settings-based resolution proceeds as before.
 
     ``custom`` uses LLM_BASE_URL/LLM_MODEL verbatim (any OpenAI-compatible
-    endpoint). ``ollama`` needs no API key; every other preset does. An unknown
-    provider name or a missing required endpoint yields ``ready=False``.
+    endpoint). ``ollama`` needs no API key; every other preset needs its own
+    provider-specific key (``LLM_API_KEY`` only applies to the configured
+    provider). An unknown provider name or a missing required endpoint yields
+    ``ready=False``.
     """
     name = settings.llm_provider.lower()
 
@@ -55,9 +58,15 @@ def resolve_provider(model: str | None = None) -> ProviderConfig:
         provider_key, sep, model_id = model.partition(':')
         if sep and model_id and provider_key in LLM_PRESETS:
             base_url, _default_model, api = LLM_PRESETS[provider_key]
-            api_key = settings.llm_api_key
+            api_key = api_key_for_provider(provider_key)
             if provider_key == 'ollama' or bool(api_key):
                 return ProviderConfig(provider_key, base_url, model_id, api, api_key, True)
+        elif sep and model_id and provider_key == 'custom':
+            api_key = api_key_for_provider('custom')
+            if settings.llm_base_url and api_key:
+                return ProviderConfig(
+                    'custom', settings.llm_base_url, model_id, 'openai', api_key, True
+                )
 
     if name == 'custom':
         if not settings.llm_base_url:
@@ -73,7 +82,7 @@ def resolve_provider(model: str | None = None) -> ProviderConfig:
         return ProviderConfig(name, '', '', 'openai', '', False)
 
     base_url, model, api = endpoint
-    api_key = settings.llm_api_key
+    api_key = api_key_for_provider(name)
     ready = name == 'ollama' or bool(api_key)
     return ProviderConfig(name, base_url, model, api, api_key, ready)
 
@@ -83,9 +92,11 @@ def resolve_fallback_provider(primary: ProviderConfig | None = None) -> Provider
 
     Returns ``None`` when no fallback is configured, the ``"provider:model"``
     value is malformed or names an unknown provider, the provider is not ready
-    (no fallback/primary API key; ``ollama`` never needs one), or the resolved
-    endpoint is identical to *primary* — retrying the same endpoint would only
-    loop. ``custom`` needs a base URL (fallback base URL, else the primary one).
+    (no explicit fallback key and no key of its own; ``ollama`` never needs
+    one), or the resolved endpoint is identical to *primary* — retrying the
+    same endpoint would only loop. ``LLM_API_KEY`` only counts for the
+    configured provider, so a cross-provider fallback never inherits it.
+    ``custom`` needs a base URL (fallback base URL, else the primary one).
     """
     value = settings.llm_fallback_model.strip()
     if not value:
@@ -97,8 +108,6 @@ def resolve_fallback_provider(primary: ProviderConfig | None = None) -> Provider
     if not sep or not provider or not model_id:
         return None
 
-    api_key = settings.llm_fallback_api_key or settings.llm_api_key
-
     if provider in LLM_PRESETS:
         base_url, _default_model, api = LLM_PRESETS[provider]
     elif provider == 'custom':
@@ -108,6 +117,11 @@ def resolve_fallback_provider(primary: ProviderConfig | None = None) -> Provider
         api = 'openai'
     else:
         return None
+
+    # An explicit fallback key always wins. Otherwise the target provider may
+    # only use its own key (or LLM_API_KEY when it is the configured provider) —
+    # never the primary provider's key.
+    api_key = settings.llm_fallback_api_key or api_key_for_provider(provider)
 
     ready = provider == 'ollama' or bool(api_key)
     if not ready:

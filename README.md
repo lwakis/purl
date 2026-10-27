@@ -31,10 +31,10 @@ Flagship features:
 - **Iterate by chat.** "Make the buttons bigger", "switch to a dark theme". Purl rewrites the page and the preview updates.
 - **React export.** Turn a finished page into a ready-to-run Vite + React project — download a zip with `App.jsx`, `main.jsx`, `package.json`, `index.html` and a README; `npm install && npm run dev` is all it takes.
 - **Projects with autosave.** Work is saved automatically, like chats in AI assistants — no Save button. Projects keep a version history you can roll back, duplicate a project, or branch a new one from any snapshot.
-- **Your model, your context.** Pick a provider and model from a catalog (`GET /api/models`), test the connection right from the picker, ask for a plan before code, attach up to 8 images (5 MB each), or click an element in the preview to iterate on it.
+- **Your model, your context.** Pick a provider and model from a catalog (`GET /api/models`); each provider is enabled by its own `*_API_KEY`. Test the connection right from the picker, ask for a plan before code, attach up to 8 images (5 MB each), or click an element in the preview to iterate on it.
 - **Style presets.** Choose a visual direction — Swiss, editorial, brutalist, minimal, warm, playful or retro — from chips on the landing input or the compact picker in the workspace chat. A preset appends a curated style fragment to the fixed system prompt; Auto is the default, and the base generation contract is never replaced.
 - **Command palette.** Press Ctrl/Cmd+K to switch views, find in code, copy or download the page, switch the language, or cancel a running generation.
-- **Mock mode.** With no LLM API key configured, Purl still works end to end. Great for local development, CI, and demos.
+- **Mock mode.** With no LLM provider keys configured, Purl still works end to end. Great for local development, CI, and demos.
 
 ## Screenshots
 
@@ -55,7 +55,7 @@ Purl runs as a single all-in-one container: FastAPI serves the built SPA on port
 ```bash
 docker run -d --name purl -p 8000:8000 \
   -v purl-data:/app/data \
-  -e LLM_PROVIDER=openai -e LLM_API_KEY=sk-... \
+  -e LLM_PROVIDER=openai -e OPENAI_API_KEY=sk-... \
   ghcr.io/lwakis/purl:latest
 ```
 
@@ -73,12 +73,12 @@ Protect a publicly reachable instance with a bearer token by passing `INSTANCE_T
 ```bash
 docker run -d --name purl -p 8000:8000 \
   -v purl-data:/app/data \
-  -e LLM_PROVIDER=openai -e LLM_API_KEY=sk-... \
+  -e LLM_PROVIDER=openai -e OPENAI_API_KEY=sk-... \
   -e INSTANCE_TOKEN=$(openssl rand -hex 32) \
   ghcr.io/lwakis/purl:latest
 ```
 
-No API key required. Leave `LLM_API_KEY` empty and the backend runs in mock mode, generating a local HTML design without any external calls.
+No API key required. Leave all provider keys empty (including `LLM_API_KEY`) and the backend runs in mock mode, generating a local HTML design without any external calls.
 
 > The image is published on version tags for `linux/amd64` and `linux/arm64`, tagged `latest` plus the semver tag. GHCR packages are **private by default** — to allow anonymous pulls, open the `purl` package under GitHub → your profile → **Packages** and make it public (or run `docker login ghcr.io` first).
 
@@ -184,7 +184,8 @@ All variables are optional; defaults live in `backend/app/config.py`. Copy `back
 
 | Variable | Default | Description |
 |---|---|---|
-| `LLM_API_KEY` | *(empty)* | LLM API key. Empty enables mock mode. |
+| `LLM_API_KEY` | *(empty)* | Legacy key for the provider selected by `LLM_PROVIDER`; never sent to another provider. Empty (with no per-provider key) enables mock mode. |
+| `OPENAI_API_KEY`, `OPENROUTER_API_KEY`, `GROQ_API_KEY`, `DEEPSEEK_API_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`, `CUSTOM_API_KEY` | *(empty)* | Per-provider keys. A provider is enabled in the picker only when its own key is set; each key is sent only to that provider. `CUSTOM_API_KEY` also needs `LLM_BASE_URL`. |
 | `LLM_PROVIDER` | `openai` | Preset: `openai`, `openrouter`, `groq`, `deepseek`, `gemini`, `ollama`, `anthropic`, or `custom` |
 | `LLM_BASE_URL` | *(preset)* | Override provider base URL (required for `custom`) |
 | `LLM_MODEL` | *(preset)* | Override model (required for `custom`) |
@@ -197,8 +198,10 @@ All variables are optional; defaults live in `backend/app/config.py`. Copy `back
 | `CACHE_TTL_SECONDS` | `86400` | Result cache TTL in seconds |
 | `INSTANCE_TOKEN` | *(empty)* | Optional bearer token; when set, every `/api/*` route requires `Authorization: Bearer <token>` (empty = open instance) |
 | `LLM_FALLBACK_MODEL` | *(empty)* | Optional fallback LLM as `provider:model`, e.g. `openrouter:openai/gpt-4o`, `ollama:llama3.2`, `custom:my-model` |
-| `LLM_FALLBACK_API_KEY` | *(empty)* | Fallback API key; falls back to `LLM_API_KEY` when empty (Ollama needs none) |
+| `LLM_FALLBACK_API_KEY` | *(empty)* | Explicit fallback key; when empty, the fallback provider's own `*_API_KEY` is used (`LLM_API_KEY` only when the fallback targets `LLM_PROVIDER`; Ollama needs none) |
 | `LLM_FALLBACK_BASE_URL` | *(empty)* | Fallback base URL; required for `custom` unless `LLM_BASE_URL` is set, optional override otherwise |
+
+**Per-provider keys.** `LLM_API_KEY` stays the key for `LLM_PROVIDER`, so existing single-key installs keep working. To switch providers in the picker, set that provider's own `<PROVIDER>_API_KEY`; providers without a key are shown disabled. If you previously used `LLM_API_KEY` for a non-default provider, move it to the matching variable — Purl will not forward it to another provider. A fallback to a different provider also needs that provider's key or an explicit `LLM_FALLBACK_API_KEY`.
 
 **Instance token.** `INSTANCE_TOKEN` is optional and empty by default (open instance). When set, every `/api/*` route requires an `Authorization: Bearer <token>` header; only `GET /health` and `GET /api/instance` stay public. The web UI shows a token screen, stores the token in the browser, and sends it on every API and SSE request. Use a long random value (for example `openssl rand -hex 32`) and serve the instance over HTTPS whenever it is reachable from the internet. The token is a bearer secret, not encryption — anyone who holds it has full access.
 
@@ -288,7 +291,7 @@ Check the backend log. A 429 response means you hit the rate limit (`RATE_LIMIT_
 ## FAQ
 
 **Do I need an LLM API key?**
-No. Without a key Purl runs in mock mode and still generates real pages locally — great for trying it out, demos, and CI. Add a key when you want production-quality results from a live model.
+No. Without any provider key Purl runs in mock mode and still generates real pages locally — great for trying it out, demos, and CI. Add a key when you want production-quality results from a live model.
 
 **Where does my data go?**
 Only where you point it. Purl is self-hosted: projects and versions live in your local SQLite file, and prompts are sent exclusively to the LLM provider you configure. No telemetry.
@@ -300,7 +303,7 @@ Yes — Purl is MIT licensed, and the pages it generates are yours.
 Those are hosted services; Purl is the self-hosted take: run it on your own machine, bring your own provider and keys, keep your data. The trade-off is that there is no hosted convenience.
 
 **Which providers and models are supported?**
-Any OpenAI-compatible endpoint through presets (OpenAI, OpenRouter, Groq, DeepSeek, Gemini, Ollama), plus Anthropic, plus a `custom` preset for arbitrary OpenAI-compatible base URLs. See the environment variables table above.
+Any OpenAI-compatible endpoint through presets (OpenAI, OpenRouter, Groq, DeepSeek, Gemini, Ollama), plus Anthropic, plus a `custom` preset for arbitrary OpenAI-compatible base URLs. Each provider is enabled by its own `*_API_KEY`; see the environment variables table above.
 
 ## Contributing
 

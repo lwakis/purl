@@ -30,22 +30,53 @@ def test_models_ollama_always_ready(client):
     assert ollama['ready'] is True
 
 
-def test_models_ready_reflects_api_key(client, monkeypatch):
+def test_models_ready_reflects_configured_provider_key(client, monkeypatch):
+    monkeypatch.setattr(settings, 'llm_provider', 'deepseek')
     monkeypatch.setattr(settings, 'llm_api_key', 'sk-test')
     providers = client.get('/api/models').json()['providers']
-    openai = next(p for p in providers if p['id'] == 'openai')
-    anthropic = next(p for p in providers if p['id'] == 'anthropic')
-    assert openai['ready'] is True
-    assert anthropic['ready'] is True
+    ready = {p['id']: p['ready'] for p in providers}
+    assert ready['deepseek'] is True
+    assert ready['openai'] is False
+    assert ready['anthropic'] is False
+
+
+def test_models_ready_reflects_provider_specific_key(client, monkeypatch):
+    monkeypatch.setattr(settings, 'llm_provider', 'openai')
+    monkeypatch.setattr(settings, 'llm_api_key', '')
+    monkeypatch.setattr(settings, 'groq_api_key', 'sk-test')
+    providers = client.get('/api/models').json()['providers']
+    ready = {p['id']: p['ready'] for p in providers}
+    assert ready['groq'] is True
+    assert ready['openai'] is False
+    assert ready['deepseek'] is False
 
 
 def test_models_custom_requires_base_url_and_key(client, monkeypatch):
-    monkeypatch.setattr(settings, 'llm_api_key', 'sk-test')
+    monkeypatch.setattr(settings, 'llm_provider', 'openai')
+    monkeypatch.setattr(settings, 'llm_api_key', '')
+    monkeypatch.setattr(settings, 'custom_api_key', '')
     monkeypatch.setattr(settings, 'llm_base_url', '')
     providers = client.get('/api/models').json()['providers']
     custom = next(p for p in providers if p['id'] == 'custom')
     assert custom['ready'] is False
 
+    # Base URL alone is not enough.
+    monkeypatch.setattr(settings, 'llm_base_url', 'https://my-llm.example/v1')
+    providers = client.get('/api/models').json()['providers']
+    custom = next(p for p in providers if p['id'] == 'custom')
+    assert custom['ready'] is False
+
+    # CUSTOM_API_KEY plus the base URL makes it ready.
+    monkeypatch.setattr(settings, 'custom_api_key', 'sk-test')
+    providers = client.get('/api/models').json()['providers']
+    custom = next(p for p in providers if p['id'] == 'custom')
+    assert custom['ready'] is True
+
+
+def test_models_custom_ready_with_configured_provider_key(client, monkeypatch):
+    monkeypatch.setattr(settings, 'llm_provider', 'custom')
+    monkeypatch.setattr(settings, 'llm_api_key', 'sk-test')
+    monkeypatch.setattr(settings, 'custom_api_key', '')
     monkeypatch.setattr(settings, 'llm_base_url', 'https://my-llm.example/v1')
     providers = client.get('/api/models').json()['providers']
     custom = next(p for p in providers if p['id'] == 'custom')

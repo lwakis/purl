@@ -1,5 +1,6 @@
 """Health-check endpoint tests."""
 
+from app.config import settings
 from app.main import app
 
 
@@ -23,5 +24,26 @@ def test_health_reports_full_status(client):
     assert body['status'] == 'healthy'
     assert body['version'] == app.version
     assert body['database'] == 'ok'
+    assert body['mock_mode'] is True
+    assert body['provider'] is None
+
+
+def test_health_uses_configured_provider_specific_key(client, monkeypatch):
+    monkeypatch.setattr(settings, 'llm_provider', 'deepseek')
+    monkeypatch.setattr(settings, 'llm_api_key', '')
+    monkeypatch.setattr(settings, 'deepseek_api_key', 'sk-test')
+
+    body = client.get('/health').json()
+    assert body['mock_mode'] is False
+    assert body['provider'] == 'deepseek'
+
+
+def test_health_ignores_another_provider_key(client, monkeypatch):
+    monkeypatch.setattr(settings, 'llm_provider', 'deepseek')
+    monkeypatch.setattr(settings, 'llm_api_key', '')
+    monkeypatch.setattr(settings, 'deepseek_api_key', '')
+    monkeypatch.setattr(settings, 'openai_api_key', 'sk-test')
+
+    body = client.get('/health').json()
     assert body['mock_mode'] is True
     assert body['provider'] is None

@@ -14,6 +14,17 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _TMPDIR = tempfile.mkdtemp(prefix='purl-test-')
 os.environ['DATABASE_URL'] = f'sqlite+aiosqlite:///{_TMPDIR}/test.db'
 os.environ['LLM_API_KEY'] = ''
+# Provider-specific keys: clear so a developer's shell/.env keys never leak in.
+for _provider in (
+    'OPENAI',
+    'OPENROUTER',
+    'GROQ',
+    'DEEPSEEK',
+    'GEMINI',
+    'ANTHROPIC',
+    'CUSTOM',
+):
+    os.environ[f'{_provider}_API_KEY'] = ''
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

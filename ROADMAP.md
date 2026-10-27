@@ -28,6 +28,7 @@ What's in the repo right now:
 
 - [x] Multi-provider LLM layer (OpenAI, OpenRouter, Groq, DeepSeek, Gemini, Ollama, Anthropic, custom OpenAI-compatible endpoint)
 - [x] Model selector in the chat UI with a provider catalog (`GET /api/models`), per-request `provider:model` override, and a fallback to the configured default
+- [x] Per-provider API keys (`OPENAI_API_KEY`, `OPENROUTER_API_KEY`, `GROQ_API_KEY`, `DEEPSEEK_API_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`, `CUSTOM_API_KEY`): each provider is ready only with its own key, and `provider:model` overrides use the selected provider's key. `LLM_API_KEY` stays scoped to `LLM_PROVIDER` for existing installs.
 - [x] Self-hosted LLM support (Ollama is always ready; `custom` preset for any OpenAI-compatible local endpoint)
 - [x] Provider connection test from the model picker (`POST /api/models/test`; mock-aware)
 - [x] Optional fallback provider — one retry on network/timeout, 408, 429 or 5xx before any content is streamed (`LLM_FALLBACK_MODEL="provider:model"`)

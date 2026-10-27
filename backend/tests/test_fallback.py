@@ -26,7 +26,9 @@ def _configure_fallback(
     model='deepseek:deepseek-chat',
     api_key='sk-fallback',
     base_url='',
+    provider='openai',
 ):
+    monkeypatch.setattr(settings, 'llm_provider', provider)
     monkeypatch.setattr(settings, 'llm_fallback_model', model)
     monkeypatch.setattr(settings, 'llm_fallback_api_key', api_key)
     monkeypatch.setattr(settings, 'llm_fallback_base_url', base_url)
@@ -59,12 +61,35 @@ def test_resolve_fallback_preset_uses_fallback_key(monkeypatch):
     assert provider.ready is True
 
 
-def test_resolve_fallback_falls_back_to_primary_key(monkeypatch):
-    _configure_fallback(monkeypatch, api_key='')
+def test_resolve_fallback_different_provider_does_not_inherit_primary_key(monkeypatch):
+    _configure_fallback(monkeypatch, api_key='', provider='openai')
+    monkeypatch.setattr(settings, 'llm_api_key', 'sk-primary')
+    assert resolve_fallback_provider() is None
+
+
+def test_resolve_fallback_uses_target_provider_key(monkeypatch):
+    _configure_fallback(monkeypatch, api_key='', provider='openai')
+    monkeypatch.setattr(settings, 'deepseek_api_key', 'sk-deepseek')
+    provider = resolve_fallback_provider()
+    assert provider is not None
+    assert provider.api_key == 'sk-deepseek'
+
+
+def test_resolve_fallback_configured_provider_uses_primary_key(monkeypatch):
+    _configure_fallback(monkeypatch, model='openai:gpt-4o-mini', api_key='', provider='openai')
     monkeypatch.setattr(settings, 'llm_api_key', 'sk-primary')
     provider = resolve_fallback_provider()
     assert provider is not None
+    assert provider.name == 'openai'
     assert provider.api_key == 'sk-primary'
+
+
+def test_resolve_fallback_explicit_key_wins_over_provider_key(monkeypatch):
+    _configure_fallback(monkeypatch, api_key='sk-fallback', provider='openai')
+    monkeypatch.setattr(settings, 'deepseek_api_key', 'sk-deepseek')
+    provider = resolve_fallback_provider()
+    assert provider is not None
+    assert provider.api_key == 'sk-fallback'
 
 
 def test_resolve_fallback_missing_key_is_none(monkeypatch):
