@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Security
 
 - Updated `certifi` to 2026.10.23, and the transitive frontend dev dependencies `undici` to 8.12.3 and `zod` to 4.6.7, closing Dependabot critical/high advisories (GHSA-6q48-6c7w-9gw2, GHSA-xjj6-f33q-929c, GHSA-mrhx-c7xc-m3w5).
+- Added an npm override pinning `postcss-selector-parser` to 6.1.5 under the build-time `@tailwindcss/typography` plugin, closing the remaining moderate PostCSS advisory (GHSA-rj75-hqrm-r3gf).
 
 ## [0.8.0] - 2026-10-21
 
